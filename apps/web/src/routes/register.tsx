@@ -15,7 +15,7 @@ function RouteComponent() {
         const formData = new FormData(formRef.current);
         const data = Object.fromEntries(formData.entries());
         setPending(true);
-        fetch("http://localhost:3000/register", {
+        fetch("/api/register", {
             method: "POST",
             body: JSON.stringify(data),
             headers: {
@@ -38,7 +38,7 @@ function RouteComponent() {
         <>
             <div className="">
                 <form
-                    action="/register"
+                    action="/api/register"
                     method="post"
                     className="flex flex-col w-2xl"
                     ref={formRef}

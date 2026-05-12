@@ -2,25 +2,41 @@ import express from "express";
 import bcrypt from "bcrypt";
 import db from "./db.js";
 import cors from "cors";
+import * as jose from "jose";
+import dotenv from "dotenv";
+dotenv.config();
+import cookieParser from "cookie-parser";
+import authMiddleware from "./middleware/auth.js";
 
 const app = express();
 const port = 3000;
 const saltRounds = 10;
+const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET);
 
-app.get("/", (req, res) => {
-    res.send("lmaoooooooo");
-});
-
+// use middleware
 app.use(express.json());
 app.use(
     cors({
         origin: "http://localhost:3001",
     }),
 );
+app.use(cookieParser());
 
-app.post("/register", (req, res) => {
-    console.log(req.body);
+// api requests
+app.get("/", (req, res) => {
+    res.send("lmaoooooooo");
+});
+
+app.get("/me", authMiddleware, (req, res) => {
+    if (req.user) {
+        return res.send(req.user);
+    }
+    res.status(401).send("Unauthorized");
+});
+
+app.post("/register", authMiddleware, (req, res) => {
     if (!req.body) return res.status(400).send("No req body");
+    if (req.user) return res.status(400).send("Already logged in");
     const { username, password } = req.body;
     const rows = db
         .prepare(`SELECT * FROM users WHERE username = ?`)
@@ -36,16 +52,34 @@ app.post("/register", (req, res) => {
     });
 });
 
-app.post("/login", (req, res) => {
+app.post("/login", authMiddleware, (req, res) => {
     if (!req.body) return res.status(400).send("No req body");
+    if (req.user) return res.status(400).send("Already logged in");
     const { username, password } = req.body;
     const rows = db
         .prepare(`SELECT * FROM users WHERE username = ?`)
         .get(username);
-    if (!rows) return res.status(400).send("Username does not exist");
-    bcrypt.compare(password, rows.password, (err, result) => {
+
+    if (!rows) res.status(400).send("Username does not exist");
+
+    bcrypt.compare(password, rows.password, async (err, result) => {
         if (err) return res.status(500).send(err);
         if (!result) return res.status(400).send("Incorrect password");
+        // jwt
+        const jwt = await new jose.SignJWT({
+            userId: rows.id,
+            username: rows.username,
+        })
+            .setProtectedHeader({ alg: "HS256" })
+            .setIssuedAt()
+            .setExpirationTime("5m")
+            .sign(jwtSecret);
+        res.cookie("accessToken", jwt, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
         res.send("Login successful");
     });
 });
