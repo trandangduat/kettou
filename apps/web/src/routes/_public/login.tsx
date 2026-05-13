@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 
-export const Route = createFileRoute("/register")({
+export const Route = createFileRoute("/_public/login")({
     component: RouteComponent,
 });
 
@@ -15,7 +15,7 @@ function RouteComponent() {
         const formData = new FormData(formRef.current);
         const data = Object.fromEntries(formData.entries());
         setPending(true);
-        fetch("/api/register", {
+        fetch("/api/login", {
             method: "POST",
             body: JSON.stringify(data),
             headers: {
@@ -38,7 +38,7 @@ function RouteComponent() {
         <>
             <div className="">
                 <form
-                    action="/api/register"
+                    action="/api/login"
                     method="post"
                     className="flex flex-col w-2xl"
                     ref={formRef}
@@ -54,15 +54,8 @@ function RouteComponent() {
                         placeholder="Password"
                     />
 
-                    <label htmlFor="retype-password">Retype password</label>
-                    <input
-                        type="password"
-                        name="retype-password"
-                        placeholder="Retype password"
-                    />
-
-                    <button type="submit">Register</button>
-                    {pending && <p>Registering...</p>}
+                    <button type="submit">Login</button>
+                    {pending && <p>Logging in...</p>}
                     {error && <p>{error}</p>}
                 </form>
             </div>

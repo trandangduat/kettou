@@ -1,20 +1,7 @@
-import { fetchMe } from "#/api/auth";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 
-export const Route = createFileRoute("/login")({
-    beforeLoad: async ({ context, search }) => {
-        console.log(context.queryClient);
-        const user = await context.queryClient.ensureQueryData({
-            queryKey: ["me"],
-            queryFn: fetchMe,
-            retry: false,
-        });
-        console.log(user);
-        if (user) {
-            throw redirect({ to: "/" });
-        }
-    },
+export const Route = createFileRoute("/_public/register")({
     component: RouteComponent,
 });
 
@@ -28,7 +15,7 @@ function RouteComponent() {
         const formData = new FormData(formRef.current);
         const data = Object.fromEntries(formData.entries());
         setPending(true);
-        fetch("/api/login", {
+        fetch("/api/register", {
             method: "POST",
             body: JSON.stringify(data),
             headers: {
@@ -51,7 +38,7 @@ function RouteComponent() {
         <>
             <div className="">
                 <form
-                    action="/api/login"
+                    action="/api/register"
                     method="post"
                     className="flex flex-col w-2xl"
                     ref={formRef}
@@ -67,8 +54,15 @@ function RouteComponent() {
                         placeholder="Password"
                     />
 
-                    <button type="submit">Login</button>
-                    {pending && <p>Logging in...</p>}
+                    <label htmlFor="retype-password">Retype password</label>
+                    <input
+                        type="password"
+                        name="retype-password"
+                        placeholder="Retype password"
+                    />
+
+                    <button type="submit">Register</button>
+                    {pending && <p>Registering...</p>}
                     {error && <p>{error}</p>}
                 </form>
             </div>
