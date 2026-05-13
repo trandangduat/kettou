@@ -29,9 +29,11 @@ app.get("/", (req, res) => {
 
 app.get("/me", authMiddleware, (req, res) => {
     if (req.user) {
-        return res.send(req.user);
+        return res.json(req.user);
     }
-    res.status(401).send("Unauthorized");
+    res.status(401).json({
+        msg: "Unauthorized",
+    });
 });
 
 app.post("/register", authMiddleware, (req, res) => {
@@ -72,7 +74,7 @@ app.post("/login", authMiddleware, (req, res) => {
         })
             .setProtectedHeader({ alg: "HS256" })
             .setIssuedAt()
-            .setExpirationTime("5m")
+            .setExpirationTime("7d")
             .sign(jwtSecret);
         res.cookie("accessToken", jwt, {
             httpOnly: true,

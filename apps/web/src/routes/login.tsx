@@ -1,7 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { fetchMe } from "#/api/auth";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 
 export const Route = createFileRoute("/login")({
+    beforeLoad: async ({ context, search }) => {
+        console.log(context.queryClient);
+        const user = await context.queryClient.ensureQueryData({
+            queryKey: ["me"],
+            queryFn: fetchMe,
+            retry: false,
+        });
+        console.log(user);
+        if (user) {
+            throw redirect({ to: "/" });
+        }
+    },
     component: RouteComponent,
 });
 

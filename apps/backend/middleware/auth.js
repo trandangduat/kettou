@@ -11,9 +11,8 @@ async function authMiddleware(req, res, next) {
             const { payload } = await jwtVerify(accessToken, jwtSecret);
             req.user = payload;
         } catch (err) {
-            if (err.code === "ERR_JWT_EXPIRED") {
-                res.clearCookie("accessToken");
-            }
+            res.clearCookie("accessToken");
+            res.send(err);
         }
     }
     next();
