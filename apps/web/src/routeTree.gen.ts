@@ -9,78 +9,63 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as PublicRouteImport } from './routes/_public'
-import { Route as PublicIndexRouteImport } ./rout./routes/indexic/index'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as PublicRegisterRouteImport } from './routes/_public/register'
+import { Route as PublicLoginRouteImport } from './routes/_public/login'
 
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicIndexRoute = PublicIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicRegisterRoute = PublicRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicLoginRoute = PublicLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => PublicRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof PublicIndexRoute
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
+  '/': typeof IndexRoute
+  '/login': typeof PublicLoginRoute
+  '/register': typeof PublicRegisterRoute
 }
 export interface FileRoutesByTo {
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
-  '/': typeof PublicIndexRoute
+  '/': typeof IndexRoute
+  '/login': typeof PublicLoginRoute
+  '/register': typeof PublicRegisterRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_public': typeof PublicRouteWithChildren
-  '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
-  '/_public/': typeof PublicIndexRoute
+  '/_public/login': typeof PublicLoginRoute
+  '/_public/register': typeof PublicRegisterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: '/' | '/login' | '/register'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/register' | '/'
-  id: '__root__' | '/_public' | '/login' | '/register' | '/_public/'
+  to: '/' | '/login' | '/register'
+  id: '__root__' | '/' | '/_public' | '/_public/login' | '/_public/register'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   PublicRoute: typeof PublicRouteWithChildren
-  LoginRoute: typeof LoginRoute
-  RegisterRoute: typeof RegisterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_public': {
       id: '/_public'
       path: ''
@@ -88,31 +73,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_public/': {
-      id: '/_public/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof PublicIndexRouteImport
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/register': {
+      id: '/_public/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof PublicRegisterRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/login': {
+      id: '/_public/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof PublicLoginRouteImport
       parentRoute: typeof PublicRoute
     }
   }
 }
 
 interface PublicRouteChildren {
-  PublicIndexRoute: typeof PublicIndexRoute
+  PublicLoginRoute: typeof PublicLoginRoute
+  PublicRegisterRoute: typeof PublicRegisterRoute
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
-  PublicIndexRoute: PublicIndexRoute,
+  PublicLoginRoute: PublicLoginRoute,
+  PublicRegisterRoute: PublicRegisterRoute,
 }
 
 const PublicRouteWithChildren =
   PublicRoute._addFileChildren(PublicRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   PublicRoute: PublicRouteWithChildren,
-  LoginRoute: LoginRoute,
-  RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
