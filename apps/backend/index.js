@@ -36,6 +36,18 @@ app.get("/me", authMiddleware, (req, res) => {
     });
 });
 
+app.get("/logout", authMiddleware, (req, res) => {
+    if (req.user) {
+        res.clearCookie("accessToken");
+        return res.status(200).json({
+            msg: "Logged out successfully",
+        });
+    }
+    res.status(401).json({
+        msg: "Unauthorized",
+    });
+});
+
 app.post("/register", authMiddleware, (req, res) => {
     if (!req.body) return res.status(400).send("No req body");
     if (req.user) return res.status(400).send("Already logged in");

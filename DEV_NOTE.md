@@ -56,3 +56,24 @@ There is also another workaround. That is to pass the `queryClient` of Tanstack 
 - [`./apps/frontend/src/main.ts`](./apps/frontend/src/main.ts)
 - [`./apps/frontend/src/routes/__root.tsx`](./apps/frontend/src/routes/__root.tsx)
 - [`./apps/frontend/src/routes/_public.tsx`](./apps/frontend/src/routes/_public.tsx)
+
+## Login Redirection Issue
+While implementing the login feature, I encountered a bug where the router didn't redirect to the homepage after a successful login. I was using `queryClient.invalidateQueries({ queryKey: ["me"] })` followed by `router.invalidate()` to re-trigger the `beforeLoad` check (which is responsible for redirecting authenticated users away from the login page).
+
+The problem was that `invalidateQueries` marks the cache as stale and schedules a background refetch. When `router.invalidate()` immediately runs the `beforeLoad` function, `context.queryClient.ensureQueryData` sees the stale unauthenticated cache and returns it instantly instead of waiting for the new data. Thus, the redirect condition `if (user)` was bypassed.
+
+To fix this, I replaced `invalidateQueries` with `removeQueries`:
+
+```tsx
+if (res.ok) {
+    setError(null);
+    // Clear the old unauthenticated cache entirely so ensureQueryData is forced to fetch fresh data
+    queryClient.removeQueries({ queryKey: ["me"] });
+    
+    // Trigger beforeLoad which will now await the fresh auth state
+    await router.invalidate();
+    return;
+}
+```
+
+This ensures the cache is completely cleared, forcing `ensureQueryData` in the `beforeLoad` function to await the new data and successfully trigger the redirect.

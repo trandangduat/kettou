@@ -9,11 +9,11 @@ export const Route = createFileRoute("/_public")({
             queryFn: fetchMe,
             retry: false,
         });
-        console.log(user);
         if (user) {
             throw redirect({ to: "/" });
         }
     },
+
     component: RouteComponent,
 });
 

@@ -1,5 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_public/login")({
     component: RouteComponent,
@@ -9,6 +10,9 @@ function RouteComponent() {
     const [pending, setPending] = useState<Boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
+    const queryClient = useQueryClient();
+    const router = useRouter();
+
     const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!formRef.current) return;
@@ -22,10 +26,13 @@ function RouteComponent() {
                 "Content-Type": "application/json",
             },
         })
-            .then((res) => {
+            .then(async (res) => {
                 setPending(false);
                 if (res.ok) {
                     setError(null);
+                    queryClient.removeQueries({ queryKey: ["me"] }); // remove the cached "me" query
+                    await router.invalidate();
+                    // await router.navigate({ to: "/" });
                 }
                 return res.text();
             })
