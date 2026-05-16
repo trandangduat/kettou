@@ -4,7 +4,22 @@ dotenv.config();
 
 const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET);
 
-async function authMiddleware(req, res, next) {
+async function authPublicMiddleware(req, res, next) {
+    const accessToken = req.cookies.accessToken;
+    if (accessToken) {
+        try {
+            const { payload } = await jwtVerify(accessToken, jwtSecret);
+            req.status(401).send("Already logged in");
+        } catch (err) {
+            res.clearCookie("accessToken");
+            next();
+        }
+    } else {
+        next();
+    }
+}
+
+async function authProtectedMiddleware(req, res, next) {
     const accessToken = req.cookies.accessToken;
     if (accessToken) {
         try {
@@ -14,8 +29,10 @@ async function authMiddleware(req, res, next) {
             res.clearCookie("accessToken");
             res.send(err);
         }
+        next();
+    } else {
+        res.status(401).send("Unauthorized");
     }
-    next();
 }
 
-export default authMiddleware;
+export { authPublicMiddleware, authProtectedMiddleware };

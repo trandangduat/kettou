@@ -6,7 +6,10 @@ import * as jose from "jose";
 import dotenv from "dotenv";
 dotenv.config();
 import cookieParser from "cookie-parser";
-import authMiddleware from "./middleware/auth.js";
+import {
+    authProtectedMiddleware,
+    authPublicMiddleware,
+} from "./middleware/auth.js";
 
 const app = express();
 const port = 3000;
@@ -27,7 +30,7 @@ app.get("/", (req, res) => {
     res.send("lmaoooooooo");
 });
 
-app.get("/me", authMiddleware, (req, res) => {
+app.get("/me", authProtectedMiddleware, (req, res) => {
     if (req.user) {
         return res.json(req.user);
     }
@@ -36,21 +39,15 @@ app.get("/me", authMiddleware, (req, res) => {
     });
 });
 
-app.get("/logout", authMiddleware, (req, res) => {
-    if (req.user) {
-        res.clearCookie("accessToken");
-        return res.status(200).json({
-            msg: "Logged out successfully",
-        });
-    }
-    res.status(401).json({
-        msg: "Unauthorized",
+app.get("/logout", authProtectedMiddleware, (req, res) => {
+    res.clearCookie("accessToken");
+    return res.status(200).json({
+        msg: "Logged out successfully",
     });
 });
 
-app.post("/register", authMiddleware, (req, res) => {
+app.post("/register", authPublicMiddleware, (req, res) => {
     if (!req.body) return res.status(400).send("No req body");
-    if (req.user) return res.status(400).send("Already logged in");
     const { username, password } = req.body;
     const rows = db
         .prepare(`SELECT * FROM users WHERE username = ?`)
@@ -66,8 +63,7 @@ app.post("/register", authMiddleware, (req, res) => {
     });
 });
 
-app.post("/login", authMiddleware, (req, res) => {
-    if (!req.body) return res.status(400).send("No req body");
+app.post("/login", authPublicMiddleware, (req, res) => {
     if (req.user) return res.status(400).send("Already logged in");
     const { username, password } = req.body;
     const rows = db
@@ -97,6 +93,12 @@ app.post("/login", authMiddleware, (req, res) => {
         res.send("Login successful");
     });
 });
+
+app.post(
+    "/games/:gameId/create-room",
+    authProtectedMiddleware,
+    (req, res) => {},
+);
 
 app.listen(port, "localhost", () => {
     console.log(`Server is running on port ${port}`);
