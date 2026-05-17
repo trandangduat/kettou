@@ -1,18 +1,17 @@
 import { fetchMe } from "#/api/auth";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_public")({
+export const Route = createFileRoute("/_protected")({
     beforeLoad: async ({ context }) => {
         const user = await context.queryClient.ensureQueryData({
             queryKey: ["me"],
             queryFn: fetchMe,
             retry: false,
         });
-        if (user) {
-            throw redirect({ to: "/" });
+        if (!user) {
+            throw redirect({ to: "/login" });
         }
     },
-
     component: RouteComponent,
 });
 

@@ -10,6 +10,7 @@ import {
     authProtectedMiddleware,
     authPublicMiddleware,
 } from "./middleware/auth.js";
+import { v6 as uuidv6 } from "uuid";
 
 const app = express();
 const port = 3000;
@@ -94,11 +95,47 @@ app.post("/login", authPublicMiddleware, (req, res) => {
     });
 });
 
-app.post(
-    "/games/:gameId/create-room",
-    authProtectedMiddleware,
-    (req, res) => {},
-);
+app.get("/games", (req, res) => {
+    const games = db.prepare(`SELECT * FROM games`).all();
+    res.json(games);
+});
+
+app.get("/games/:gameId", (req, res) => {
+    const { gameId } = req.params;
+    const game = db.prepare(`SELECT * FROM games WHERE id = ?`).get(gameId);
+    res.json(game);
+});
+
+app.get("/games/:gameId/rooms", (req, res) => {
+    const { gameId } = req.params;
+    const rooms = db
+        .prepare(`SELECT * FROM rooms WHERE game_id = ?`)
+        .all(gameId);
+    res.json(rooms);
+});
+
+app.get("/rooms/:roomId", (req, res) => {
+    const { roomId } = req.params;
+    const room = db.prepare(`SELECT * FROM rooms WHERE id = ?`).get(roomId);
+    res.json(room);
+});
+
+app.post("/games/:gameId/create-room", authProtectedMiddleware, (req, res) => {
+    const { gameId } = req.params;
+    const roomdId = uuidv6();
+    const userId = req.user.userId;
+    try {
+        db.prepare(
+            `INSERT INTO rooms(id, game_id, player1_id) VALUES (?, ?, ?)`,
+        ).run(roomdId, gameId, userId);
+        res.json({
+            message: "Room created successfully",
+            roomId: roomdId,
+        });
+    } catch (err) {
+        return res.status(500).send(err);
+    }
+});
 
 app.listen(port, "localhost", () => {
     console.log(`Server is running on port ${port}`);

@@ -9,7 +9,7 @@ async function authPublicMiddleware(req, res, next) {
     if (accessToken) {
         try {
             const { payload } = await jwtVerify(accessToken, jwtSecret);
-            req.status(401).send("Already logged in");
+            req.status(401).send("Already logged in, not allowed to do this");
         } catch (err) {
             res.clearCookie("accessToken");
             next();
@@ -31,7 +31,7 @@ async function authProtectedMiddleware(req, res, next) {
         }
         next();
     } else {
-        res.status(401).send("Unauthorized");
+        res.status(401).send("Not logged in, not authorized");
     }
 }
 

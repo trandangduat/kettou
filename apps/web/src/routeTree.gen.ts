@@ -10,12 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PublicRouteImport } from './routes/_public'
+import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PublicRegisterRouteImport } from './routes/_public/register'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
+import { Route as GamesGameIdIndexRouteImport } from './routes/games/$gameId/index'
+import { Route as ProtectedRoomsRoomIdIndexRouteImport } from './routes/_protected/rooms.$roomId/index'
 
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedRoute = ProtectedRouteImport.update({
+  id: '/_protected',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -33,35 +40,68 @@ const PublicLoginRoute = PublicLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => PublicRoute,
 } as any)
+const GamesGameIdIndexRoute = GamesGameIdIndexRouteImport.update({
+  id: '/games/$gameId/',
+  path: '/games/$gameId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedRoomsRoomIdIndexRoute =
+  ProtectedRoomsRoomIdIndexRouteImport.update({
+    id: '/rooms/$roomId/',
+    path: '/rooms/$roomId/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
+  '/games/$gameId/': typeof GamesGameIdIndexRoute
+  '/rooms/$roomId/': typeof ProtectedRoomsRoomIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
+  '/games/$gameId': typeof GamesGameIdIndexRoute
+  '/rooms/$roomId': typeof ProtectedRoomsRoomIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_protected': typeof ProtectedRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/_public/login': typeof PublicLoginRoute
   '/_public/register': typeof PublicRegisterRoute
+  '/games/$gameId/': typeof GamesGameIdIndexRoute
+  '/_protected/rooms/$roomId/': typeof ProtectedRoomsRoomIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/games/$gameId/'
+    | '/rooms/$roomId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register'
-  id: '__root__' | '/' | '/_public' | '/_public/login' | '/_public/register'
+  to: '/' | '/login' | '/register' | '/games/$gameId' | '/rooms/$roomId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_protected'
+    | '/_public'
+    | '/_public/login'
+    | '/_public/register'
+    | '/games/$gameId/'
+    | '/_protected/rooms/$roomId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProtectedRoute: typeof ProtectedRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
+  GamesGameIdIndexRoute: typeof GamesGameIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -71,6 +111,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof PublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_protected': {
+      id: '/_protected'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ProtectedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -94,8 +141,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicLoginRouteImport
       parentRoute: typeof PublicRoute
     }
+    '/games/$gameId/': {
+      id: '/games/$gameId/'
+      path: '/games/$gameId'
+      fullPath: '/games/$gameId/'
+      preLoaderRoute: typeof GamesGameIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_protected/rooms/$roomId/': {
+      id: '/_protected/rooms/$roomId/'
+      path: '/rooms/$roomId'
+      fullPath: '/rooms/$roomId/'
+      preLoaderRoute: typeof ProtectedRoomsRoomIdIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
   }
 }
+
+interface ProtectedRouteChildren {
+  ProtectedRoomsRoomIdIndexRoute: typeof ProtectedRoomsRoomIdIndexRoute
+}
+
+const ProtectedRouteChildren: ProtectedRouteChildren = {
+  ProtectedRoomsRoomIdIndexRoute: ProtectedRoomsRoomIdIndexRoute,
+}
+
+const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
+  ProtectedRouteChildren,
+)
 
 interface PublicRouteChildren {
   PublicLoginRoute: typeof PublicLoginRoute
@@ -112,7 +185,9 @@ const PublicRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProtectedRoute: ProtectedRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
+  GamesGameIdIndexRoute: GamesGameIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
