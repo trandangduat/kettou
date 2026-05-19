@@ -1,5 +1,7 @@
 import { getRoom } from "#/api/rooms";
+import { socket } from "#/socket";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_protected/rooms/$roomId/")({
     loader: async ({ context, params }) => {
@@ -77,14 +79,91 @@ function GameBoard() {
     );
 }
 
+interface GameMove {
+    r: Number;
+    c: Number;
+    d: Number;
+}
+
+interface PlayerState {
+    username: String;
+    id: String;
+    moves: GameMove[];
+}
+
+interface GameState {
+    player1: PlayerState | null;
+    player2: PlayerState | null;
+    canStart: Boolean;
+    isPlaying: Boolean;
+    turn: String;
+}
+
 function RouteComponent() {
     const room = Route.useLoaderData();
+    const { user } = Route.useRouteContext();
+    const [gameState, setGameState] = useState<GameState>();
+
+    const startGame = () => {
+        socket.emit("start game", {
+            roomId: room.id,
+            userId: user.userId,
+        });
+    };
+
+    useEffect(() => {
+        socket.emit("join room", {
+            roomId: room.id,
+            user: {
+                username: user.username,
+                id: user.userId,
+            },
+        });
+
+        socket.on("update gamestate", (newState) => {
+            setGameState(newState);
+        });
+
+        return () => {
+            socket.emit("leave room", {
+                roomId: room.id,
+                user: {
+                    username: user.username,
+                    id: user.userId,
+                },
+            });
+        };
+    }, []);
     return (
         <>
             <h1>{room.id}</h1>
             <p>{room.game_id}</p>
-            <p>Player 1: {room.player1_id}</p>
-            <p>Player 2: {room.player2_id ?? "NULL"}</p>
+            <p>
+                Player 1:
+                {gameState && gameState.player1
+                    ? gameState.player1.username
+                    : "NULL"}
+            </p>
+            <p>
+                Player 2:
+                {gameState && gameState.player2
+                    ? gameState.player2.username
+                    : "NULL"}
+            </p>
+            <button
+                onClick={startGame}
+                className="p-2 border"
+                style={{
+                    backgroundColor:
+                        gameState?.canStart &&
+                        gameState?.player1?.id == user.userId
+                            ? "cyan"
+                            : "grey",
+                }}
+            >
+                Start Game
+            </button>
+            <p>isPlaying: {gameState?.isPlaying ? "true" : "false"}</p>
             <GameBoard />
         </>
     );

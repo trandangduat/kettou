@@ -11,8 +11,16 @@ import {
     authPublicMiddleware,
 } from "./middleware/auth.js";
 import { v6 as uuidv6 } from "uuid";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: ["http://localhost:3001"],
+    },
+});
 const port = 3000;
 const saltRounds = 10;
 const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -114,10 +122,30 @@ app.get("/games/:gameId/rooms", (req, res) => {
     res.json(rooms);
 });
 
-app.get("/rooms/:roomId", (req, res) => {
+app.get("/rooms/:roomId", authProtectedMiddleware, (req, res) => {
     const { roomId } = req.params;
     const room = db.prepare(`SELECT * FROM rooms WHERE id = ?`).get(roomId);
     res.json(room);
+});
+
+app.get("/rooms/:roomId/join", authProtectedMiddleware, (req, res) => {
+    const { roomId } = req.params;
+    const userId = req.user.userId;
+    let room = db.prepare(`SELECT * FROM rooms WHERE id = ?`).get(roomId);
+    if (room.player1_id === userId || room.player2_id == userId) {
+        return res.json(room);
+    }
+    if (!room.player2_id) {
+        db.prepare(`UPDATE rooms SET player2_id = ? WHERE id = ?`).run(
+            userId,
+            roomId,
+        );
+        room = db.prepare(`SELECT * FROM rooms WHERE id = ?`).get(roomId);
+        return res.json(room);
+    }
+    return res.status(403).json({
+        message: "This room is already full!",
+    });
 });
 
 app.post("/games/:gameId/create-room", authProtectedMiddleware, (req, res) => {
@@ -137,6 +165,119 @@ app.post("/games/:gameId/create-room", authProtectedMiddleware, (req, res) => {
     }
 });
 
-app.listen(port, "localhost", () => {
+// websocket
+const gameStates = {};
+
+io.on("connection", (socket) => {
+    console.log("socket connected: ", socket.id);
+
+    socket.on("join room", ({ roomId, user }) => {
+        const roomStr = `room:${roomId}`;
+        socket.join(roomStr);
+        gameStates[roomId] ??= {};
+        if (
+            gameStates[roomId].player1?.username === user.username ||
+            gameStates[roomId].player2?.username === user.username
+        ) {
+            return;
+        }
+        if (!gameStates[roomId].player1) {
+            gameStates[roomId] = {
+                ...gameStates[roomId],
+                player1: {
+                    username: user.username,
+                    id: user.id,
+                    moves: [],
+                },
+            };
+        } else if (!gameStates[roomId].player2) {
+            gameStates[roomId] = {
+                ...gameStates[roomId],
+                player2: {
+                    username: user.username,
+                    id: user.id,
+                    moves: [],
+                },
+            };
+        } else {
+            gameStates[roomId] = {
+                ...gameStates[roomId],
+                waitingQueues: [
+                    {
+                        username: user.username,
+                        id: user.id,
+                        moves: [],
+                    },
+                    ...(gameStates[roomId].waitingQueues ?? []),
+                ],
+            };
+        }
+        if (gameStates[roomId].player1 && gameStates[roomId].player2) {
+            gameStates[roomId].canStart = true;
+            gameStates[roomId].isPlaying = false;
+        } else {
+            gameStates[roomId].canStart = false;
+            gameStates[roomId].isPlaying = false;
+        }
+        io.to(roomStr).emit("update gamestate", gameStates[roomId]);
+        console.log("gameStates", gameStates);
+    });
+
+    socket.on("leave room", ({ roomId, user }) => {
+        // console.log("user ", user.username, " leave room ", roomId);
+        const roomStr = `room:${roomId}`;
+        socket.leave(roomStr);
+        gameStates[roomId] ??= {};
+        // player1 is basically the room host, so if player1 left,
+        // promote the remaining player to room host
+        if (gameStates[roomId].player1?.username === user.username) {
+            gameStates[roomId].player1 = gameStates[roomId].player2;
+            gameStates[roomId].player2 =
+                gameStates[roomId].waitingQueues?.pop();
+        }
+        if (gameStates[roomId].player2?.username === user.username) {
+            gameStates[roomId].player2 =
+                gameStates[roomId].waitingQueues?.pop();
+        }
+        if (gameStates[roomId].player1 && gameStates[roomId].player2) {
+            gameStates[roomId].canStart = true;
+            gameStates[roomId].isPlaying = false;
+        } else {
+            gameStates[roomId].canStart = false;
+            gameStates[roomId].isPlaying = false;
+        }
+        io.to(roomStr).emit("update gamestate", gameStates[roomId]);
+        console.log("gameStates", gameStates);
+    });
+
+    socket.on("start game", ({ roomId, userId }) => {
+        const roomStr = `room:${roomId}`;
+        gameStates[roomId] ??= {};
+        console.log(
+            roomId,
+            userId,
+            gameStates[roomId].canStart,
+            gameStates[roomId].player1?.id,
+        );
+        if (
+            gameStates[roomId].canStart &&
+            userId === gameStates[roomId].player1?.id
+        ) {
+            gameStates[roomId] = {
+                ...gameStates[roomId],
+                canStart: false,
+                isPlaying: true,
+            };
+        }
+        io.to(roomStr).emit("update gamestate", gameStates[roomId]);
+        console.log("gameStates", gameStates);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("socket disconnected: ", socket.id);
+    });
+});
+
+httpServer.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });

@@ -1,5 +1,4 @@
 import { getAllRoomsOfGame } from "#/api/rooms";
-import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/games/$gameId/")({
@@ -19,17 +18,14 @@ interface Room {
 function RouteComponent() {
     const { gameId } = Route.useParams();
     const rooms = Route.useLoaderData();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const createRoom = async () => {
-        await fetch(`/api/games/${gameId}/create-room`, {
+        const res = await fetch(`/api/games/${gameId}/create-room`, {
             method: "POST",
         });
-        queryClient.removeQueries({
-            queryKey: ["all-rooms", gameId],
-        });
-        await router.invalidate();
+        const { roomId } = await res.json();
+        await router.navigate({ to: "/rooms/$roomId", params: { roomId } });
     };
 
     return (

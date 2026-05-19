@@ -11,6 +11,7 @@ export const Route = createFileRoute("/_protected")({
         if (!user) {
             throw redirect({ to: "/login" });
         }
+        return { user };
     },
     component: RouteComponent,
 });
