@@ -1,5 +1,5 @@
 import type { Server } from "socket.io";
-import { GameStateDict } from "./gameStates.js";
+import { createInitGameState, GameStateDict } from "./gameStates.js";
 
 const updateRoomStatus = (gameStates: GameStateDict, roomId: string) => {
     if (gameStates[roomId].player1 && gameStates[roomId].player2) {
@@ -18,7 +18,7 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
         socket.on("join room", ({ roomId, user }) => {
             const roomStr = `room:${roomId}`;
             socket.join(roomStr);
-            gameStates[roomId] ??= {};
+            gameStates[roomId] ??= createInitGameState();
             if (
                 gameStates[roomId].player1?.username === user.username ||
                 gameStates[roomId].player2?.username === user.username
@@ -65,7 +65,7 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
             // console.log("user ", user.username, " leave room ", roomId);
             const roomStr = `room:${roomId}`;
             socket.leave(roomStr);
-            gameStates[roomId] ??= {};
+            gameStates[roomId] ??= createInitGameState();
             // player1 is basically the room host, so if player1 left,
             // promote the remaining player to room host
             if (gameStates[roomId].player1?.username === user.username) {
@@ -84,7 +84,7 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
 
         socket.on("start game", ({ roomId, userId }) => {
             const roomStr = `room:${roomId}`;
-            gameStates[roomId] ??= {};
+            gameStates[roomId] ??= createInitGameState();
             console.log(
                 roomId,
                 userId,
