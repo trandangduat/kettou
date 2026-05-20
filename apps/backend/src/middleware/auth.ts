@@ -17,11 +17,18 @@ const authPublicMiddleware: RequestHandler = async (req, res, next) => {
     }
 };
 
+interface AuthUser {
+    userId: number;
+    username: string;
+}
+
 const authProtectedMiddleware: RequestHandler = async (req, res, next) => {
     const accessToken = req.cookies.accessToken;
     if (accessToken) {
         try {
-            const { payload } = await jwtVerify(accessToken, JWT_SECRET);
+            const { payload } = (await jwtVerify(accessToken, JWT_SECRET)) as {
+                payload: AuthUser;
+            };
             req.user = payload;
         } catch (err) {
             res.clearCookie("accessToken");
