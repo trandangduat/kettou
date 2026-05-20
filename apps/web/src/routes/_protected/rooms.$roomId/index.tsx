@@ -2,6 +2,7 @@ import { getRoom } from "#/api/rooms";
 import { socket } from "#/socket";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import type { GameState } from "shared";
 
 export const Route = createFileRoute("/_protected/rooms/$roomId/")({
     loader: async ({ context, params }) => {
@@ -79,36 +80,40 @@ function GameBoard() {
     );
 }
 
-interface GameMove {
-    r: Number;
-    c: Number;
-    d: Number;
-}
-
-interface PlayerState {
-    username: String;
-    id: String;
-    moves: GameMove[];
-}
-
-interface GameState {
-    player1: PlayerState | null;
-    player2: PlayerState | null;
-    canStart: Boolean;
-    isPlaying: Boolean;
-    turn: String;
-}
-
 function RouteComponent() {
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
     const [gameState, setGameState] = useState<GameState>();
+    const [waitingDice, setWaitingDice] = useState<boolean>(false);
+    const myTurn: boolean =
+        gameState?.turn === 0
+            ? user.userId === gameState?.player1?.id
+            : user.userId === gameState?.player2?.id;
+    let myDiceNumber = 0;
+    if (
+        gameState &&
+        gameState.roundNumber > 0 &&
+        gameState.rounds?.length === gameState.roundNumber
+    ) {
+        myDiceNumber = gameState.rounds[gameState.roundNumber - 1].diceNumber;
+    }
 
     const startGame = () => {
         socket.emit("start game", {
             roomId: room.id,
             userId: user.userId,
         });
+    };
+
+    const rollDice = () => {
+        setWaitingDice(true);
+        setTimeout(() => {
+            socket.emit("roll dice", {
+                roomId: room.id,
+                userId: room.userId,
+            });
+            setWaitingDice(false);
+        }, 1000);
     };
 
     useEffect(() => {
@@ -163,7 +168,45 @@ function RouteComponent() {
             >
                 Start Game
             </button>
-            <p>isPlaying: {gameState?.isPlaying ? "true" : "false"}</p>
+            <p>
+                isPlaying:
+                <b
+                    style={{
+                        color: gameState?.isPlaying ? "green" : "red",
+                    }}
+                >
+                    {gameState?.isPlaying ? "true" : "false"}
+                </b>
+            </p>
+            {gameState?.isPlaying && (
+                <div>
+                    {myTurn ? (
+                        <>
+                            <p>
+                                It is <b>your turn</b> now!
+                            </p>
+                            <button
+                                className="p-2 border mb-4"
+                                onClick={rollDice}
+                            >
+                                Roll dice
+                            </button>
+                            {waitingDice && <p>Rolling dices...</p>}
+                            {myDiceNumber > 0 && (
+                                <p>
+                                    Your dice lands on <b>{myDiceNumber}</b>
+                                </p>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <p>
+                                Waiting for <b>enemy's turn</b>
+                            </p>
+                        </>
+                    )}
+                </div>
+            )}
             <GameBoard />
         </>
     );

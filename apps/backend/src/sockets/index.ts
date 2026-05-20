@@ -1,5 +1,7 @@
 import type { Server } from "socket.io";
-import { createInitGameState, GameStateDict } from "./gameStates.js";
+import { GameStateDict } from "./gameStates.js";
+import { getRandomNumber } from "../utils.js";
+import { createInitGameState, GameState } from "shared";
 
 const updateRoomStatus = (gameStates: GameStateDict, roomId: string) => {
     if (gameStates[roomId].player1 && gameStates[roomId].player2) {
@@ -9,6 +11,10 @@ const updateRoomStatus = (gameStates: GameStateDict, roomId: string) => {
         gameStates[roomId].canStart = false;
         gameStates[roomId].isPlaying = false;
     }
+};
+
+const debugGameStates = (gameStates: GameStateDict) => {
+    console.log("gameStates:", JSON.stringify(gameStates, null, 2));
 };
 
 export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
@@ -31,7 +37,6 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
                     player1: {
                         username: user.username,
                         id: user.id,
-                        moves: [],
                     },
                 };
             } else if (!gameStates[roomId].player2) {
@@ -40,7 +45,6 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
                     player2: {
                         username: user.username,
                         id: user.id,
-                        moves: [],
                     },
                 };
             } else {
@@ -50,7 +54,6 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
                         {
                             username: user.username,
                             id: user.id,
-                            moves: [],
                         },
                         ...(gameStates[roomId].waitingQueues ?? []),
                     ],
@@ -58,7 +61,7 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
             }
             updateRoomStatus(gameStates, roomId);
             io.to(roomStr).emit("update gamestate", gameStates[roomId]);
-            console.log("gameStates", gameStates);
+            debugGameStates(gameStates);
         });
 
         socket.on("leave room", ({ roomId, user }) => {
@@ -79,30 +82,38 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
             }
             updateRoomStatus(gameStates, roomId);
             io.to(roomStr).emit("update gamestate", gameStates[roomId]);
-            console.log("gameStates", gameStates);
+            debugGameStates(gameStates);
         });
 
         socket.on("start game", ({ roomId, userId }) => {
             const roomStr = `room:${roomId}`;
             gameStates[roomId] ??= createInitGameState();
-            console.log(
-                roomId,
-                userId,
-                gameStates[roomId].canStart,
-                gameStates[roomId].player1?.id,
-            );
             if (
                 gameStates[roomId].canStart &&
                 userId === gameStates[roomId].player1?.id
             ) {
                 gameStates[roomId] = {
                     ...gameStates[roomId],
+                    roundNumber: 1,
                     canStart: false,
                     isPlaying: true,
+                    turn: getRandomNumber(2),
                 };
             }
             io.to(roomStr).emit("update gamestate", gameStates[roomId]);
-            console.log("gameStates", gameStates);
+            debugGameStates(gameStates);
+        });
+
+        socket.on("roll dice", ({ roomId, userId }) => {
+            const roomStr = `room:${roomId}`;
+            gameStates[roomId] ??= createInitGameState();
+            gameStates[roomId].rounds.push({
+                move: null,
+                diceNumber: getRandomNumber(6) + 1,
+                playerId: userId,
+            });
+            io.to(roomStr).emit("update gamestate", gameStates[roomId]);
+            debugGameStates(gameStates);
         });
 
         socket.on("disconnect", () => {
