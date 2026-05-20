@@ -1,15 +1,13 @@
 import { jwtVerify } from "jose";
-import dotenv from "dotenv";
-dotenv.config();
+import { JWT_SECRET } from "../config.js";
+import type { RequestHandler } from "express";
 
-const jwtSecret = new TextEncoder().encode(process.env.JWT_SECRET);
-
-async function authPublicMiddleware(req, res, next) {
+const authPublicMiddleware: RequestHandler = async (req, res, next) => {
     const accessToken = req.cookies.accessToken;
     if (accessToken) {
         try {
-            const { payload } = await jwtVerify(accessToken, jwtSecret);
-            req.status(401).send("Already logged in, not allowed to do this");
+            await jwtVerify(accessToken, JWT_SECRET);
+            res.status(401).send("Already logged in, not allowed to do this");
         } catch (err) {
             res.clearCookie("accessToken");
             next();
@@ -17,13 +15,13 @@ async function authPublicMiddleware(req, res, next) {
     } else {
         next();
     }
-}
+};
 
-async function authProtectedMiddleware(req, res, next) {
+const authProtectedMiddleware: RequestHandler = async (req, res, next) => {
     const accessToken = req.cookies.accessToken;
     if (accessToken) {
         try {
-            const { payload } = await jwtVerify(accessToken, jwtSecret);
+            const { payload } = await jwtVerify(accessToken, JWT_SECRET);
             req.user = payload;
         } catch (err) {
             res.clearCookie("accessToken");
@@ -33,6 +31,6 @@ async function authProtectedMiddleware(req, res, next) {
     } else {
         res.status(401).send("Not logged in, not authorized");
     }
-}
+};
 
 export { authPublicMiddleware, authProtectedMiddleware };

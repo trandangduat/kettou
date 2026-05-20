@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-const db = new Database("./database/sqlite.db");
+const db = new Database("database/sqlite.db");
 
 db.pragma("foreign_keys = ON");
 
