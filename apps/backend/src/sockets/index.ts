@@ -80,6 +80,10 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
                 gameStates[roomId].player2 =
                     gameStates[roomId].waitingQueues?.pop();
             }
+            if (!gameStates[roomId].player1 && !gameStates[roomId].player2) {
+                gameStates[roomId] = undefined;
+                return;
+            }
             updateRoomStatus(gameStates, roomId);
             io.to(roomStr).emit("update gamestate", gameStates[roomId]);
             debugGameStates(gameStates);
