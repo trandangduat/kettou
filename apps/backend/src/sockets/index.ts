@@ -1,7 +1,7 @@
 import type { Server } from "socket.io";
 import { GameStateDict } from "./gameStates.js";
 import { getRandomNumber } from "../utils.js";
-import { createInitGameState, GameState } from "shared";
+import { createInitGameState, GameMove, GameState } from "shared";
 
 const updateRoomStatus = (gameStates: GameStateDict, roomId: string) => {
     if (gameStates[roomId].player1 && gameStates[roomId].player2) {
@@ -15,6 +15,18 @@ const updateRoomStatus = (gameStates: GameStateDict, roomId: string) => {
 
 const debugGameStates = (gameStates: GameStateDict) => {
     console.log("gameStates:", JSON.stringify(gameStates, null, 2));
+};
+
+const checkValidMove = ({
+    currentMove,
+    userId,
+    gameState,
+}: {
+    currentMove: GameMove;
+    userId: number;
+    gameState: GameState;
+}): boolean => {
+    return true;
 };
 
 export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
@@ -116,6 +128,28 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
                 diceNumber: getRandomNumber(6) + 1,
                 playerId: userId,
             });
+            io.to(roomStr).emit("update gamestate", gameStates[roomId]);
+            debugGameStates(gameStates);
+        });
+
+        socket.on("finish move", ({ roomId, userId, move }) => {
+            const roomStr = `room:${roomId}`;
+            gameStates[roomId] ??= createInitGameState();
+            const roundNumber = gameStates[roomId].roundNumber;
+            if (
+                roundNumber > 0 &&
+                checkValidMove({
+                    currentMove: move,
+                    userId,
+                    gameState: gameStates[roomId],
+                })
+            ) {
+                gameStates[roomId].rounds[roundNumber - 1].move = move;
+                gameStates[roomId].roundNumber++;
+                gameStates[roomId].turn = 1 - gameStates[roomId].turn;
+            } else {
+                console.log("Not a valid move, move again!");
+            }
             io.to(roomStr).emit("update gamestate", gameStates[roomId]);
             debugGameStates(gameStates);
         });
