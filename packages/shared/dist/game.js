@@ -3,8 +3,10 @@ export const createInitGameState = () => ({
     player2: null,
     roundNumber: 0,
     rounds: [],
+    turn: null,
     waitingQueues: [],
     canStart: false,
     isPlaying: false,
-    turn: null,
+    ended: false,
+    endState: null,
 });

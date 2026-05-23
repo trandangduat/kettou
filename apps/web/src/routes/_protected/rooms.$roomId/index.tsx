@@ -34,6 +34,18 @@ function RouteComponent() {
     ) {
         myDiceNumber = gameState.rounds[gameState.roundNumber - 1].diceNumber;
     }
+    const playerPoints = gameState?.endState?.playerPoints;
+    let isAWinner = false;
+
+    if (gameState && playerPoints && gameState.player1 && gameState.player2) {
+        isAWinner =
+            (user.userId === gameState.player1.id &&
+                playerPoints[user.userId] >
+                    playerPoints[gameState.player2.id]) ||
+            (user.userId === gameState.player2.id &&
+                playerPoints[user.userId] > playerPoints[gameState.player1.id]);
+        console.log("isAWinner", isAWinner);
+    }
 
     const startGame = () => {
         socket.emit("start game", {
@@ -98,6 +110,7 @@ function RouteComponent() {
                 style={{
                     backgroundColor:
                         gameState?.canStart &&
+                        !gameState?.ended &&
                         gameState?.player1?.id == user.userId
                             ? "cyan"
                             : "grey",
@@ -144,7 +157,7 @@ function RouteComponent() {
                     )}
                 </div>
             )}
-            <div className="flex flex-col m-auto">
+            <div className="flex flex-col m-auto bg-gray-200">
                 <div>Enemy</div>
                 <GameBoard
                     gameState={gameState}
@@ -153,6 +166,12 @@ function RouteComponent() {
                 />
                 <div>You</div>
             </div>
+            {gameState?.ended && (
+                <>
+                    {isAWinner ? "Winner" : "Loser"}
+                    <p>Points: {playerPoints?.[user.userId]}</p>
+                </>
+            )}
         </>
     );
 }

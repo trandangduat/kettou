@@ -1,5 +1,5 @@
 import type { Server } from "socket.io";
-import { GameStateDict } from "./gameStates.js";
+import { GameStateDict, gameStates } from "./gameStates.js";
 import { getRandomNumber } from "../utils.js";
 import { createInitGameState, GameMove, GameState } from "shared";
 
@@ -11,6 +11,33 @@ const updateRoomStatus = (gameStates: GameStateDict, roomId: string) => {
         gameStates[roomId].canStart = false;
         gameStates[roomId].isPlaying = false;
     }
+};
+
+const moveOnToNextRound = (gameStates: GameStateDict, roomId: string) => {
+    const roundNumber = gameStates[roomId].roundNumber;
+    if (roundNumber > 0) {
+        gameStates[roomId].roundNumber++;
+        gameStates[roomId].turn = 1 - gameStates[roomId].turn;
+    }
+};
+
+const endGame = (gameStates: GameStateDict, roomId: string) => {
+    const rounds = gameStates[roomId].rounds;
+    const points: Record<string, number> = {};
+
+    for (let { playerId, move } of rounds) {
+        points[playerId] ??= 0;
+        points[playerId] += move ? move.d * move.d : 0;
+    }
+
+    gameStates[roomId] = {
+        ...gameStates[roomId],
+        ended: true,
+        isPlaying: false,
+        endState: {
+            playerPoints: points,
+        },
+    };
 };
 
 const debugGameStates = (gameStates: GameStateDict) => {
@@ -145,11 +172,31 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
                 })
             ) {
                 gameStates[roomId].rounds[roundNumber - 1].move = move;
-                gameStates[roomId].roundNumber++;
-                gameStates[roomId].turn = 1 - gameStates[roomId].turn;
+                moveOnToNextRound(gameStates, roomId);
             } else {
                 console.log("Not a valid move, move again!");
             }
+
+            io.to(roomStr).emit("update gamestate", gameStates[roomId]);
+            debugGameStates(gameStates);
+        });
+
+        socket.on("cannot move", ({ roomId, userId }) => {
+            console.log("cannot move socket ");
+            const roomStr = `room:${roomId}`;
+            gameStates[roomId] ??= createInitGameState();
+            const roundNumber = gameStates[roomId].roundNumber;
+
+            // if the other player could not move as well
+            if (
+                roundNumber > 1 &&
+                !gameStates[roomId].rounds[roundNumber - 2].move
+            ) {
+                endGame(gameStates, roomId);
+            } else {
+                moveOnToNextRound(gameStates, roomId);
+            }
+
             io.to(roomStr).emit("update gamestate", gameStates[roomId]);
             debugGameStates(gameStates);
         });

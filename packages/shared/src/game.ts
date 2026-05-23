@@ -15,15 +15,21 @@ export interface GameRound {
     playerId: number;
 }
 
+export interface EndGameState {
+    playerPoints: Record<string, number>;
+}
+
 export interface GameState {
     player1: PlayerState | null;
     player2: PlayerState | null;
     roundNumber: number;
     rounds: GameRound[];
+    turn: number | null;
     waitingQueues: PlayerState[];
     canStart: boolean;
     isPlaying: boolean;
-    turn: number | null;
+    ended: boolean;
+    endState: EndGameState | null;
 }
 
 export const createInitGameState = (): GameState => ({
@@ -31,8 +37,10 @@ export const createInitGameState = (): GameState => ({
     player2: null,
     roundNumber: 0,
     rounds: [],
+    turn: null,
     waitingQueues: [],
     canStart: false,
     isPlaying: false,
-    turn: null,
+    ended: false,
+    endState: null,
 });

@@ -137,10 +137,13 @@ const checkValidMove = ({
 export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
-    const W = 20;
-    const H = 30;
+    const W = 10;
+    const H = 10;
     const board: number[][] = Array.from({ length: H + 2 }, () =>
         Array(W + 2).fill(0),
+    );
+    const isAValidMove: boolean[][] = Array.from({ length: H + 2 }, () =>
+        Array(W + 2).fill(false),
     );
     let sumBoard: number[][] = Array.from({ length: H + 2 }, () =>
         Array(W + 2).fill(0),
@@ -153,8 +156,7 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
         c: 0,
         d: -1,
     });
-
-    let moves: Record<string, GameMove[]> = {
+    let moves: Record<string, (GameMove | null)[]> = {
         yours: [],
         enemys: [],
     };
@@ -168,13 +170,12 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
                 .filter((round) => round.playerId !== user.userId)
                 .map((round) => round.move),
         };
-
         // putting the square in the bottom edge of the board is always valid
         for (let j = 1; j <= W; j++) board[0][j] = 1;
 
-        for (const play of moves?.yours) {
-            if (!play) continue;
-            let { r, c, d: len } = play;
+        for (const move of moves?.yours) {
+            if (!move) continue;
+            let { r, c, d: len } = move;
             for (let i = r; i <= r + len - 1; i++) {
                 for (let j = c; j <= c + len - 1; j++) {
                     board[i][j] = 1;
@@ -182,9 +183,9 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
             }
         }
         sumBoardMine = generatePrefixSum({ W, H, board });
-        for (const play of moves?.enemys) {
-            if (!play) continue;
-            let { r, c, d: len } = play;
+        for (const move of moves?.enemys) {
+            if (!move) continue;
+            let { r, c, d: len } = move;
             r = H - r + 1;
             c = W - c + 1;
             for (let i = r; i >= r - len + 1; i--) {
@@ -195,44 +196,41 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
         }
         sumBoard = generatePrefixSum({ W, H, board });
     }
-    const hoverOnCell = (r: number, c: number) => {
-        if (
-            myTurn &&
-            myDiceNumber > 0 &&
-            checkValidMove({
-                W,
-                H,
-                r,
-                c,
-                d: myDiceNumber,
-                sumBoard,
-                sumBoardMine,
-            })
-        ) {
-            setCurrentMove({
-                r,
-                c,
-                d: myDiceNumber,
+
+    if (gameState?.isPlaying && myTurn && myDiceNumber > 0) {
+        let countValid = 0;
+        for (let r = 1; r <= H; r++) {
+            for (let c = 1; c <= W; c++) {
+                isAValidMove[r][c] = checkValidMove({
+                    W,
+                    H,
+                    r,
+                    c,
+                    d: myDiceNumber,
+                    sumBoard,
+                    sumBoardMine,
+                });
+                countValid += isAValidMove[r][c] ? 1 : 0;
+            }
+        }
+        if (countValid === 0) {
+            socket.emit("cannot move", {
+                roomId: room.id,
+                userId: user.userId,
             });
+        }
+    }
+
+    const hoverOnCell = (r: number, c: number) => {
+        if (isAValidMove[r][c]) {
+            setCurrentMove({ r, c, d: myDiceNumber });
         } else {
             setCurrentMove({ r: 0, c: 0, d: -1 });
         }
     };
 
     const clickOnCell = (r: number, c: number) => {
-        if (
-            myTurn &&
-            myDiceNumber > 0 &&
-            checkValidMove({
-                W,
-                H,
-                r,
-                c,
-                d: myDiceNumber,
-                sumBoard,
-                sumBoardMine,
-            })
-        ) {
+        if (isAValidMove[r][c]) {
             socket.emit("finish move", {
                 roomId: room.id,
                 userId: user.userId,
@@ -248,7 +246,7 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
 
     return (
         <div
-            className="w-100 h-150 gap-px bg-black border"
+            className="w-100 h-100 gap-px bg-black border"
             style={{
                 display: "grid",
                 gridTemplateColumns: `repeat(${W}, 1fr)`,
