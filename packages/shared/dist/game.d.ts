@@ -1,7 +1,7 @@
 export interface GameMove {
     r: number;
     c: number;
-    d: number;
+    len: number;
 }
 export interface PlayerState {
     id: number;
@@ -15,16 +15,15 @@ export interface GameRound {
 export interface EndGameState {
     playerPoints: Record<string, number>;
 }
+export type GameStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
 export interface GameState {
+    status: GameStatus;
     player1: PlayerState | null;
     player2: PlayerState | null;
     roundNumber: number;
     rounds: GameRound[];
     turn: number | null;
     waitingQueues: PlayerState[];
-    canStart: boolean;
-    isPlaying: boolean;
-    ended: boolean;
     endState: EndGameState | null;
 }
 export declare const createInitGameState: () => GameState;

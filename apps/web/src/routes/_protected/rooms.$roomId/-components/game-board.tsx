@@ -154,7 +154,7 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
     const [currentMove, setCurrentMove] = useState<GameMove>({
         r: 0,
         c: 0,
-        d: -1,
+        len: -1,
     });
     let moves: Record<string, (GameMove | null)[]> = {
         yours: [],
@@ -175,7 +175,7 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
 
         for (const move of moves?.yours) {
             if (!move) continue;
-            let { r, c, d: len } = move;
+            let { r, c, len: len } = move;
             for (let i = r; i <= r + len - 1; i++) {
                 for (let j = c; j <= c + len - 1; j++) {
                     board[i][j] = 1;
@@ -185,7 +185,7 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
         sumBoardMine = generatePrefixSum({ W, H, board });
         for (const move of moves?.enemys) {
             if (!move) continue;
-            let { r, c, d: len } = move;
+            let { r, c, len } = move;
             r = H - r + 1;
             c = W - c + 1;
             for (let i = r; i >= r - len + 1; i--) {
@@ -197,7 +197,7 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
         sumBoard = generatePrefixSum({ W, H, board });
     }
 
-    if (gameState?.isPlaying && myTurn && myDiceNumber > 0) {
+    if (gameState?.status === "PLAYING" && myTurn && myDiceNumber > 0) {
         let countValid = 0;
         for (let r = 1; r <= H; r++) {
             for (let c = 1; c <= W; c++) {
@@ -223,9 +223,9 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
 
     const hoverOnCell = (r: number, c: number) => {
         if (isAValidMove[r][c]) {
-            setCurrentMove({ r, c, d: myDiceNumber });
+            setCurrentMove({ r, c, len: myDiceNumber });
         } else {
-            setCurrentMove({ r: 0, c: 0, d: -1 });
+            setCurrentMove({ r: 0, c: 0, len: -1 });
         }
     };
 
@@ -237,11 +237,11 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
                 move: {
                     r,
                     c,
-                    d: myDiceNumber,
+                    len: myDiceNumber,
                 },
             });
         }
-        setCurrentMove({ r: 0, c: 0, d: -1 });
+        setCurrentMove({ r: 0, c: 0, len: -1 });
     };
 
     return (
@@ -260,9 +260,9 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
                 const isEnemys = board[r][c] == 2;
                 const inCurrentMoveSquare =
                     currentMove.r <= r &&
-                    r <= currentMove.r + currentMove.d - 1 &&
+                    r <= currentMove.r + currentMove.len - 1 &&
                     currentMove.c <= c &&
-                    c <= currentMove.c + currentMove.d - 1;
+                    c <= currentMove.c + currentMove.len - 1;
                 return (
                     <div
                         key={`cell-${r}-${c}`}

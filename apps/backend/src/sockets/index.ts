@@ -5,11 +5,9 @@ import { createInitGameState, GameMove, GameState } from "shared";
 
 const updateRoomStatus = (gameStates: GameStateDict, roomId: string) => {
     if (gameStates[roomId].player1 && gameStates[roomId].player2) {
-        gameStates[roomId].canStart = true;
-        gameStates[roomId].isPlaying = false;
+        gameStates[roomId].status = "READY";
     } else {
-        gameStates[roomId].canStart = false;
-        gameStates[roomId].isPlaying = false;
+        gameStates[roomId].status = "WAITING";
     }
 };
 
@@ -27,13 +25,12 @@ const endGame = (gameStates: GameStateDict, roomId: string) => {
 
     for (let { playerId, move } of rounds) {
         points[playerId] ??= 0;
-        points[playerId] += move ? move.d * move.d : 0;
+        points[playerId] += move ? move.len * move.len : 0;
     }
 
     gameStates[roomId] = {
         ...gameStates[roomId],
-        ended: true,
-        isPlaying: false,
+        status: "ENDED",
         endState: {
             playerPoints: points,
         },
@@ -132,14 +129,13 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
             const roomStr = `room:${roomId}`;
             gameStates[roomId] ??= createInitGameState();
             if (
-                gameStates[roomId].canStart &&
+                gameStates[roomId].status === "READY" &&
                 userId === gameStates[roomId].player1?.id
             ) {
                 gameStates[roomId] = {
                     ...gameStates[roomId],
                     roundNumber: 1,
-                    canStart: false,
-                    isPlaying: true,
+                    status: "PLAYING",
                     turn: getRandomNumber(2),
                 };
             }

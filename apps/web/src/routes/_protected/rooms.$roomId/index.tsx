@@ -109,8 +109,7 @@ function RouteComponent() {
                 className="p-2 border"
                 style={{
                     backgroundColor:
-                        gameState?.canStart &&
-                        !gameState?.ended &&
+                        gameState?.status === "READY" &&
                         gameState?.player1?.id == user.userId
                             ? "cyan"
                             : "grey",
@@ -122,13 +121,14 @@ function RouteComponent() {
                 isPlaying:
                 <b
                     style={{
-                        color: gameState?.isPlaying ? "green" : "red",
+                        color:
+                            gameState?.status === "PLAYING" ? "green" : "red",
                     }}
                 >
-                    {gameState?.isPlaying ? "true" : "false"}
+                    {gameState?.status === "PLAYING" ? "true" : "false"}
                 </b>
             </p>
-            {gameState?.isPlaying && (
+            {gameState?.status === "PLAYING" && (
                 <div>
                     {myTurn ? (
                         <>
@@ -166,7 +166,7 @@ function RouteComponent() {
                 />
                 <div>You</div>
             </div>
-            {gameState?.ended && (
+            {gameState?.status === "ENDED" && (
                 <>
                     {isAWinner ? "Winner" : "Loser"}
                     <p>Points: {playerPoints?.[user.userId]}</p>
