@@ -3,7 +3,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_public")({
     beforeLoad: async ({ context }) => {
-        const user = await context.queryClient.ensureQueryData({
+        const user = await context.queryClient.fetchQuery({
             queryKey: ["me"],
             queryFn: fetchMe,
             retry: false,

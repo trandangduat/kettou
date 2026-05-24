@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -13,33 +13,35 @@ function RouteComponent() {
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!formRef.current) return;
+
         const formData = new FormData(formRef.current);
         const data = Object.fromEntries(formData.entries());
+
         setPending(true);
-        fetch("/api/login", {
+        setError(null);
+
+        const res = await fetch("/api/login", {
             method: "POST",
             body: JSON.stringify(data),
             headers: {
                 "Content-Type": "application/json",
             },
-        })
-            .then(async (res) => {
-                setPending(false);
-                if (res.ok) {
-                    setError(null);
-                    queryClient.removeQueries({ queryKey: ["me"] }); // remove the cached "me" query
-                    await router.invalidate();
-                    // await router.navigate({ to: "/" });
-                }
-                return res.text();
-            })
-            .then((data) => {
-                console.log(data);
-                setError(data);
-            });
+        });
+
+        setPending(false);
+        if (!res.ok) {
+            setError(await res.text());
+            return;
+        }
+
+        queryClient.invalidateQueries({
+            queryKey: ["me"],
+        });
+        await router.invalidate();
+        // await router.navigate({ to: "/" });
     };
     return (
         <>
