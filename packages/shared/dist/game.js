@@ -1,10 +1,9 @@
 export const createInitGameState = () => ({
     status: "WAITING",
-    player1: null,
-    player2: null,
+    players: [],
     roundNumber: 0,
     rounds: [],
-    turn: null,
+    turn: 0,
     waitingQueues: [],
     endState: null,
 });

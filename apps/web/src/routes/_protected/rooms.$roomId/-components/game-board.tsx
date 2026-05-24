@@ -4,7 +4,7 @@ import { useState } from "react";
 import { socket } from "#/socket";
 
 interface GameBoardProps {
-    gameState?: GameState;
+    gameState: GameState;
     myTurn: boolean;
     myDiceNumber: number;
 }
@@ -135,6 +135,14 @@ const checkValidMove = ({
 };
 
 export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
+    const {
+        status: gameStatus,
+        players,
+        roundNumber,
+        rounds,
+        turn,
+        endState,
+    } = gameState;
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
     const W = 10;
@@ -161,12 +169,12 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
         enemys: [],
     };
 
-    if (gameState?.rounds) {
+    if (rounds) {
         moves = {
-            yours: gameState?.rounds
+            yours: rounds
                 .filter((round) => round.playerId === user.userId)
                 .map((round) => round.move),
-            enemys: gameState?.rounds
+            enemys: rounds
                 .filter((round) => round.playerId !== user.userId)
                 .map((round) => round.move),
         };
@@ -197,7 +205,7 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
         sumBoard = generatePrefixSum({ W, H, board });
     }
 
-    if (gameState?.status === "PLAYING" && myTurn && myDiceNumber > 0) {
+    if (gameStatus === "PLAYING" && myTurn && myDiceNumber > 0) {
         let countValid = 0;
         for (let r = 1; r <= H; r++) {
             for (let c = 1; c <= W; c++) {

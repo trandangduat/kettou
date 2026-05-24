@@ -4,8 +4,8 @@ export interface GameMove {
     len: number;
 }
 
-export interface PlayerState {
-    id: number;
+export interface Player {
+    userId: number;
     username: string;
 }
 
@@ -23,22 +23,20 @@ export type GameStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
 
 export interface GameState {
     status: GameStatus;
-    player1: PlayerState | null;
-    player2: PlayerState | null;
+    players: Player[];
     roundNumber: number;
     rounds: GameRound[];
-    turn: number | null;
-    waitingQueues: PlayerState[];
+    turn: number;
+    waitingQueues: Player[];
     endState: EndGameState | null;
 }
 
 export const createInitGameState = (): GameState => ({
     status: "WAITING",
-    player1: null,
-    player2: null,
+    players: [],
     roundNumber: 0,
     rounds: [],
-    turn: null,
+    turn: 0,
     waitingQueues: [],
     endState: null,
 });

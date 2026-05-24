@@ -2,9 +2,10 @@ import type { Server } from "socket.io";
 import { GameStateDict, gameStates } from "./gameStates.js";
 import { getRandomNumber } from "../utils.js";
 import { createInitGameState, GameMove, GameState } from "shared";
+import e from "cors";
 
 const updateRoomStatus = (gameStates: GameStateDict, roomId: string) => {
-    if (gameStates[roomId].player1 && gameStates[roomId].player2) {
+    if (gameStates[roomId].players.length === 2) {
         gameStates[roomId].status = "READY";
     } else {
         gameStates[roomId].status = "WAITING";
@@ -62,39 +63,16 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
             socket.join(roomStr);
             gameStates[roomId] ??= createInitGameState();
             if (
-                gameStates[roomId].player1?.username === user.username ||
-                gameStates[roomId].player2?.username === user.username
+                gameStates[roomId].players.find(
+                    (player) => player.userId === user.id,
+                )
             ) {
                 return;
             }
-            if (!gameStates[roomId].player1) {
-                gameStates[roomId] = {
-                    ...gameStates[roomId],
-                    player1: {
-                        username: user.username,
-                        id: user.id,
-                    },
-                };
-            } else if (!gameStates[roomId].player2) {
-                gameStates[roomId] = {
-                    ...gameStates[roomId],
-                    player2: {
-                        username: user.username,
-                        id: user.id,
-                    },
-                };
-            } else {
-                gameStates[roomId] = {
-                    ...gameStates[roomId],
-                    waitingQueues: [
-                        {
-                            username: user.username,
-                            id: user.id,
-                        },
-                        ...(gameStates[roomId].waitingQueues ?? []),
-                    ],
-                };
-            }
+            gameStates[roomId].players.push({
+                username: user.username,
+                userId: user.id,
+            });
             updateRoomStatus(gameStates, roomId);
             io.to(roomStr).emit("update gamestate", gameStates[roomId]);
             debugGameStates(gameStates);
@@ -105,18 +83,12 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
             const roomStr = `room:${roomId}`;
             socket.leave(roomStr);
             gameStates[roomId] ??= createInitGameState();
-            // player1 is basically the room host, so if player1 left,
-            // promote the remaining player to room host
-            if (gameStates[roomId].player1?.username === user.username) {
-                gameStates[roomId].player1 = gameStates[roomId].player2;
-                gameStates[roomId].player2 =
-                    gameStates[roomId].waitingQueues?.pop();
+            const players = gameStates[roomId].players;
+            const leftPlayerId = players.findIndex((p) => p.userId === user.id);
+            if (leftPlayerId >= 0) {
+                players.splice(leftPlayerId, 1);
             }
-            if (gameStates[roomId].player2?.username === user.username) {
-                gameStates[roomId].player2 =
-                    gameStates[roomId].waitingQueues?.pop();
-            }
-            if (!gameStates[roomId].player1 && !gameStates[roomId].player2) {
+            if (players.length === 0) {
                 gameStates[roomId] = undefined;
                 return;
             }
@@ -130,7 +102,7 @@ export const setUpSocket = (io: Server, gameStates: GameStateDict) => {
             gameStates[roomId] ??= createInitGameState();
             if (
                 gameStates[roomId].status === "READY" &&
-                userId === gameStates[roomId].player1?.id
+                userId === gameStates[roomId].players[0].userId
             ) {
                 gameStates[roomId] = {
                     ...gameStates[roomId],

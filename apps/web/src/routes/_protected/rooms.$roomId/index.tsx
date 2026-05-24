@@ -2,7 +2,7 @@ import { getRoom } from "#/api/rooms";
 import { socket } from "#/socket";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import type { GameState } from "shared";
+import { createInitGameState, type GameState } from "shared";
 import { GameBoard } from "./-components/game-board";
 
 export const Route = createFileRoute("/_protected/rooms/$roomId/")({
@@ -20,31 +20,34 @@ export const Route = createFileRoute("/_protected/rooms/$roomId/")({
 function RouteComponent() {
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
-    const [gameState, setGameState] = useState<GameState>();
+    const [gameState, setGameState] = useState<GameState>(
+        createInitGameState(),
+    );
+    const {
+        status: gameStatus,
+        players,
+        roundNumber,
+        rounds,
+        turn,
+        endState,
+    } = gameState;
     const [waitingDice, setWaitingDice] = useState<boolean>(false);
     const myTurn: boolean =
-        gameState?.turn === 0
-            ? user.userId === gameState?.player1?.id
-            : user.userId === gameState?.player2?.id;
+        gameStatus === "PLAYING" && user.userId === players[turn].userId;
     let myDiceNumber = 0;
-    if (
-        gameState &&
-        gameState.roundNumber > 0 &&
-        gameState.rounds?.length === gameState.roundNumber
-    ) {
-        myDiceNumber = gameState.rounds[gameState.roundNumber - 1].diceNumber;
+    if (roundNumber > 0 && rounds.length === roundNumber) {
+        myDiceNumber = rounds[roundNumber - 1].diceNumber;
     }
-    const playerPoints = gameState?.endState?.playerPoints;
+    const playerPoints = endState?.playerPoints;
     let isAWinner = false;
 
-    if (gameState && playerPoints && gameState.player1 && gameState.player2) {
+    if (gameStatus === "ENDED") {
         isAWinner =
-            (user.userId === gameState.player1.id &&
-                playerPoints[user.userId] >
-                    playerPoints[gameState.player2.id]) ||
-            (user.userId === gameState.player2.id &&
-                playerPoints[user.userId] > playerPoints[gameState.player1.id]);
-        console.log("isAWinner", isAWinner);
+            (user.userId === players[0].userId &&
+                playerPoints![user.userId] >
+                    playerPoints![players[1].userId]) ||
+            (user.userId === players[1].userId &&
+                playerPoints![user.userId] > playerPoints![players[0].userId]);
     }
 
     const startGame = () => {
@@ -66,13 +69,15 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        socket.emit("join room", {
-            roomId: room.id,
-            user: {
-                username: user.username,
-                id: user.userId,
-            },
-        });
+        if (gameState?.status === "WAITING") {
+            socket.emit("join room", {
+                roomId: room.id,
+                user: {
+                    username: user.username,
+                    id: user.userId,
+                },
+            });
+        }
 
         socket.on("update gamestate", (newState) => {
             setGameState(newState);
@@ -92,25 +97,21 @@ function RouteComponent() {
         <>
             <h1>{room.id}</h1>
             <p>{room.game_id}</p>
-            <p>
-                Player 1:
-                {gameState && gameState.player1
-                    ? gameState.player1.username
-                    : "NULL"}
-            </p>
-            <p>
-                Player 2:
-                {gameState && gameState.player2
-                    ? gameState.player2.username
-                    : "NULL"}
-            </p>
+            {Array.from({ length: 2 }).map((_, i) => {
+                return (
+                    <div key={i}>
+                        Player {i + 1}:{" "}
+                        {i + 1 > players.length ? "-" : players[i].username}
+                    </div>
+                );
+            })}
             <button
                 onClick={startGame}
                 className="p-2 border"
                 style={{
                     backgroundColor:
-                        gameState?.status === "READY" &&
-                        gameState?.player1?.id == user.userId
+                        gameStatus === "READY" &&
+                        user.userId === players[0].userId
                             ? "cyan"
                             : "grey",
                 }}
@@ -121,14 +122,13 @@ function RouteComponent() {
                 isPlaying:
                 <b
                     style={{
-                        color:
-                            gameState?.status === "PLAYING" ? "green" : "red",
+                        color: gameStatus === "PLAYING" ? "green" : "red",
                     }}
                 >
-                    {gameState?.status === "PLAYING" ? "true" : "false"}
+                    {gameStatus === "PLAYING" ? "true" : "false"}
                 </b>
             </p>
-            {gameState?.status === "PLAYING" && (
+            {gameStatus === "PLAYING" && (
                 <div>
                     {myTurn ? (
                         <>
@@ -166,7 +166,7 @@ function RouteComponent() {
                 />
                 <div>You</div>
             </div>
-            {gameState?.status === "ENDED" && (
+            {gameStatus === "ENDED" && (
                 <>
                     {isAWinner ? "Winner" : "Loser"}
                     <p>Points: {playerPoints?.[user.userId]}</p>
