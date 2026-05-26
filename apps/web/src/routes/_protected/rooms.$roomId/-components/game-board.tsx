@@ -4,7 +4,7 @@ import { useState } from "react";
 import { socket } from "#/socket";
 
 interface GameBoardProps {
-    gameState: Room;
+    roomState: Room;
     myTurn: boolean;
     myDiceNumber: number;
 }
@@ -134,15 +134,8 @@ const checkValidMove = ({
     return true;
 };
 
-export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
-    const {
-        status: gameStatus,
-        players,
-        roundNumber,
-        rounds,
-        turn,
-        endState,
-    } = gameState;
+export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
+    const { status: gameStatus, rounds } = roomState;
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
     const W = 10;
@@ -222,7 +215,6 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
             }
         }
         if (countValid === 0) {
-            console.log(Date.now(), "khong di duoc roi");
             socket.emit("cannot move", {
                 roomId: room.id,
                 userId: user.userId,

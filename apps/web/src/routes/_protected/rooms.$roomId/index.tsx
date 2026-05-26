@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_protected/rooms/$roomId/")({
 function RouteComponent() {
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
-    const [gameState, setGameState] = useState<Room>(initRoom());
+    const [roomState, setRoomState] = useState<Room>(initRoom());
     const {
         status: gameStatus,
         players,
@@ -28,7 +28,7 @@ function RouteComponent() {
         rounds,
         turn,
         endState,
-    } = gameState;
+    } = roomState;
     const [waitingDice, setWaitingDice] = useState<boolean>(false);
     const myTurn: boolean =
         gameStatus === "PLAYING" && user.userId === players[turn].userId;
@@ -67,7 +67,7 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        if (gameState?.status === "WAITING") {
+        if (roomState?.status === "WAITING") {
             socket.emit("join room", {
                 roomId: room.id,
                 user: {
@@ -78,7 +78,7 @@ function RouteComponent() {
         }
 
         socket.on("update room", (newState) => {
-            setGameState(newState);
+            setRoomState(newState);
         });
 
         return () => {
@@ -158,7 +158,7 @@ function RouteComponent() {
             <div className="flex flex-col m-auto bg-gray-200">
                 <div>Enemy</div>
                 <GameBoard
-                    gameState={gameState}
+                    roomState={roomState}
                     myDiceNumber={myDiceNumber}
                     myTurn={myTurn}
                 />
