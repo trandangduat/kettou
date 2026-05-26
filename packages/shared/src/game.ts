@@ -19,10 +19,10 @@ export interface EndGameState {
     playerPoints: Record<string, number>;
 }
 
-export type GameStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
+export type RoomStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
 
-export interface GameState {
-    status: GameStatus;
+export interface Room {
+    status: RoomStatus;
     players: Player[];
     roundNumber: number;
     rounds: GameRound[];
@@ -31,7 +31,7 @@ export interface GameState {
     endState: EndGameState | null;
 }
 
-export const createInitGameState = (): GameState => ({
+export const initRoom = (): Room => ({
     status: "WAITING",
     players: [],
     roundNumber: 0,

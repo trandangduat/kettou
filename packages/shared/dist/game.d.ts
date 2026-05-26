@@ -15,9 +15,9 @@ export interface GameRound {
 export interface EndGameState {
     playerPoints: Record<string, number>;
 }
-export type GameStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
-export interface GameState {
-    status: GameStatus;
+export type RoomStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
+export interface Room {
+    status: RoomStatus;
     players: Player[];
     roundNumber: number;
     rounds: GameRound[];
@@ -25,5 +25,5 @@ export interface GameState {
     waitingQueues: Player[];
     endState: EndGameState | null;
 }
-export declare const createInitGameState: () => GameState;
+export declare const initRoom: () => Room;
 //# sourceMappingURL=game.d.ts.map

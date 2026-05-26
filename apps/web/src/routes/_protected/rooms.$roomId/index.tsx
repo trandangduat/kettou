@@ -2,7 +2,7 @@ import { getRoom } from "#/api/rooms";
 import { socket } from "#/socket";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { createInitGameState, type GameState } from "shared";
+import { initRoom, type Room } from "shared";
 import { GameBoard } from "./-components/game-board";
 
 export const Route = createFileRoute("/_protected/rooms/$roomId/")({
@@ -20,9 +20,7 @@ export const Route = createFileRoute("/_protected/rooms/$roomId/")({
 function RouteComponent() {
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
-    const [gameState, setGameState] = useState<GameState>(
-        createInitGameState(),
-    );
+    const [gameState, setGameState] = useState<Room>(initRoom());
     const {
         status: gameStatus,
         players,
@@ -79,7 +77,7 @@ function RouteComponent() {
             });
         }
 
-        socket.on("update gamestate", (newState) => {
+        socket.on("update room", (newState) => {
             setGameState(newState);
         });
 

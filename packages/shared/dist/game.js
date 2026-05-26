@@ -1,4 +1,4 @@
-export const createInitGameState = () => ({
+export const initRoom = () => ({
     status: "WAITING",
     players: [],
     roundNumber: 0,

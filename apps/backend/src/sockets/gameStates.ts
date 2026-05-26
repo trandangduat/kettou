@@ -1,7 +1,7 @@
-import { GameState } from "shared";
+import { Room } from "shared";
 
 export interface GameStateDict {
-    [key: string]: GameState;
+    [key: string]: Room;
 }
 
 export const gameStates: GameStateDict = {};

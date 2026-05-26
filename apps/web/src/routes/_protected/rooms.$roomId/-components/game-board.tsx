@@ -1,10 +1,10 @@
-import type { GameMove, GameState } from "shared";
+import type { GameMove, Room } from "shared";
 import { Route } from "..";
 import { useState } from "react";
 import { socket } from "#/socket";
 
 interface GameBoardProps {
-    gameState: GameState;
+    gameState: Room;
     myTurn: boolean;
     myDiceNumber: number;
 }
@@ -222,6 +222,7 @@ export function GameBoard({ gameState, myTurn, myDiceNumber }: GameBoardProps) {
             }
         }
         if (countValid === 0) {
+            console.log(Date.now(), "khong di duoc roi");
             socket.emit("cannot move", {
                 roomId: room.id,
                 userId: user.userId,

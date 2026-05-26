@@ -77,3 +77,39 @@ if (res.ok) {
 ```
 
 This ensures the cache is completely cleared, forcing `ensureQueryData` in the `beforeLoad` function to await the new data and successfully trigger the redirect.
+
+## The function object parameter problem
+Take a look at this code:
+```tsx
+const endGame = ({ roomState }: { roomState: Room }) => {
+  roomState = {
+    ...roomState,
+    status: "ENDED"
+  }
+}
+
+let room: Room = {
+  status: "PLAYING"
+}
+
+endGame({ roomState: room });
+```
+After writing this code, I naively thought that the `endGame` function would change the `room` object status from "PLAYING" to "ENDED". That's not what happened. Initially, `roomState` pointed to `room`, that means whatever modifications were to applied to `roomState` would be applied to `room` as well. However, in the endGame function, when `roomState` was assigned to the {...roomState, status: "ENDED"} object, it already lost it reference to the origin `room` object, thus there're no modifications to the `room` object.
+
+Here's the simple fix:
+
+```tsx
+const endGame = ({ roomState }: { roomState: Room }): Room => {
+  roomState = {
+    ...roomState,
+    status: "ENDED"
+  }
+  return roomState;
+}
+
+let room: Room = {
+  status: "PLAYING"
+}
+
+room = endGame({ roomState: room });
+```
