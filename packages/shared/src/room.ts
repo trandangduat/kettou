@@ -3,19 +3,24 @@ export interface GameMove {
     c: number;
     len: number;
 }
+
 export interface Player {
     userId: number;
     username: string;
 }
+
 export interface GameRound {
     move: GameMove | null;
     diceNumber: number;
     playerId: number;
 }
+
 export interface EndGameState {
     playerPoints: Record<string, number>;
 }
+
 export type RoomStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
+
 export interface Room {
     status: RoomStatus;
     players: Player[];
@@ -25,5 +30,13 @@ export interface Room {
     waitingQueues: Player[];
     endState: EndGameState | null;
 }
-export declare const initRoom: () => Room;
-//# sourceMappingURL=game.d.ts.map
+
+export const initRoom = (): Room => ({
+    status: "WAITING",
+    players: [],
+    roundNumber: 0,
+    rounds: [],
+    turn: 0,
+    waitingQueues: [],
+    endState: null,
+});

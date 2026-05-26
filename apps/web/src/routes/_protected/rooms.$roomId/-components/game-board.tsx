@@ -1,4 +1,9 @@
-import type { GameMove, Room } from "shared";
+import {
+    createPrefixSumMatrix,
+    isValidSquareMove,
+    type GameMove,
+    type Room,
+} from "shared";
 import { Route } from "..";
 import { useState } from "react";
 import { socket } from "#/socket";
@@ -9,135 +14,15 @@ interface GameBoardProps {
     myDiceNumber: number;
 }
 
-const generatePrefixSum = ({
-    W,
-    H,
-    board,
-}: {
-    W: number;
-    H: number;
-    board: number[][];
-}): number[][] => {
-    const f: number[][] = Array.from({ length: H + 2 }, () =>
-        Array(W + 2).fill(0),
-    );
-    for (let i = 0; i <= H + 1; i++) {
-        for (let j = 0; j <= W + 1; j++) {
-            f[i][j] += i > 0 ? f[i - 1][j] : 0;
-            f[i][j] += j > 0 ? f[i][j - 1] : 0;
-            f[i][j] -= i > 0 && j > 0 ? f[i - 1][j - 1] : 0;
-            f[i][j] += board[i][j];
-        }
-    }
-    return f;
-};
-
-const getSumInRect = ({
-    W,
-    H,
-    sum,
-    sr,
-    sc,
-    dr,
-    dc,
-}: {
-    W: number;
-    H: number;
-    sum: number[][];
-    sr: number;
-    sc: number;
-    dr: number;
-    dc: number;
-}): number => {
-    let res = sum[dr][dc];
-    res -= sr > 0 ? sum[sr - 1][dc] : 0;
-    res -= sc > 0 ? sum[dr][sc - 1] : 0;
-    res += sr > 0 && sc > 0 ? sum[sr - 1][sc - 1] : 0;
-    return res;
-};
-
-const checkValidMove = ({
-    W,
-    H,
-    r,
-    c,
-    d,
-    sumBoard,
-    sumBoardMine,
-}: {
-    W: number;
-    H: number;
-    r: number;
-    c: number;
-    d: number;
-    sumBoard: number[][];
-    sumBoardMine: number[][];
-}): boolean => {
-    // check square in board
-    if (r + d - 1 > H || c + d - 1 > W) return false;
-
-    // check overlap
-    if (
-        getSumInRect({
-            H,
-            W,
-            sr: r,
-            sc: c,
-            dr: r + d - 1,
-            dc: c + d - 1,
-            sum: sumBoard,
-        }) > 0
-    )
-        return false;
-
-    // check adjacent edge with other squares (only check with own squares)
-    // check edge from L-T-R-B
-    if (
-        getSumInRect({
-            H,
-            W,
-            sr: r,
-            sc: c - 1,
-            dr: r + d - 1,
-            dc: c - 1,
-            sum: sumBoardMine,
-        }) === 0 &&
-        getSumInRect({
-            H,
-            W,
-            sr: r - 1,
-            sc: c,
-            dr: r - 1,
-            dc: c + d - 1,
-            sum: sumBoardMine,
-        }) === 0 &&
-        getSumInRect({
-            H,
-            W,
-            sr: r,
-            sc: c + d,
-            dr: r + d - 1,
-            dc: c + d,
-            sum: sumBoardMine,
-        }) === 0 &&
-        getSumInRect({
-            H,
-            W,
-            sr: r + d,
-            sc: c,
-            dr: r + d,
-            dc: c + d - 1,
-            sum: sumBoardMine,
-        }) === 0
-    )
-        return false;
-    return true;
-};
-
 export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
     const { status: gameStatus, rounds } = roomState;
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
+    const [myMoves, setMyMoves] = useState<(GameMove | null)[]>(
+        rounds
+            .filter((round) => round.playerId === user.userId)
+            .map((round) => round.move),
+    );
     const W = 10;
     const H = 10;
     const board: number[][] = Array.from({ length: H + 2 }, () =>
@@ -164,9 +49,7 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
 
     if (rounds) {
         moves = {
-            yours: rounds
-                .filter((round) => round.playerId === user.userId)
-                .map((round) => round.move),
+            mine: myMoves,
             enemys: rounds
                 .filter((round) => round.playerId !== user.userId)
                 .map((round) => round.move),
@@ -174,7 +57,7 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
         // putting the square in the bottom edge of the board is always valid
         for (let j = 1; j <= W; j++) board[0][j] = 1;
 
-        for (const move of moves?.yours) {
+        for (const move of moves?.mine) {
             if (!move) continue;
             let { r, c, len: len } = move;
             for (let i = r; i <= r + len - 1; i++) {
@@ -183,7 +66,11 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
                 }
             }
         }
-        sumBoardMine = generatePrefixSum({ W, H, board });
+        sumBoardMine = createPrefixSumMatrix({
+            boardWidth: W,
+            boardHeight: H,
+            sourceMatrix: board,
+        });
         for (const move of moves?.enemys) {
             if (!move) continue;
             let { r, c, len } = move;
@@ -195,21 +82,25 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
                 }
             }
         }
-        sumBoard = generatePrefixSum({ W, H, board });
+        sumBoard = createPrefixSumMatrix({
+            boardWidth: W,
+            boardHeight: H,
+            sourceMatrix: board,
+        });
     }
 
     if (gameStatus === "PLAYING" && myTurn && myDiceNumber > 0) {
         let countValid = 0;
         for (let r = 1; r <= H; r++) {
             for (let c = 1; c <= W; c++) {
-                isAValidMove[r][c] = checkValidMove({
-                    W,
-                    H,
-                    r,
-                    c,
-                    d: myDiceNumber,
-                    sumBoard,
-                    sumBoardMine,
+                isAValidMove[r][c] = isValidSquareMove({
+                    boardWidth: W,
+                    boardHeight: H,
+                    row: r,
+                    col: c,
+                    squareSize: myDiceNumber,
+                    occupiedCellsPrefixSum: sumBoard,
+                    ownCellsPrefixSum: sumBoardMine,
                 });
                 countValid += isAValidMove[r][c] ? 1 : 0;
             }
@@ -232,6 +123,7 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
 
     const clickOnCell = (r: number, c: number) => {
         if (isAValidMove[r][c]) {
+            setMyMoves((prev) => [...prev, { r, c, len: myDiceNumber }]);
             socket.emit("finish move", {
                 roomId: room.id,
                 userId: user.userId,
