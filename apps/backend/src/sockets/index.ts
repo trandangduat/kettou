@@ -1,11 +1,17 @@
 import type { Server } from "socket.io";
 import { getRandomNumber } from "../utils.js";
-import { initRoom, GameMove, Room } from "shared";
+import {
+    initRoom,
+    GameMove,
+    Room,
+    getRoomKey,
+    updateRoomReadyStatus,
+    debugRoom,
+    moveOnToNextRound,
+    endGame,
+    addMove,
+} from "shared";
 import { getRoomState, setRoomState } from "../redis.js";
-
-const getRoomKey = (roomId: string) => {
-    return `room:${roomId}`;
-};
 
 const saveRoomState = async ({
     io,
@@ -19,47 +25,6 @@ const saveRoomState = async ({
     io.to(getRoomKey(roomId)).emit("update room", room);
     debugRoom(room);
     await setRoomState({ roomId, roomState: room });
-};
-
-const updateRoomReadyStatus = ({ room }: { room: Room }): Room => {
-    if (room.players.length === 2) {
-        room.status = "READY";
-    } else {
-        room.status = "WAITING";
-    }
-    return room;
-};
-
-const moveOnToNextRound = ({ room }: { room: Room }): Room => {
-    if (room.roundNumber > 0) {
-        room.roundNumber++;
-        room.turn = 1 - room.turn;
-    }
-    return room;
-};
-
-const endGame = ({ room }: { room: Room }): Room => {
-    console.log("END GAME ACTUALLY");
-    const { rounds } = room;
-    const points: Record<string, number> = {};
-
-    for (let { playerId, move } of rounds) {
-        points[playerId] ??= 0;
-        points[playerId] += move ? move.len * move.len : 0;
-    }
-
-    room = {
-        ...room,
-        status: "ENDED",
-        endState: {
-            playerPoints: points,
-        },
-    };
-    return room;
-};
-
-const debugRoom = (room: Room) => {
-    console.log("room:", JSON.stringify(room, null, 2));
 };
 
 const checkValidMove = ({
@@ -78,7 +43,7 @@ export const setUpSocket = (io: Server) => {
     io.on("connection", (socket) => {
         console.log("socket connected: ", socket.id);
 
-        socket.on("join room", async ({ roomId, user }) => {
+        const joinRoom = async ({ roomId, user }) => {
             console.log("JOIN ROOM");
             socket.join(getRoomKey(roomId));
             let room = await getRoomState({ roomId });
@@ -93,9 +58,9 @@ export const setUpSocket = (io: Server) => {
             });
             room = updateRoomReadyStatus({ room });
             await saveRoomState({ io, room, roomId });
-        });
+        };
 
-        socket.on("leave room", async ({ roomId, user }) => {
+        const leaveRoom = async ({ roomId, user }) => {
             console.log("LEAVE ROOM");
             socket.leave(getRoomKey(roomId));
             let room = await getRoomState({ roomId });
@@ -112,9 +77,9 @@ export const setUpSocket = (io: Server) => {
             }
             room = updateRoomReadyStatus({ room });
             await saveRoomState({ io, room, roomId });
-        });
+        };
 
-        socket.on("start game", async ({ roomId, userId }) => {
+        const startGame = async ({ roomId, userId }) => {
             console.log("START GAME");
             let room = await getRoomState({ roomId });
             room ??= initRoom();
@@ -127,9 +92,9 @@ export const setUpSocket = (io: Server) => {
                 };
             }
             await saveRoomState({ io, room, roomId });
-        });
+        };
 
-        socket.on("roll dice", async ({ roomId, userId }) => {
+        const rollDice = async ({ roomId, userId }) => {
             console.log("ROLL DICE");
             let room = await getRoomState({ roomId });
             room ??= initRoom();
@@ -139,9 +104,9 @@ export const setUpSocket = (io: Server) => {
                 playerId: userId,
             });
             await saveRoomState({ io, room, roomId });
-        });
+        };
 
-        socket.on("finish move", async ({ roomId, userId, move }) => {
+        const finishMove = async ({ roomId, userId, move }) => {
             console.log("FINISH MOVE");
             let room = await getRoomState({ roomId });
             room ??= initRoom();
@@ -154,16 +119,14 @@ export const setUpSocket = (io: Server) => {
                     room,
                 })
             ) {
-                room.rounds[roundNumber - 1].move = move;
-                room = moveOnToNextRound({ room });
+                addMove({ room, move });
             } else {
                 console.log("Not a valid move, move again!");
             }
 
             await saveRoomState({ io, room, roomId });
-        });
-
-        socket.on("cannot move", async ({ roomId, userId }) => {
+        };
+        const cannotMove = async ({ roomId, userId }) => {
             console.log("CANNOT MOVE");
             let room = await getRoomState({ roomId });
             room ??= initRoom();
@@ -177,8 +140,14 @@ export const setUpSocket = (io: Server) => {
             }
 
             await saveRoomState({ io, room, roomId });
-        });
+        };
 
+        socket.on("join room", joinRoom);
+        socket.on("leave room", leaveRoom);
+        socket.on("start game", startGame);
+        socket.on("roll dice", rollDice);
+        socket.on("finish move", finishMove);
+        socket.on("cannot move", cannotMove);
         socket.on("disconnect", () => {
             console.log("socket disconnected: ", socket.id);
         });

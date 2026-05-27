@@ -18,11 +18,6 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
     const { status: gameStatus, rounds } = roomState;
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
-    const [myMoves, setMyMoves] = useState<(GameMove | null)[]>(
-        rounds
-            .filter((round) => round.playerId === user.userId)
-            .map((round) => round.move),
-    );
     const W = 10;
     const H = 10;
     const board: number[][] = Array.from({ length: H + 2 }, () =>
@@ -49,7 +44,9 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
 
     if (rounds) {
         moves = {
-            mine: myMoves,
+            mine: rounds
+                .filter((round) => round.playerId === user.userId)
+                .map((round) => round.move),
             enemys: rounds
                 .filter((round) => round.playerId !== user.userId)
                 .map((round) => round.move),
@@ -123,7 +120,6 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
 
     const clickOnCell = (r: number, c: number) => {
         if (isAValidMove[r][c]) {
-            setMyMoves((prev) => [...prev, { r, c, len: myDiceNumber }]);
             socket.emit("finish move", {
                 roomId: room.id,
                 userId: user.userId,
