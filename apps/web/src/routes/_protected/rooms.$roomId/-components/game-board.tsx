@@ -6,7 +6,7 @@ import {
     type Room,
 } from "shared";
 import { Route } from "..";
-import React, { useState, type Dispatch, type SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
 
 interface GameBoardProps {

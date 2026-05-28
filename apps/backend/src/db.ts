@@ -6,7 +6,7 @@ db.pragma("foreign_keys = ON");
 db.exec(
     `
   CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id TEXT PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL
   );
@@ -19,8 +19,8 @@ db.exec(
   CREATE TABLE IF NOT EXISTS rooms (
       id TEXT PRIMARY KEY,
       game_id TEXT NOT NULL,
-      player1_id INTEGER,
-      player2_id INTEGER,
+      player1_id string,
+      player2_id string,
 
       FOREIGN KEY (game_id) REFERENCES games(id),
       FOREIGN KEY (player1_id) REFERENCES users(id),

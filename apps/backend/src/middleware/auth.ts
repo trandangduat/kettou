@@ -18,7 +18,7 @@ const authPublicMiddleware: RequestHandler = async (req, res, next) => {
 };
 
 interface AuthUser {
-    userId: number;
+    userId: string;
     username: string;
 }
 

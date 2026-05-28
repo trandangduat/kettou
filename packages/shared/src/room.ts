@@ -5,7 +5,7 @@ export interface GameMove {
 }
 
 export interface Player {
-    userId: number;
+    userId: string;
     username: string;
 }
 

@@ -33,7 +33,7 @@ const checkValidMove = ({
     room,
 }: {
     currentMove: GameMove;
-    userId: number;
+    userId: string;
     room: Room;
 }): boolean => {
     return true;

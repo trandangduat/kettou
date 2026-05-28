@@ -12,9 +12,9 @@ import { Router } from "express";
 
 const router = Router();
 
-router.get("/me", authProtectedMiddleware, getMe);
 router.post("/login", authPublicMiddleware, logIn);
 router.post("/register", authPublicMiddleware, register);
+router.get("/me", authProtectedMiddleware, getMe);
 router.get("/logout", authProtectedMiddleware, logOut);
 
 export default router;
