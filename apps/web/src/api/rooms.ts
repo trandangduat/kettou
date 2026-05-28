@@ -1,14 +1,3 @@
-const getAllRoomsOfGame = async (gameId: string) => {
-    try {
-        const res = await fetch(`/api/games/${gameId}/rooms`);
-        const rooms = await res.json();
-        return rooms;
-    } catch (error) {
-        console.error(error);
-        return null;
-    }
-};
-
 const getRoom = async (roomId: string) => {
     try {
         const res = await fetch(`/api/rooms/${roomId}`);
@@ -20,4 +9,4 @@ const getRoom = async (roomId: string) => {
     }
 };
 
-export { getAllRoomsOfGame, getRoom };
+export { getRoom };

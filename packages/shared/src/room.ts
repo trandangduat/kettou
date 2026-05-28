@@ -23,6 +23,7 @@ export interface EndGameState {
 export type RoomStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
 
 export interface Room {
+    gameId: string;
     status: RoomStatus;
     players: Player[];
     roundNumber: number;
@@ -32,7 +33,8 @@ export interface Room {
     endState: EndGameState | null;
 }
 
-export const initRoom = (): Room => ({
+export const initRoom = ({ gameId }: { gameId: string }): Room => ({
+    gameId,
     status: "WAITING",
     players: [],
     roundNumber: 0,

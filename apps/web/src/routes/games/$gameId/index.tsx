@@ -1,48 +1,50 @@
-import { getAllRoomsOfGame } from "#/api/rooms";
+import { socket } from "#/socket";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/games/$gameId/")({
-    loader: async ({ context, params }) => {
-        return await context.queryClient.ensureQueryData({
-            queryKey: ["all-rooms", params.gameId],
-            queryFn: () => getAllRoomsOfGame(params.gameId),
-        });
-    },
     component: RouteComponent,
 });
 
-interface Room {
-    id: string;
-}
-
 function RouteComponent() {
     const { gameId } = Route.useParams();
-    const rooms = Route.useLoaderData();
+    const [roomsId, setRoomsId] = useState<string[]>([]);
     const router = useRouter();
 
     const createRoom = async () => {
-        const res = await fetch(`/api/games/${gameId}/create-room`, {
-            method: "POST",
-        });
-        const { roomId } = await res.json();
-        await router.navigate({ to: "/rooms/$roomId", params: { roomId } });
+        socket.emit(
+            "create room",
+            { gameId },
+            async ({ roomId }: { roomId: string }) => {
+                if (roomId) {
+                    await router.navigate({
+                        to: "/rooms/$roomId",
+                        params: { roomId },
+                    });
+                }
+            },
+        );
     };
+
+    useEffect(() => {
+        socket.emit("join rooms update", { gameId });
+        socket.on(`rooms snapshot`, ({ roomsId }) => setRoomsId(roomsId));
+        socket.on(`room created`, ({ roomId }) => {
+            setRoomsId((prev: string[]) => [roomId, ...prev]);
+        });
+    }, []);
 
     return (
         <>
             <h1 className="text-xl">Dice Territory</h1>
             <ul>
-                {rooms &&
-                    rooms.map((room: Room) => (
-                        <li key={room.id}>
-                            <Link
-                                to="/rooms/$roomId"
-                                params={{ roomId: room.id }}
-                            >
-                                {room.id}
-                            </Link>
-                        </li>
-                    ))}
+                {roomsId.map((roomId: string) => (
+                    <li key={roomId}>
+                        <Link to="/rooms/$roomId" params={{ roomId: roomId }}>
+                            {roomId}
+                        </Link>
+                    </li>
+                ))}
             </ul>
             <button onClick={createRoom}>Create Room</button>
         </>

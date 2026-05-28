@@ -38,3 +38,46 @@ export const setRoomState = async ({
 }) => {
     await redis.set(getRoomKey(roomId), JSON.stringify(roomState));
 };
+
+export const deleteRoom = async ({ roomId }: { roomId: string }) => {
+    await redis.del(getRoomKey(roomId));
+};
+
+export const getLobbyKey = (gameId: string) => {
+    return `game:${gameId}:lobby`;
+};
+
+export const createRoom = async ({
+    roomId,
+    gameId,
+}: {
+    roomId: string;
+    gameId: string;
+}): Promise<Room> => {
+    const roomKey = getRoomKey(roomId);
+    const lobbyKey = getLobbyKey(gameId);
+    const room = initRoom({ gameId });
+    const createdAt = Date.now();
+    await redis
+        .multi()
+        .set(roomKey, JSON.stringify(room))
+        .zAdd(lobbyKey, [
+            {
+                score: createdAt,
+                value: roomId,
+            },
+        ])
+        .exec();
+    return room;
+};
+
+export const getAllRoomsInLobby = async ({
+    gameId,
+}: {
+    gameId: string;
+}): Promise<string[]> => {
+    const lobbyKey = getLobbyKey(gameId);
+    const roomsId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
+    console.log("redis roomsId", roomsId);
+    return roomsId;
+};
