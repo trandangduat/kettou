@@ -42,12 +42,8 @@ function RouteComponent() {
     let isAWinner = false;
 
     if (gameStatus === "ENDED") {
-        isAWinner =
-            (user.userId === players[0].userId &&
-                playerPoints![user.userId] >
-                    playerPoints![players[1].userId]) ||
-            (user.userId === players[1].userId &&
-                playerPoints![user.userId] > playerPoints![players[0].userId]);
+        console.log("ENDSTATE", endState);
+        isAWinner = user.userId == endState?.winnerUserId;
     }
 
     const startGame = () => {

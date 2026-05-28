@@ -16,6 +16,7 @@ export interface GameRound {
 }
 
 export interface EndGameState {
+    winnerUserId: string | null;
     playerPoints: Record<string, number>;
 }
 
@@ -80,15 +81,23 @@ export const endGame = ({ room }: { room: Room }): Room => {
     const { rounds } = room;
     const points: Record<string, number> = {};
 
+    let highestScore = 0;
+
     for (let { playerId, move } of rounds) {
         points[playerId] ??= 0;
         points[playerId] += move ? move.len * move.len : 0;
+        highestScore = Math.max(highestScore, points[playerId]);
     }
+
+    let winners = Object.entries(points).filter(
+        ([playerId, score]) => score === highestScore,
+    );
 
     room = {
         ...room,
         status: "ENDED",
         endState: {
+            winnerUserId: winners.length > 1 ? null : winners[0][0],
             playerPoints: points,
         },
     };
