@@ -1,4 +1,3 @@
-import { getRoom } from "#/api/rooms";
 import { socket } from "#/socket";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -6,21 +5,16 @@ import { initRoom, type Room } from "shared";
 import { GameBoard } from "./-components/game-board";
 
 export const Route = createFileRoute("/_protected/rooms/$roomId/")({
-    loader: async ({ context, params }) => {
-        const roomId = params.roomId;
-        const room = await context.queryClient.ensureQueryData({
-            queryKey: ["room", roomId],
-            queryFn: () => getRoom(roomId),
-        });
-        return room;
-    },
     component: RouteComponent,
 });
 
 function RouteComponent() {
-    const room = Route.useLoaderData();
+    const { roomId } = Route.useParams();
     const { user } = Route.useRouteContext();
-    const [roomState, setRoomState] = useState<Room>(initRoom());
+    const [room, setRoom] = useState<Room>(initRoom({ gameId: "" }));
+    const [waitingStart, setWaitingStart] = useState<boolean>(false);
+    const [waitingDice, setWaitingDice] = useState<boolean>(false);
+
     const {
         status: gameStatus,
         players,
@@ -28,22 +22,20 @@ function RouteComponent() {
         rounds,
         turn,
         endState,
-    } = roomState;
-    const [waitingStart, setWaitingStart] = useState<boolean>(false);
-    const [waitingDice, setWaitingDice] = useState<boolean>(false);
-
-    const myTurn: boolean =
-        gameStatus === "PLAYING" && user.userId === players[turn].userId;
-    let myDiceNumber = 0;
+    } = room;
+    let myTurn: boolean = false;
+    let myDiceNumber: number = 0;
+    let playerPoints: Record<string, number> = {};
+    let isAWinner = false;
+    if (gameStatus === "PLAYING") {
+        myTurn = user.userId === players[turn].userId;
+    }
     if (roundNumber > 0 && rounds.length === roundNumber) {
         myDiceNumber = rounds[roundNumber - 1].diceNumber;
     }
-    const playerPoints = endState?.playerPoints;
-    let isAWinner = false;
-
     if (gameStatus === "ENDED") {
-        console.log("ENDSTATE", endState);
-        isAWinner = user.userId == endState?.winnerUserId;
+        playerPoints = endState!.playerPoints;
+        isAWinner = user.userId == endState!.winnerUserId;
     }
 
     const startGame = () => {
@@ -51,7 +43,7 @@ function RouteComponent() {
         socket.emit(
             "start game",
             {
-                roomId: room.id,
+                roomId,
                 userId: user.userId,
             },
             ({ ok }: { ok: boolean }) => {
@@ -64,7 +56,7 @@ function RouteComponent() {
         setWaitingDice(true);
         setTimeout(() => {
             socket.emit("roll dice", {
-                roomId: room.id,
+                roomId,
                 userId: user.userId,
             });
             setWaitingDice(false);
@@ -72,9 +64,9 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        if (roomState?.status === "WAITING") {
+        if (room.status === "WAITING") {
             socket.emit("join room", {
-                roomId: room.id,
+                roomId,
                 user: {
                     username: user.username,
                     id: user.userId,
@@ -83,12 +75,12 @@ function RouteComponent() {
         }
 
         socket.on("update room", (newState) => {
-            setRoomState(newState);
+            setRoom(newState);
         });
 
         return () => {
             socket.emit("leave room", {
-                roomId: room.id,
+                roomId,
                 user: {
                     username: user.username,
                     id: user.userId,
@@ -98,8 +90,8 @@ function RouteComponent() {
     }, []);
     return (
         <>
-            <h1>{room.id}</h1>
-            <p>{room.game_id}</p>
+            <h1>{roomId}</h1>
+            <p>{room.gameId}</p>
             {Array.from({ length: 2 }).map((_, i) => {
                 return (
                     <div key={i}>
@@ -166,10 +158,11 @@ function RouteComponent() {
             <div className="flex flex-col m-auto bg-gray-200">
                 <div>Enemy</div>
                 <GameBoard
-                    roomState={roomState}
+                    roomId={roomId}
+                    room={room}
                     myDiceNumber={myDiceNumber}
                     myTurn={myTurn}
-                    setRoomState={setRoomState}
+                    setRoom={setRoom}
                 />
                 <div>You</div>
             </div>

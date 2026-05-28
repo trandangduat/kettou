@@ -10,20 +10,21 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
 
 interface GameBoardProps {
-    roomState: Room;
+    roomId: string;
+    room: Room;
     myTurn: boolean;
     myDiceNumber: number;
-    setRoomState: Dispatch<SetStateAction<Room>>;
+    setRoom: Dispatch<SetStateAction<Room>>;
 }
 
 export function GameBoard({
-    roomState,
+    roomId,
+    room,
     myTurn,
     myDiceNumber,
-    setRoomState,
+    setRoom,
 }: GameBoardProps) {
-    const { status: gameStatus, rounds } = roomState;
-    const room = Route.useLoaderData();
+    const { status: gameStatus, rounds } = room;
     const { user } = Route.useRouteContext();
     const W = 10;
     const H = 10;
@@ -111,7 +112,7 @@ export function GameBoard({
         }
         if (countValid === 0) {
             socket.emit("cannot move", {
-                roomId: room.id,
+                roomId,
                 userId: user.userId,
             });
         }
@@ -129,14 +130,14 @@ export function GameBoard({
         if (isAValidMove[r][c]) {
             //optimistic UI update
             const move: GameMove = { r, c, len: myDiceNumber };
-            setRoomState((prev) =>
+            setRoom((prev) =>
                 addMove({
                     room: prev,
                     move,
                 }),
             );
             socket.emit("finish move", {
-                roomId: room.id,
+                roomId,
                 userId: user.userId,
                 move,
             });
