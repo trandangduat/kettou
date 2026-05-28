@@ -79,7 +79,7 @@ export const setUpSocket = (io: Server) => {
             await saveRoomState({ io, room, roomId });
         };
 
-        const startGame = async ({ roomId, userId }) => {
+        const startGame = async ({ roomId, userId }, ack) => {
             console.log("START GAME");
             let room = await getRoomState({ roomId });
             room ??= initRoom();
@@ -90,6 +90,7 @@ export const setUpSocket = (io: Server) => {
                     status: "PLAYING",
                     turn: getRandomNumber(2),
                 };
+                ack({ ok: true });
             }
             await saveRoomState({ io, room, roomId });
         };
@@ -119,7 +120,7 @@ export const setUpSocket = (io: Server) => {
                     room,
                 })
             ) {
-                addMove({ room, move });
+                room = addMove({ room, move });
             } else {
                 console.log("Not a valid move, move again!");
             }

@@ -1,20 +1,27 @@
 import {
+    addMove,
     createPrefixSumMatrix,
     isValidSquareMove,
     type GameMove,
     type Room,
 } from "shared";
 import { Route } from "..";
-import { useState } from "react";
+import React, { useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
 
 interface GameBoardProps {
     roomState: Room;
     myTurn: boolean;
     myDiceNumber: number;
+    setRoomState: Dispatch<SetStateAction<Room>>;
 }
 
-export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
+export function GameBoard({
+    roomState,
+    myTurn,
+    myDiceNumber,
+    setRoomState,
+}: GameBoardProps) {
     const { status: gameStatus, rounds } = roomState;
     const room = Route.useLoaderData();
     const { user } = Route.useRouteContext();
@@ -120,14 +127,18 @@ export function GameBoard({ roomState, myTurn, myDiceNumber }: GameBoardProps) {
 
     const clickOnCell = (r: number, c: number) => {
         if (isAValidMove[r][c]) {
+            //optimistic UI update
+            const move: GameMove = { r, c, len: myDiceNumber };
+            setRoomState((prev) =>
+                addMove({
+                    room: prev,
+                    move,
+                }),
+            );
             socket.emit("finish move", {
                 roomId: room.id,
                 userId: user.userId,
-                move: {
-                    r,
-                    c,
-                    len: myDiceNumber,
-                },
+                move,
             });
         }
         setCurrentMove({ r: 0, c: 0, len: -1 });

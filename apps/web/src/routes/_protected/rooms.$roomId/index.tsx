@@ -29,7 +29,9 @@ function RouteComponent() {
         turn,
         endState,
     } = roomState;
+    const [waitingStart, setWaitingStart] = useState<boolean>(false);
     const [waitingDice, setWaitingDice] = useState<boolean>(false);
+
     const myTurn: boolean =
         gameStatus === "PLAYING" && user.userId === players[turn].userId;
     let myDiceNumber = 0;
@@ -49,10 +51,17 @@ function RouteComponent() {
     }
 
     const startGame = () => {
-        socket.emit("start game", {
-            roomId: room.id,
-            userId: user.userId,
-        });
+        setWaitingStart(true);
+        socket.emit(
+            "start game",
+            {
+                roomId: room.id,
+                userId: user.userId,
+            },
+            ({ ok }: { ok: boolean }) => {
+                if (ok) setWaitingStart(false);
+            },
+        );
     };
 
     const rollDice = () => {
@@ -103,19 +112,22 @@ function RouteComponent() {
                     </div>
                 );
             })}
-            <button
-                onClick={startGame}
-                className="p-2 border"
-                style={{
-                    backgroundColor:
-                        gameStatus === "READY" &&
-                        user.userId === players[0].userId
-                            ? "cyan"
-                            : "grey",
-                }}
-            >
-                Start Game
-            </button>
+            <div className="flex flex-row">
+                <button
+                    onClick={startGame}
+                    className="p-2 border"
+                    style={{
+                        backgroundColor:
+                            gameStatus === "READY" &&
+                            user.userId === players[0].userId
+                                ? "cyan"
+                                : "grey",
+                    }}
+                >
+                    Start Game
+                </button>
+                {waitingStart && "Waiting game to start..."}
+            </div>
             <p>
                 isPlaying:
                 <b
@@ -161,6 +173,7 @@ function RouteComponent() {
                     roomState={roomState}
                     myDiceNumber={myDiceNumber}
                     myTurn={myTurn}
+                    setRoomState={setRoomState}
                 />
                 <div>You</div>
             </div>
