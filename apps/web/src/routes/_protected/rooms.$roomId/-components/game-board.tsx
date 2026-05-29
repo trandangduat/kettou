@@ -24,8 +24,8 @@ export function GameBoard({
 }: GameBoardProps) {
     const { status: gameStatus, rounds } = room;
     const { user } = Route.useRouteContext();
-    const W = 10;
-    const H = 10;
+    const W = 8;
+    const H = 8;
     const board: number[][] = Array.from({ length: H + 2 }, () =>
         Array(W + 2).fill(0),
     );

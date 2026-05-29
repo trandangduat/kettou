@@ -17,6 +17,7 @@ import {
     createRoom,
     getAllRoomsInLobby,
 } from "../redis.js";
+import { createMatch, saveEndedMatch } from "../services/matches.services.js";
 
 const saveRoomState = async ({
     io,
@@ -93,6 +94,7 @@ export const setUpSocket = (io: Server) => {
         const startGame = async ({ roomId, userId }, ack) => {
             console.log("START GAME");
             let room = await getRoomState({ roomId });
+            let startedAt = Date.now();
             try {
                 if (
                     room.status === "READY" &&
@@ -107,6 +109,8 @@ export const setUpSocket = (io: Server) => {
                     ack({ ok: true });
                 }
                 await saveRoomState({ io, room, roomId });
+                // create the match in database
+                createMatch({ room, type: "CUSTOM", startedAt });
             } catch (err) {}
         };
 
@@ -152,7 +156,10 @@ export const setUpSocket = (io: Server) => {
 
                 // if the other player could not move as well
                 if (roundNumber > 1 && !room.rounds[roundNumber - 2].move) {
+                    let endedAt = Date.now();
                     room = endGame({ room });
+                    // update the match in database
+                    saveEndedMatch({ room, endedAt });
                 } else {
                     room = moveOnToNextRound({ room });
                 }
