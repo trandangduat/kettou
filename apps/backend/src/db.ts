@@ -3,8 +3,12 @@ const db = new Database("database/sqlite.db");
 
 db.pragma("foreign_keys = ON");
 
-db.exec(
-    `
+db.exec(`
+  CREATE TABLE IF NOT EXISTS migrations (
+    version INTEGER PRIMARY KEY,
+    applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
@@ -62,12 +66,39 @@ db.exec(
 
   CREATE INDEX IF NOT EXISTS idx_match_players_user_id ON match_players(user_id);
   CREATE INDEX IF NOT EXISTS idx_match_moves_player_id ON match_moves(player_id);
-`,
-);
+`);
 
 db.prepare(`INSERT OR IGNORE INTO games(id, description) VALUES (?, ?)`).run(
     "dice-territory",
     "Dice territory description",
 );
+
+const migrations = [
+    {
+        version: 1,
+        sql: `
+        ALTER TABLE users ADD COLUMN elo INTEGER DEFAULT 1000;
+        UPDATE users SET elo = 1000 WHERE elo IS NULL;
+        `,
+    },
+];
+
+const migrate = db.transaction(() => {
+    for (const migration of migrations) {
+        const { version, sql } = migration;
+        const checkExistVersion = db
+            .prepare(`SELECT 1 FROM migrations WHERE version = ?`)
+            .get(version);
+
+        if (!checkExistVersion) {
+            db.exec(sql);
+            db.prepare(`INSERT INTO migrations(version) VALUES (?)`).run(
+                version,
+            );
+        }
+    }
+});
+
+migrate();
 
 export default db;
