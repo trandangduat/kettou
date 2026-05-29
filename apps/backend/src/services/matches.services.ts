@@ -1,4 +1,4 @@
-import { GameRound, Player, Room } from "shared";
+import { Round, Player, Room } from "shared";
 import db from "../db.js";
 
 export type MatchType = "CUSTOM" | "RANKED";
@@ -67,7 +67,7 @@ export const saveEndedMatch = ({
     const insertMove = db.prepare(
         `INSERT INTO match_moves(match_id, player_id, move, move_number) VALUES (?, ?, ?, ?)`,
     );
-    const insertManyMoves = db.transaction((rounds: GameRound[]) => {
+    const insertManyMoves = db.transaction((rounds: Round[]) => {
         for (let i = 0; i < rounds.length; i++) {
             const { move, playerId } = rounds[i];
             insertMove.run(id, playerId, JSON.stringify(move), i);

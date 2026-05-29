@@ -1,2 +1,2 @@
-export * from "./game.js";
+export * from "./game-logic.js";
 export * from "./room.js";

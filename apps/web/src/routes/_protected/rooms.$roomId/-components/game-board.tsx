@@ -2,7 +2,7 @@ import {
     addMove,
     createPrefixSumMatrix,
     isValidSquareMove,
-    type GameMove,
+    type Move,
     type Room,
 } from "shared";
 import { Route } from "..";
@@ -38,12 +38,12 @@ export function GameBoard({
     let sumBoardMine: number[][] = Array.from({ length: H + 2 }, () =>
         Array(W + 2).fill(0),
     );
-    const [currentMove, setCurrentMove] = useState<GameMove>({
+    const [currentMove, setCurrentMove] = useState<Move>({
         r: 0,
         c: 0,
         len: -1,
     });
-    let moves: Record<string, (GameMove | null)[]> = {
+    let moves: Record<string, (Move | null)[]> = {
         yours: [],
         enemys: [],
     };
@@ -109,7 +109,7 @@ export function GameBoard({
             }
         }
         if (countValid === 0) {
-            socket.emit("cannot move", {
+            socket.emit("match:cannot-move", {
                 roomId: room.id,
                 userId: user.userId,
             });
@@ -127,14 +127,14 @@ export function GameBoard({
     const clickOnCell = (r: number, c: number) => {
         if (isAValidMove[r][c]) {
             //optimistic UI update
-            const move: GameMove = { r, c, len: myDiceNumber };
+            const move: Move = { r, c, len: myDiceNumber };
             setRoom((prev) =>
                 addMove({
                     room: prev,
                     move,
                 }),
             );
-            socket.emit("finish move", {
+            socket.emit("match:finish-move", {
                 roomId: room.id,
                 userId: user.userId,
                 move,

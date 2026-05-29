@@ -26,7 +26,7 @@ export const getRoomState = async ({
     if (!data) {
         return null;
     }
-    return JSON.parse(data) as Room;
+    return JSON.parse(data.toString()) as Room;
 };
 
 export const setRoomState = async ({
@@ -84,5 +84,5 @@ export const getAllRoomsInLobby = async ({
 }): Promise<string[]> => {
     const lobbyKey = getLobbyKey(gameId);
     const roomsId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
-    return roomsId;
+    return roomsId.map((roomId) => roomId.toString());
 };

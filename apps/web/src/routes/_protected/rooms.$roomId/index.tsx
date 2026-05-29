@@ -41,7 +41,7 @@ function RouteComponent() {
     const startGame = () => {
         setWaitingStart(true);
         socket.emit(
-            "start game",
+            "match:start",
             {
                 roomId,
                 userId: user.userId,
@@ -55,7 +55,7 @@ function RouteComponent() {
     const rollDice = () => {
         setWaitingDice(true);
         setTimeout(() => {
-            socket.emit("roll dice", {
+            socket.emit("match:roll-dice", {
                 roomId,
                 userId: user.userId,
             });
@@ -64,7 +64,7 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        socket.emit("join room", {
+        socket.emit("room:join", {
             roomId,
             user: {
                 username: user.username,
@@ -72,12 +72,12 @@ function RouteComponent() {
             },
         });
 
-        socket.on("update room", (newState) => {
+        socket.on("room:update", (newState) => {
             setRoom(newState);
         });
 
         return () => {
-            socket.emit("leave room", {
+            socket.emit("room:leave", {
                 roomId,
                 user: {
                     username: user.username,

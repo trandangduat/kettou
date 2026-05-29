@@ -1,6 +1,6 @@
 import { v6 as uuidv6 } from "uuid";
 
-export interface GameMove {
+export interface Move {
     r: number;
     c: number;
     len: number;
@@ -11,8 +11,8 @@ export interface Player {
     username: string;
 }
 
-export interface GameRound {
-    move: GameMove | null;
+export interface Round {
+    move: Move | null;
     diceNumber: number;
     playerId: number;
 }
@@ -30,7 +30,7 @@ export interface Room {
     status: RoomStatus;
     players: Player[];
     roundNumber: number;
-    rounds: GameRound[];
+    rounds: Round[];
     turn: number;
     waitingQueues: Player[];
     endState: EndGameState | null;
@@ -83,7 +83,7 @@ export const moveOnToNextRound = ({ room }: { room: Room }): Room => {
     return room;
 };
 
-export const endGame = ({ room }: { room: Room }): Room => {
+export const endMatch = ({ room }: { room: Room }): Room => {
     const { rounds } = room;
     const points: Record<string, number> = {};
 
@@ -110,13 +110,7 @@ export const endGame = ({ room }: { room: Room }): Room => {
     return room;
 };
 
-export const addMove = ({
-    room,
-    move,
-}: {
-    room: Room;
-    move: GameMove;
-}): Room => {
+export const addMove = ({ room, move }: { room: Room; move: Move }): Room => {
     const { roundNumber, rounds } = room;
     const newRounds = [...rounds];
     newRounds[roundNumber - 1].move = move;

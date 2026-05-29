@@ -13,7 +13,7 @@ function RouteComponent() {
 
     const createRoom = async () => {
         socket.emit(
-            "create room",
+            "room:create",
             { gameId },
             async ({ roomId }: { roomId: string }) => {
                 if (roomId) {
@@ -27,12 +27,12 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        socket.emit("join rooms update", { gameId });
-        socket.on(`rooms snapshot`, ({ roomsId }) => setRoomsId(roomsId));
-        socket.on(`room created`, ({ roomId }) => {
+        socket.emit("lobby:rooms-update", { gameId });
+        socket.on("lobby:rooms-update", ({ roomsId }) => setRoomsId(roomsId));
+        socket.on("room:create", ({ roomId }) => {
             setRoomsId((prevRoomsId: string[]) => [roomId, ...prevRoomsId]);
         });
-        socket.on(`room deleted`, ({ roomId }) => {
+        socket.on("room:leave", ({ roomId }) => {
             setRoomsId((prevRoomsId: string[]) =>
                 prevRoomsId.filter((id) => id != roomId),
             );
