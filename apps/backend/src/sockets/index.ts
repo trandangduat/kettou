@@ -17,7 +17,6 @@ import {
     createRoom,
     getAllRoomsInLobby,
 } from "../redis.js";
-import { v6 as uuidv6 } from "uuid";
 
 const saveRoomState = async ({
     io,
@@ -54,7 +53,6 @@ export const setUpSocket = (io: Server) => {
             socket.join(getRoomKey(roomId));
             try {
                 let room = await getRoomState({ roomId });
-
                 if (room.players.find((player) => player.userId === user.id)) {
                     return;
                 }
@@ -72,8 +70,7 @@ export const setUpSocket = (io: Server) => {
             socket.leave(getRoomKey(roomId));
             try {
                 let room = await getRoomState({ roomId });
-
-                const { players } = room;
+                const { gameId, players } = room;
                 const leftPlayerId = players.findIndex(
                     (p) => p.userId === user.id,
                 );
@@ -82,7 +79,10 @@ export const setUpSocket = (io: Server) => {
                 }
                 // no players left
                 if (players.length === 0) {
-                    await deleteRoom({ roomId });
+                    await deleteRoom({ roomId, gameId });
+                    io.to(`lobby:${gameId}`).emit("room deleted", {
+                        roomId,
+                    });
                     return;
                 }
                 room = updateRoomReadyStatus({ room });
@@ -174,9 +174,9 @@ export const setUpSocket = (io: Server) => {
         };
 
         const joinRoomsUpdate = async ({ gameId }) => {
+            console.log("JOIN ROOM UPDATE", socket.id);
             socket.join(`lobby:${gameId}`);
             const roomsId = await getAllRoomsInLobby({ gameId });
-            console.log("roomsId", roomsId);
             io.to(`lobby:${gameId}`).emit("rooms snapshot", { roomsId });
         };
 

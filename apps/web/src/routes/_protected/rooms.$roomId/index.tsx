@@ -30,7 +30,7 @@ function RouteComponent() {
     if (gameStatus === "PLAYING") {
         myTurn = user.userId === players[turn].userId;
     }
-    if (roundNumber > 0 && rounds.length === roundNumber) {
+    if (myTurn && roundNumber > 0 && rounds.length === roundNumber) {
         myDiceNumber = rounds[roundNumber - 1].diceNumber;
     }
     if (gameStatus === "ENDED") {
@@ -64,15 +64,13 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        if (room.status === "WAITING") {
-            socket.emit("join room", {
-                roomId,
-                user: {
-                    username: user.username,
-                    id: user.userId,
-                },
-            });
-        }
+        socket.emit("join room", {
+            roomId,
+            user: {
+                username: user.username,
+                id: user.userId,
+            },
+        });
 
         socket.on("update room", (newState) => {
             setRoom(newState);

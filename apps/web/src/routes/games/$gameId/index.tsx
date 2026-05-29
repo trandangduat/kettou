@@ -16,7 +16,6 @@ function RouteComponent() {
             "create room",
             { gameId },
             async ({ roomId }: { roomId: string }) => {
-                console.log(roomId);
                 if (roomId) {
                     await router.navigate({
                         to: "/rooms/$roomId",
@@ -31,7 +30,12 @@ function RouteComponent() {
         socket.emit("join rooms update", { gameId });
         socket.on(`rooms snapshot`, ({ roomsId }) => setRoomsId(roomsId));
         socket.on(`room created`, ({ roomId }) => {
-            setRoomsId((prev: string[]) => [roomId, ...prev]);
+            setRoomsId((prevRoomsId: string[]) => [roomId, ...prevRoomsId]);
+        });
+        socket.on(`room deleted`, ({ roomId }) => {
+            setRoomsId((prevRoomsId: string[]) =>
+                prevRoomsId.filter((id) => id != roomId),
+            );
         });
     }, []);
 
