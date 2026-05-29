@@ -48,15 +48,13 @@ export const getLobbyKey = (gameId: string) => {
 };
 
 export const createRoom = async ({
-    roomId,
     gameId,
 }: {
-    roomId: string;
     gameId: string;
 }): Promise<Room> => {
-    const roomKey = getRoomKey(roomId);
-    const lobbyKey = getLobbyKey(gameId);
     const room = initRoom({ gameId });
+    const roomKey = getRoomKey(room.id);
+    const lobbyKey = getLobbyKey(gameId);
     const createdAt = Date.now();
     await redis
         .multi()
@@ -64,7 +62,7 @@ export const createRoom = async ({
         .zAdd(lobbyKey, [
             {
                 score: createdAt,
-                value: roomId,
+                value: room.id,
             },
         ])
         .exec();

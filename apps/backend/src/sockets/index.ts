@@ -162,11 +162,12 @@ export const setUpSocket = (io: Server) => {
         };
 
         const createNewRoom = async ({ gameId }, ack) => {
-            let roomId = uuidv6();
             try {
-                const room = await createRoom({ roomId, gameId });
-                io.to(`lobby:${gameId}`).emit("room created", { roomId });
-                ack({ roomId });
+                const room = await createRoom({ gameId });
+                io.to(`lobby:${gameId}`).emit("room created", {
+                    roomId: room.id,
+                });
+                ack({ roomId: room.id });
             } catch (err) {
                 ack({ roomId: null });
             }

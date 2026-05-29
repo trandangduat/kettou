@@ -1,3 +1,5 @@
+import { v6 as uuidv6 } from "uuid";
+
 export interface GameMove {
     r: number;
     c: number;
@@ -23,6 +25,7 @@ export interface EndGameState {
 export type RoomStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
 
 export interface Room {
+    id: string;
     gameId: string;
     status: RoomStatus;
     players: Player[];
@@ -34,6 +37,7 @@ export interface Room {
 }
 
 export const initRoom = ({ gameId }: { gameId: string }): Room => ({
+    id: uuidv6(),
     gameId,
     status: "WAITING",
     players: [],

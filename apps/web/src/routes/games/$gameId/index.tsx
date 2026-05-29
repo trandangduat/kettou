@@ -16,6 +16,7 @@ function RouteComponent() {
             "create room",
             { gameId },
             async ({ roomId }: { roomId: string }) => {
+                console.log(roomId);
                 if (roomId) {
                     await router.navigate({
                         to: "/rooms/$roomId",

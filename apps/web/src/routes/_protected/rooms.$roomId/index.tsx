@@ -158,7 +158,6 @@ function RouteComponent() {
             <div className="flex flex-col m-auto bg-gray-200">
                 <div>Enemy</div>
                 <GameBoard
-                    roomId={roomId}
                     room={room}
                     myDiceNumber={myDiceNumber}
                     myTurn={myTurn}

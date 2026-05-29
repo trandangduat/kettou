@@ -10,7 +10,6 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
 
 interface GameBoardProps {
-    roomId: string;
     room: Room;
     myTurn: boolean;
     myDiceNumber: number;
@@ -18,7 +17,6 @@ interface GameBoardProps {
 }
 
 export function GameBoard({
-    roomId,
     room,
     myTurn,
     myDiceNumber,
@@ -112,7 +110,7 @@ export function GameBoard({
         }
         if (countValid === 0) {
             socket.emit("cannot move", {
-                roomId,
+                roomId: room.id,
                 userId: user.userId,
             });
         }
@@ -137,7 +135,7 @@ export function GameBoard({
                 }),
             );
             socket.emit("finish move", {
-                roomId,
+                roomId: room.id,
                 userId: user.userId,
                 move,
             });
