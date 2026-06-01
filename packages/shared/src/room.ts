@@ -23,10 +23,12 @@ export interface EndGameState {
 }
 
 export type RoomStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
+export type MatchType = "CUSTOM" | "RANKED";
 
 export interface Room {
     id: string;
     gameId: string;
+    matchType: MatchType;
     status: RoomStatus;
     players: Player[];
     roundNumber: number;
@@ -36,9 +38,16 @@ export interface Room {
     endState: EndGameState | null;
 }
 
-export const initRoom = ({ gameId }: { gameId: string }): Room => ({
+export const initRoom = ({
+    gameId,
+    matchType,
+}: {
+    gameId: string;
+    matchType: MatchType;
+}): Room => ({
     id: uuidv6(),
     gameId,
+    matchType,
     status: "WAITING",
     players: [],
     roundNumber: 0,

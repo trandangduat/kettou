@@ -11,7 +11,9 @@ export const Route = createFileRoute("/_protected/rooms/$roomId/")({
 function RouteComponent() {
     const { roomId } = Route.useParams();
     const { user } = Route.useRouteContext();
-    const [room, setRoom] = useState<Room>(initRoom({ gameId: "" }));
+    const [room, setRoom] = useState<Room>(
+        initRoom({ gameId: "", matchType: "CUSTOM" }),
+    );
     const [waitingStart, setWaitingStart] = useState<boolean>(false);
     const [waitingDice, setWaitingDice] = useState<boolean>(false);
 
@@ -64,6 +66,9 @@ function RouteComponent() {
     };
 
     useEffect(() => {
+        socket.emit("room:get-info", { roomId }, (room: Room) => {
+            setRoom(room);
+        });
         socket.emit("room:join", {
             roomId,
             user: {

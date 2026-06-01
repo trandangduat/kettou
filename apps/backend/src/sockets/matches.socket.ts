@@ -8,7 +8,7 @@ import {
 import { getRoomState } from "../redis.js";
 import { saveEndedMatch, createMatch } from "../services/matches.services.js";
 import { getRandomNumber } from "../utils.js";
-import { saveRoomState } from "./room-state.js";
+import { saveAndBroadcastRoomState } from "./room-state.js";
 import type { SocketHandlerContext } from "./types.js";
 
 const checkValidMove = ({
@@ -38,7 +38,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
                 };
                 ack({ ok: true });
             }
-            await saveRoomState({ io, room, roomId });
+            await saveAndBroadcastRoomState({ io, room });
             // create the match in database
             createMatch({ room, type: "CUSTOM", startedAt });
         } catch (err) {}
@@ -53,7 +53,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
                 diceNumber: getRandomNumber(6) + 1,
                 playerId: userId,
             });
-            await saveRoomState({ io, room, roomId });
+            await saveAndBroadcastRoomState({ io, room });
         } catch (err) {}
     };
 
@@ -75,7 +75,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
                 console.log("Not a valid move, move again!");
             }
 
-            await saveRoomState({ io, room, roomId });
+            await saveAndBroadcastRoomState({ io, room });
         } catch (err) {}
     };
 
@@ -95,7 +95,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
                 room = moveOnToNextRound({ room });
             }
 
-            await saveRoomState({ io, room, roomId });
+            await saveAndBroadcastRoomState({ io, room });
         } catch (err) {}
     };
 

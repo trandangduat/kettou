@@ -14,7 +14,7 @@ function RouteComponent() {
     const createRoom = async () => {
         socket.emit(
             "room:create",
-            { gameId },
+            { gameId, matchType: "CUSTOM" },
             async ({ roomId }: { roomId: string }) => {
                 if (roomId) {
                     await router.navigate({

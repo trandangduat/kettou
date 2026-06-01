@@ -1,12 +1,12 @@
 import { getRoomKey, updateRoomReadyStatus } from "shared";
 import { createRoom, deleteRoom, getRoomState } from "../redis.js";
-import { saveRoomState } from "./room-state.js";
+import { saveAndBroadcastRoomState } from "./room-state.js";
 import type { SocketHandlerContext } from "./types.js";
 
 export const setupRoomsSocket = ({ io, socket }: SocketHandlerContext) => {
-    const createNewRoom = async ({ gameId }, ack) => {
+    const createNewRoom = async ({ gameId, matchType }, ack) => {
         try {
-            const room = await createRoom({ gameId });
+            const room = await createRoom({ gameId, matchType });
             io.to(`lobby:${gameId}`).emit("room:create", {
                 roomId: room.id,
             });
@@ -29,7 +29,7 @@ export const setupRoomsSocket = ({ io, socket }: SocketHandlerContext) => {
                 userId: user.id,
             });
             room = updateRoomReadyStatus({ room });
-            await saveRoomState({ io, room, roomId });
+            await saveAndBroadcastRoomState({ io, room });
         } catch (err) {}
     };
 
@@ -39,9 +39,7 @@ export const setupRoomsSocket = ({ io, socket }: SocketHandlerContext) => {
         try {
             let room = await getRoomState({ roomId });
             const { gameId, players } = room;
-            const leftPlayerId = players.findIndex(
-                (p) => p.userId === user.id,
-            );
+            const leftPlayerId = players.findIndex((p) => p.userId === user.id);
             if (leftPlayerId >= 0) {
                 players.splice(leftPlayerId, 1);
             }
@@ -54,10 +52,19 @@ export const setupRoomsSocket = ({ io, socket }: SocketHandlerContext) => {
                 return;
             }
             room = updateRoomReadyStatus({ room });
-            await saveRoomState({ io, room, roomId });
+            await saveAndBroadcastRoomState({ io, room });
         } catch (err) {}
     };
 
+    const getRoomInfo = async ({ roomId }, ack) => {
+        console.log("GET ROOM INFO");
+        try {
+            let room = await getRoomState({ roomId });
+            ack(room);
+        } catch (err) {}
+    };
+
+    socket.on("room:get-info", getRoomInfo);
     socket.on("room:create", createNewRoom);
     socket.on("room:join", joinRoom);
     socket.on("room:leave", leaveRoom);

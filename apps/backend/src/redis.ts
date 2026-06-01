@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { createClient, RESP_TYPES } from "redis";
-import { initRoom, Room } from "shared";
+import { initRoom, MatchType, Room } from "shared";
+import { canMatch, QueuePlayer } from "./matchmaking.logic.js";
 dotenv.config();
 
 const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
@@ -15,6 +16,24 @@ export const redis = await createClient({
 
 const getRoomKey = (roomId: string) => {
     return `room:${roomId}`;
+};
+
+export const getLobbyKey = (gameId: string) => {
+    return `game:${gameId}:lobby`;
+};
+
+export const getMatchmakingKey = (gameId: string) => {
+    return `matchmaking:${gameId}:queue`;
+};
+
+export const getMatchmakingPlayerKey = ({
+    userId,
+    gameId,
+}: {
+    userId: string;
+    gameId: string;
+}) => {
+    return `matchmaking:${gameId}:player:${userId}`;
 };
 
 export const getRoomState = async ({
@@ -39,10 +58,6 @@ export const setRoomState = async ({
     await redis.set(getRoomKey(roomId), JSON.stringify(roomState));
 };
 
-export const getLobbyKey = (gameId: string) => {
-    return `game:${gameId}:lobby`;
-};
-
 export const deleteRoom = async ({
     roomId,
     gameId,
@@ -57,23 +72,26 @@ export const deleteRoom = async ({
 
 export const createRoom = async ({
     gameId,
+    matchType,
 }: {
     gameId: string;
+    matchType: MatchType;
 }): Promise<Room> => {
-    const room = initRoom({ gameId });
+    const room = initRoom({ gameId, matchType });
     const roomKey = getRoomKey(room.id);
     const lobbyKey = getLobbyKey(gameId);
     const createdAt = Date.now();
-    await redis
-        .multi()
-        .set(roomKey, JSON.stringify(room))
-        .zAdd(lobbyKey, [
+    const redisChain = redis.multi();
+    redisChain.set(roomKey, JSON.stringify(room));
+    if (matchType === "CUSTOM") {
+        redisChain.zAdd(lobbyKey, [
             {
                 score: createdAt,
                 value: room.id,
             },
-        ])
-        .exec();
+        ]);
+    }
+    await redisChain.exec();
     return room;
 };
 
@@ -85,4 +103,103 @@ export const getAllRoomsInLobby = async ({
     const lobbyKey = getLobbyKey(gameId);
     const roomsId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
     return roomsId.map((roomId) => roomId.toString());
+};
+
+export const addToMatchmakingQueue = async ({
+    gameId,
+    user,
+}: {
+    gameId: string;
+    user: Record<string, any>;
+}) => {
+    const mmKey = getMatchmakingKey(gameId);
+    const mmPlayerKey = getMatchmakingPlayerKey({
+        userId: user.userId,
+        gameId,
+    });
+    await redis
+        .multi()
+        .set(mmPlayerKey, JSON.stringify(user))
+        .zAdd(mmKey, {
+            score: user.elo,
+            value: user.userId,
+        })
+        .exec();
+};
+
+export const removeFromMatchmakingQueue = async ({
+    gameId,
+    user,
+}: {
+    gameId: string;
+    user: Record<string, any>;
+}) => {
+    const mmKey = getMatchmakingKey(gameId);
+    const mmPlayerKey = getMatchmakingPlayerKey({
+        userId: user.userId,
+        gameId,
+    });
+    await redis.multi().zRem(mmKey, user.userId).del(mmPlayerKey).exec();
+};
+
+export const getMatchesInMmQueue = async ({ gameId }: { gameId: string }) => {
+    const mmKey = getMatchmakingKey(gameId);
+    const playersId = await redis.zRange(mmKey, 0, -1);
+    const redisChain = redis.multi();
+    for (let id of playersId) {
+        redisChain.get(
+            getMatchmakingPlayerKey({ userId: id.toString(), gameId }),
+        );
+    }
+    const rawData = await redisChain.exec();
+    const playersInQ = rawData
+        .filter((value) => typeof value === "string")
+        .map((value) => JSON.parse(value) as QueuePlayer);
+
+    const matched = {};
+    const matches = [];
+    for (let i = 0; i < playersInQ.length; i++) {
+        for (let j = playersInQ.length - 1; j > i; j--) {
+            let playerA = playersInQ[i];
+            let playerB = playersInQ[j];
+            if (
+                canMatch(playerA, playerB) &&
+                !matched[playerA.userId] &&
+                !matched[playerB.userId]
+            ) {
+                matched[playerA.userId] = playerB.userId;
+                matched[playerB.userId] = playerA.userId;
+                matches.push({ playerA, playerB });
+                break;
+            }
+        }
+    }
+    return matches;
+};
+
+export const removeMatchesFromMmQueue = async ({
+    gameId,
+    matches,
+}: {
+    gameId: string;
+    matches: Record<string, QueuePlayer>[];
+}) => {
+    const mmKey = getMatchmakingKey(gameId);
+    const redisChain = redis.multi();
+    for (let match of matches) {
+        const { playerA, playerB } = match;
+        const mmPlayerKeyA = getMatchmakingPlayerKey({
+            userId: playerA.userId,
+            gameId,
+        });
+        const mmPlayerKeyB = getMatchmakingPlayerKey({
+            userId: playerB.userId,
+            gameId,
+        });
+        redis.del(mmPlayerKeyA);
+        redis.del(mmPlayerKeyB);
+        redis.zRem(mmKey, playerA.userId);
+        redis.zRem(mmKey, playerB.userId);
+    }
+    await redisChain.exec();
 };

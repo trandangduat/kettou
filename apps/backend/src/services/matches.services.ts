@@ -1,7 +1,5 @@
-import { Round, Player, Room } from "shared";
+import { Round, Player, Room, MatchType } from "shared";
 import db from "../db.js";
-
-export type MatchType = "CUSTOM" | "RANKED";
 
 export const createMatch = ({
     room,

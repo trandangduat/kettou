@@ -6,12 +6,14 @@ import db from "../db.js";
 import { v6 as uuidv6 } from "uuid";
 
 export const getMe: RequestHandler = (req, res) => {
-    if (req.user) {
-        return res.json(req.user);
+    const { userId } = req.user;
+    const user = db
+        .prepare(`SELECT id AS userId, username, elo FROM users WHERE id = ?`)
+        .get(userId);
+    if (!user) {
+        return res.status(401).send("Unauthorized");
     }
-    return res.status(401).json({
-        msg: "Unauthorized",
-    });
+    return res.json(user);
 };
 
 export const logOut: RequestHandler = (req, res) => {
