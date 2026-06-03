@@ -1,5 +1,6 @@
 import { Round, Player, Room, MatchType } from "shared";
 import db from "../db.js";
+import { getNewElo } from "../logics/elo.logic.js";
 
 export const createMatch = ({
     room,
@@ -36,7 +37,7 @@ export const saveEndedMatch = ({
     room: Room;
     endedAt: number;
 }) => {
-    const { id, status, endState, rounds } = room;
+    const { id, matchType, status, endState, rounds, players } = room;
     const { winnerUserId, playerPoints } = endState;
 
     // update match status
@@ -60,6 +61,27 @@ export const saveEndedMatch = ({
         },
     );
     updateManyPlayers(playerPoints);
+
+    // update players elo
+    if (matchType === "RANKED") {
+        const updatePlayerElo = db.prepare(`
+        UPDATE users SET elo = ? WHERE id = ?`);
+
+        const updateManyPlayersElo = db.transaction(() => {
+            for (let i = 0; i < 2; i++) {
+                let isDraw = !winnerUserId;
+                let isWinner = players[i].userId === winnerUserId;
+                let result = isDraw ? 0.5 : isWinner ? 1 : 0;
+                let newElo = getNewElo({
+                    yourRating: players[i].elo,
+                    enemyRating: players[1 - i].elo,
+                    result: result,
+                });
+                updatePlayerElo.run(newElo, players[i].userId);
+            }
+        });
+        updateManyPlayersElo();
+    }
 
     // insert players moves
     const insertMove = db.prepare(

@@ -9,6 +9,7 @@ export interface Move {
 export interface Player {
     userId: string;
     username: string;
+    elo: number;
 }
 
 export interface Round {

@@ -31,10 +31,12 @@ const processMatchmakingQueue = async ({
         room.players.push({
             username: playerA.username,
             userId: playerA.userId,
+            elo: playerA.elo,
         });
         room.players.push({
             username: playerB.username,
             userId: playerB.userId,
+            elo: playerB.elo,
         });
         room = updateRoomReadyStatus({ room });
         await setRoomState({ roomId: room.id, roomState: room });
@@ -69,7 +71,7 @@ export const startMatchMakingWorker = (io: Server) => {
         } finally {
             isProcessing = false;
         }
-    }, 3000);
+    }, 8000);
 };
 
 export const setUpMatchmakingSocket = ({

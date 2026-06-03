@@ -27,6 +27,7 @@ export const setupRoomsSocket = ({ io, socket }: SocketHandlerContext) => {
             room.players.push({
                 username: user.username,
                 userId: user.id,
+                elo: user.elo,
             });
             room = updateRoomReadyStatus({ room });
             await saveAndBroadcastRoomState({ io, room });

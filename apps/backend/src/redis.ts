@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { createClient, RESP_TYPES } from "redis";
 import { initRoom, MatchType, Room } from "shared";
-import { canMatch, QueuePlayer } from "./matchmaking.logic.js";
+import { canMatch, QueuePlayer } from "./logics/matchmaking.logic.js";
 dotenv.config();
 
 const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
