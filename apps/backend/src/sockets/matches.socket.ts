@@ -40,7 +40,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             }
             await saveAndBroadcastRoomState({ io, room });
             // create the match in database
-            createMatch({ room, type: "CUSTOM", startedAt });
+            createMatch({ room, type: room.matchType, startedAt });
         } catch (err) {}
     };
 
