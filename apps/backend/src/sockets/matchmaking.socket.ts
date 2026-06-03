@@ -9,7 +9,7 @@ import {
 } from "../redis.js";
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
-import { saveAndBroadcastRoomState } from "./room-state.js";
+import { logger } from "../logger.js";
 
 const getMatchmakingKey = (gameId: string) => {
     return `matchmaking:${gameId}`;
@@ -64,7 +64,7 @@ export const startMatchMakingWorker = (io: Server) => {
         }
         isProcessing = true;
         try {
-            console.log("PROCESSING MM QUEUE ~~~~~~~~~~~~~~~~~~~~");
+            logger.info("PROCESSING MM QUEUE");
             await processMatchmakingQueue({ io, gameId: "dice-territory" });
         } finally {
             isProcessing = false;
