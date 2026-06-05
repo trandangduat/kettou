@@ -1,14 +1,9 @@
-import {
-    getAllGames,
-    getAllRoomsOfGame,
-    getGameDetails,
-} from "../controllers/games.controller.js";
 import { Router } from "express";
+import { allGames, gameDetails } from "../controllers/games.controller.js";
 
 const router = Router();
 
-router.get("/games", getAllGames);
-router.get("/games/:gameId", getGameDetails);
-router.get("/games/:gameId/rooms", getAllRoomsOfGame);
+router.get("/games", allGames);
+router.get("/games/:gameId", gameDetails);
 
 export default router;

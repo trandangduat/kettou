@@ -1,21 +1,17 @@
 import { RequestHandler } from "express";
-import db from "../db.js";
+import { getGameById, getGames } from "../services/games.services.js";
 
-export const getAllGames: RequestHandler = (req, res) => {
-    const games = db.prepare(`SELECT * FROM games`).all();
-    res.json(games);
+export const allGames: RequestHandler = (req, res) => {
+    const games = getGames();
+    return res.status(200).json(games);
 };
 
-export const getGameDetails: RequestHandler = (req, res) => {
-    const { gameId } = req.params;
-    const game = db.prepare(`SELECT * FROM games WHERE id = ?`).get(gameId);
-    res.json(game);
+type GameDetailsParams = {
+    gameId: string;
 };
 
-export const getAllRoomsOfGame: RequestHandler = (req, res) => {
+export const gameDetails: RequestHandler<GameDetailsParams> = (req, res) => {
     const { gameId } = req.params;
-    const rooms = db
-        .prepare(`SELECT * FROM rooms WHERE game_id = ?`)
-        .all(gameId);
-    res.json(rooms);
+    const game = getGameById(gameId);
+    return res.status(200).json(game);
 };
