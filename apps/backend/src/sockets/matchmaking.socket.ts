@@ -25,7 +25,7 @@ const processMatchmakingQueue = async ({
     const matches = await getMatchesInMmQueue({ gameId });
 
     for (let match of matches) {
-        console.log("MATCH", match);
+        logger.info(match, "MATCHED");
         const { playerA, playerB } = match;
         let room = await createRoom({ gameId, matchType: "RANKED" });
         room.players.push({
@@ -80,17 +80,20 @@ export const setUpMatchmakingSocket = ({
 }: SocketHandlerContext) => {
     const joinMatchmaking = async ({ gameId, user }, ack) => {
         socket.join(getMatchmakingKey(gameId));
-        user = {
-            ...user,
+        const { id, elo, username } = user;
+        const player = {
+            userId: id,
+            elo,
+            username,
             socketId: socket.id,
             joinedAt: Date.now(),
         };
-        await addToMatchmakingQueue({ gameId, user });
+        await addToMatchmakingQueue({ gameId, player });
         ack(true);
     };
     const leaveMatchmaking = async ({ gameId, user }, ack) => {
         socket.leave(getMatchmakingKey(gameId));
-        await removeFromMatchmakingQueue({ gameId, user });
+        await removeFromMatchmakingQueue({ gameId, userId: user.id });
         ack(true);
     };
     socket.on("matchmaking:join", joinMatchmaking);

@@ -107,39 +107,39 @@ export const getAllRoomsInLobby = async ({
 
 export const addToMatchmakingQueue = async ({
     gameId,
-    user,
+    player,
 }: {
     gameId: string;
-    user: Record<string, any>;
+    player: Record<string, any>;
 }) => {
     const mmKey = getMatchmakingKey(gameId);
     const mmPlayerKey = getMatchmakingPlayerKey({
-        userId: user.userId,
+        userId: player.userId,
         gameId,
     });
     await redis
         .multi()
-        .set(mmPlayerKey, JSON.stringify(user))
+        .set(mmPlayerKey, JSON.stringify(player))
         .zAdd(mmKey, {
-            score: user.elo,
-            value: user.userId,
+            score: player.elo,
+            value: player.userId,
         })
         .exec();
 };
 
 export const removeFromMatchmakingQueue = async ({
     gameId,
-    user,
+    userId,
 }: {
     gameId: string;
-    user: Record<string, any>;
+    userId: string;
 }) => {
     const mmKey = getMatchmakingKey(gameId);
     const mmPlayerKey = getMatchmakingPlayerKey({
-        userId: user.userId,
+        userId,
         gameId,
     });
-    await redis.multi().zRem(mmKey, user.userId).del(mmPlayerKey).exec();
+    await redis.multi().zRem(mmKey, userId).del(mmPlayerKey).exec();
 };
 
 export const getMatchesInMmQueue = async ({ gameId }: { gameId: string }) => {

@@ -7,7 +7,8 @@ import {
 
 export const getMe: RequestHandler = (req, res) => {
     try {
-        const user = getCurrentUser(req.user.userId);
+        const { id } = req.user;
+        const user = getCurrentUser(id);
         return res.status(200).json(user);
     } catch (err) {
         return res.status(401).send(err.toString());

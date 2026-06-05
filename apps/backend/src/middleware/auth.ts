@@ -1,6 +1,7 @@
 import { jwtVerify } from "jose";
 import { JWT_SECRET } from "../config.js";
 import type { RequestHandler } from "express";
+import { AuthUser } from "../types/express.js";
 
 const authPublicMiddleware: RequestHandler = async (req, res, next) => {
     const accessToken = req.cookies.accessToken;
@@ -16,11 +17,6 @@ const authPublicMiddleware: RequestHandler = async (req, res, next) => {
         next();
     }
 };
-
-interface AuthUser {
-    userId: string;
-    username: string;
-}
 
 const authProtectedMiddleware: RequestHandler = async (req, res, next) => {
     const accessToken = req.cookies.accessToken;

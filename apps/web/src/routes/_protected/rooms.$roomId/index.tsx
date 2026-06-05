@@ -30,14 +30,14 @@ function RouteComponent() {
     let playerPoints: Record<string, number> = {};
     let isAWinner = false;
     if (gameStatus === "PLAYING") {
-        myTurn = user.userId === players[turn].userId;
+        myTurn = user.id === players[turn].userId;
     }
     if (myTurn && roundNumber > 0 && rounds.length === roundNumber) {
         myDiceNumber = rounds[roundNumber - 1].diceNumber;
     }
     if (gameStatus === "ENDED") {
         playerPoints = endState!.playerPoints;
-        isAWinner = user.userId == endState!.winnerUserId;
+        isAWinner = user.id == endState!.winnerUserId;
     }
 
     const startGame = () => {
@@ -46,7 +46,7 @@ function RouteComponent() {
             "match:start",
             {
                 roomId,
-                userId: user.userId,
+                userId: user.id,
             },
             ({ ok }: { ok: boolean }) => {
                 if (ok) setWaitingStart(false);
@@ -59,7 +59,7 @@ function RouteComponent() {
         setTimeout(() => {
             socket.emit("match:roll-dice", {
                 roomId,
-                userId: user.userId,
+                userId: user.id,
             });
             setWaitingDice(false);
         }, 1000);
@@ -73,7 +73,7 @@ function RouteComponent() {
             roomId,
             user: {
                 username: user.username,
-                id: user.userId,
+                id: user.id,
             },
         });
 
@@ -86,7 +86,7 @@ function RouteComponent() {
                 roomId,
                 user: {
                     username: user.username,
-                    id: user.userId,
+                    id: user.id,
                 },
             });
         };
@@ -110,7 +110,7 @@ function RouteComponent() {
                     style={{
                         backgroundColor:
                             gameStatus === "READY" &&
-                            user.userId === players[0].userId
+                            user.id === players[0].userId
                                 ? "cyan"
                                 : "grey",
                     }}
@@ -171,7 +171,7 @@ function RouteComponent() {
             {gameStatus === "ENDED" && (
                 <>
                     {isAWinner ? "Winner" : "Loser"}
-                    <p>Points: {playerPoints?.[user.userId]}</p>
+                    <p>Points: {playerPoints?.[user.id]}</p>
                 </>
             )}
         </>

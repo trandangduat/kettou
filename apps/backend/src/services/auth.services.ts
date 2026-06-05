@@ -46,21 +46,18 @@ type LoginInputProps = {
 
 export const loginUser = async (input: LoginInputProps) => {
     const { username, password } = input;
-    const rows = getUserByUsername(username);
+    const user = getUserByUsername(username);
 
-    if (!rows) {
+    if (!user) {
         throw new Error("Username does not exist");
     }
 
-    const compareResult = await bcrypt.compare(password, rows.password);
+    const compareResult = await bcrypt.compare(password, user.password);
     if (!compareResult) {
         throw new Error("Incorrect password");
     }
 
-    const jwtToken = await new jose.SignJWT({
-        userId: rows.id,
-        username: rows.username,
-    })
+    const jwtToken = await new jose.SignJWT(user)
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
         .setExpirationTime("7d")

@@ -51,10 +51,10 @@ export function GameBoard({
     if (rounds) {
         moves = {
             mine: rounds
-                .filter((round) => round.playerId === user.userId)
+                .filter((round) => round.playerId === user.id)
                 .map((round) => round.move),
             enemys: rounds
-                .filter((round) => round.playerId !== user.userId)
+                .filter((round) => round.playerId !== user.id)
                 .map((round) => round.move),
         };
         // putting the square in the bottom edge of the board is always valid
@@ -111,7 +111,7 @@ export function GameBoard({
         if (countValid === 0) {
             socket.emit("match:cannot-move", {
                 roomId: room.id,
-                userId: user.userId,
+                userId: user.id,
             });
         }
     }
@@ -136,7 +136,7 @@ export function GameBoard({
             );
             socket.emit("match:finish-move", {
                 roomId: room.id,
-                userId: user.userId,
+                userId: user.id,
                 move,
             });
         }

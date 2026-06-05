@@ -1,12 +1,12 @@
+export interface AuthUser {
+    id: string;
+    username: string;
+}
+
 declare global {
     namespace Express {
         interface Request {
-            user?: {
-                userId: string;
-                username: string;
-            };
+            user?: AuthUser;
         }
     }
 }
-
-export {};
