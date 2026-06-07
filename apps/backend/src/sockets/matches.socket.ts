@@ -5,11 +5,11 @@ import {
     type Move,
     type Room,
 } from "shared";
-import { getRoomState } from "../redis.js";
 import { saveEndedMatch, createMatch } from "../services/matches.services.js";
 import { getRandomNumber } from "../utils.js";
 import { saveAndBroadcastRoomState } from "./room-state.js";
 import type { SocketHandlerContext } from "./types.js";
+import { getRoomState } from "../services/rooms.services.js";
 
 const checkValidMove = ({
     currentMove,

@@ -1,7 +1,12 @@
-import { getRoomKey, updateRoomReadyStatus } from "shared";
-import { createRoom, deleteRoom, getRoomState } from "../redis.js";
+import { updateRoomReadyStatus } from "shared";
 import { saveAndBroadcastRoomState } from "./room-state.js";
 import type { SocketHandlerContext } from "./types.js";
+import {
+    createRoom,
+    deleteRoom,
+    getRoomKey,
+    getRoomState,
+} from "../services/rooms.services.js";
 
 export const setupRoomsSocket = ({ io, socket }: SocketHandlerContext) => {
     const createNewRoom = async ({ gameId, matchType }, ack) => {

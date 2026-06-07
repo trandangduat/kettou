@@ -1,4 +1,4 @@
-import { getAllRoomsInLobby } from "../redis.js";
+import { getAllRoomsInLobby } from "../services/rooms.services.js";
 import type { SocketHandlerContext } from "./types.js";
 
 export const setupLobbySocket = ({ io, socket }: SocketHandlerContext) => {

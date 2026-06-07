@@ -1,6 +1,6 @@
 import type { Server } from "socket.io";
-import { debugRoom, getRoomKey, type Room } from "shared";
-import { setRoomState } from "../redis.js";
+import { debugRoom, type Room } from "shared";
+import { getRoomKey, setRoomState } from "../services/rooms.services.js";
 
 export const saveAndBroadcastRoomState = async ({
     io,

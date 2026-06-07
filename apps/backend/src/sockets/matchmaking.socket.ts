@@ -1,15 +1,18 @@
-import { getRoomKey, updateRoomReadyStatus } from "shared";
-import {
-    addToMatchmakingQueue,
-    createRoom,
-    getMatchesInMmQueue,
-    removeFromMatchmakingQueue,
-    removeMatchesFromMmQueue,
-    setRoomState,
-} from "../redis.js";
+import { updateRoomReadyStatus } from "shared";
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
 import { logger } from "../logger.js";
+import {
+    addToMatchmakingQueue,
+    getMatchesInMmQueue,
+    removeFromMatchmakingQueue,
+    removeMatchesFromMmQueue,
+} from "../services/matchmaking.services.js";
+import {
+    createRoom,
+    getRoomKey,
+    setRoomState,
+} from "../services/rooms.services.js";
 
 const getMatchmakingKey = (gameId: string) => {
     return `matchmaking:${gameId}`;

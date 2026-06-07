@@ -58,10 +58,6 @@ export const initRoom = ({
     endState: null,
 });
 
-export const getRoomKey = (roomId: string) => {
-    return `room:${roomId}`;
-};
-
 export const debugRoom = (room: Room) => {
     console.log("room:", JSON.stringify(room, null, 2));
 };
