@@ -21,7 +21,7 @@ type App struct {
 func initApp() App {
 	return App{
 		currentScreen: loginScreen,
-		loginForm:     components.NewForm([]string{"Email", "Username", "Password"}),
+		loginForm:     components.NewForm([]string{"username", "password"}),
 	}
 }
 
@@ -57,16 +57,16 @@ func (app App) View() tea.View {
 	switch app.currentScreen {
 	case loginScreen:
 		s += "login screen!\n"
-		
+
 		// Lấy view của form, bao gồm cả nội dung và đối tượng con trỏ (cursor)
 		formView := app.loginForm.View()
 		s += formView.Content
 		c = formView.Cursor
-		
+
 	case mainScreen:
 		s += "main screen!"
 	}
-	
+
 	v := tea.NewView(s)
 	// Gắn con trỏ vào view chính
 	v.Cursor = c
@@ -75,7 +75,7 @@ func (app App) View() tea.View {
 
 func main() {
 	p := tea.NewProgram(initApp())
-	
+
 	// Khởi chạy ứng dụng
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("There's been an error: %v\n", err)
