@@ -1,7 +1,7 @@
 package components
 
 import (
-	"fmt"
+	"log"
 	"mini-games-tui/services"
 	"mini-games-tui/types"
 	"strings"
@@ -67,10 +67,10 @@ func (form FormModel) Update(msg tea.Msg) (FormModel, tea.Cmd) {
 	numInputs := len(form.inputs) + 1 // +1 for Submit button
 	switch msg := msg.(type) {
 	case services.ErrMsg:
-		fmt.Printf("Error %v", msg)
+		log.Printf("Error %v", msg)
 
 	case services.LoggedInMsg:
-		fmt.Printf("get logged in command success")
+		log.Printf("get logged in command success")
 
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -97,7 +97,7 @@ func (form FormModel) Update(msg tea.Msg) (FormModel, tea.Cmd) {
 		case "enter":
 			if form.focusIndex == numInputs-1 { // is on Submit button
 				formValues := form.getValues()
-				fmt.Printf("%+v", formValues)
+				log.Printf("%+v", formValues)
 				user := types.LoginRequest{
 					Username: formValues["username"],
 					Password: formValues["password"],
