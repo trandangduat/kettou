@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"kettou/types"
 	"log"
-	"mini-games-tui/types"
 
 	tea "charm.land/bubbletea/v2"
 )

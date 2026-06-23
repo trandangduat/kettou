@@ -1,4 +1,4 @@
-module mini-games-tui
+module kettou
 
 go 1.26.4
 

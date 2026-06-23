@@ -1,9 +1,9 @@
 package components
 
 import (
+	"kettou/services"
+	"kettou/types"
 	"log"
-	"mini-games-tui/services"
-	"mini-games-tui/types"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"

@@ -2,40 +2,29 @@ package main
 
 import (
 	"fmt"
-	"mini-games-tui/components"
-	"mini-games-tui/services"
-	"mini-games-tui/types"
+	"kettou/screens"
+	"kettou/services"
+	"kettou/types"
 	"os"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
-)
-
-const (
-	loginScreen int = iota
-	mainScreen
 )
 
 type App struct {
-	currentScreen int
-	loginForm     components.FormModel
+	currentScreen tea.Model
 	currentUser   types.User
-	logOutFocused bool
 }
 
 func initApp() App {
 	return App{
-		currentScreen: loginScreen,
-		loginForm:     components.NewForm([]string{"username", "password"}),
+		currentScreen: screens.InitLoginScreen(),
 	}
 }
 
 func (app App) Init() tea.Cmd {
-	app.currentScreen = loginScreen
 	var cmds []tea.Cmd
 	cmds = append(cmds, services.FetchMe())
-	cmds = append(cmds, app.loginForm.Init())
 	return tea.Batch(cmds...)
 }
 
@@ -43,35 +32,24 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
+	app.currentScreen, cmd = app.currentScreen.Update(msg)
+	cmds = append(cmds, cmd)
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return app, tea.Quit
-		case "enter":
-			if app.currentScreen == mainScreen && app.logOutFocused {
-				cmd = services.Logout()
-				cmds = append(cmds, cmd)
-			}
-
 		}
 	case services.LoggedInMsg:
-		cmds = append(cmds, services.FetchMe())
+		cmd = services.FetchMe()
+		cmds = append(cmds, cmd)
 	case services.CurrentUserMsg:
 		app.currentUser = types.User(msg)
-		app.currentScreen = mainScreen
-		app.logOutFocused = true
+		app.currentScreen = screens.InitHomeScreen()
 	case services.LogoutMsg:
 		app.currentUser = types.User{}
-		app.currentScreen = loginScreen
-		app.logOutFocused = false
-		cmds = append(cmds, app.loginForm.Init())
-
-	}
-
-	if app.currentScreen == loginScreen {
-		app.loginForm, cmd = app.loginForm.Update(msg)
-		cmds = append(cmds, cmd)
+		app.currentScreen = screens.InitLoginScreen()
 	}
 
 	return app, tea.Batch(cmds...)
@@ -81,27 +59,9 @@ func (app App) View() tea.View {
 	var s strings.Builder
 
 	s.WriteString("You're in: ")
+	s.WriteString(app.currentScreen.View().Content)
+
 	var c *tea.Cursor
-
-	switch app.currentScreen {
-	case loginScreen:
-		s.WriteString("login screen!\n")
-
-		// Lấy view của form, bao gồm cả nội dung và đối tượng con trỏ (cursor)
-		formView := app.loginForm.View()
-		s.WriteString(formView.Content)
-		c = formView.Cursor
-
-	case mainScreen:
-		s.WriteString("main screen!\n")
-		logOutBtnStyle := lipgloss.NewStyle()
-		if app.logOutFocused == true {
-			logOutBtnStyle = logOutBtnStyle.Background(lipgloss.Color("18"))
-		}
-		s.WriteString(logOutBtnStyle.Render("[Logout]"))
-
-	}
-
 	v := tea.NewView(s.String())
 	// Gắn con trỏ vào view chính
 	v.Cursor = c
