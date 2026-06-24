@@ -25,6 +25,7 @@ func initApp() App {
 func (app App) Init() tea.Cmd {
 	var cmds []tea.Cmd
 	cmds = append(cmds, services.FetchMe())
+	cmds = append(cmds, app.currentScreen.Init())
 	return tea.Batch(cmds...)
 }
 
@@ -46,7 +47,7 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	case services.CurrentUserMsg:
 		app.currentUser = types.User(msg)
-		app.currentScreen = screens.InitHomeScreen()
+		app.currentScreen = screens.InitHomeScreen(app.currentUser)
 	case services.LogoutMsg:
 		app.currentUser = types.User{}
 		app.currentScreen = screens.InitLoginScreen()
@@ -58,13 +59,13 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (app App) View() tea.View {
 	var s strings.Builder
 
-	s.WriteString("You're in: ")
 	s.WriteString(app.currentScreen.View().Content)
 
 	var c *tea.Cursor
 	v := tea.NewView(s.String())
 	// Gắn con trỏ vào view chính
 	v.Cursor = c
+	v.AltScreen = true
 	return v
 }
 

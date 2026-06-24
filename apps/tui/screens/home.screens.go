@@ -2,6 +2,7 @@ package screens
 
 import (
 	"kettou/services"
+	"kettou/types"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -10,11 +11,13 @@ import (
 
 type HomeScreen struct {
 	logOutFocused bool
+	currentUser   types.User
 }
 
-func InitHomeScreen() HomeScreen {
+func InitHomeScreen(cu types.User) HomeScreen {
 	return HomeScreen{
 		logOutFocused: true,
+		currentUser:   cu,
 	}
 }
 
@@ -25,6 +28,8 @@ func (m HomeScreen) Init() tea.Cmd {
 func (m HomeScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
+
+	cmds = append(cmds, cmd)
 
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -43,6 +48,7 @@ func (m HomeScreen) View() tea.View {
 	var s strings.Builder
 
 	s.WriteString("main screen!\n")
+
 	logOutBtnStyle := lipgloss.NewStyle()
 	if m.logOutFocused == true {
 		logOutBtnStyle = logOutBtnStyle.Background(lipgloss.Color("18"))
