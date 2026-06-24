@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"kettou/components"
 	"kettou/screens"
 	"kettou/services"
 	"kettou/types"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type App struct {
@@ -59,13 +61,22 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (app App) View() tea.View {
 	var s strings.Builder
 
-	s.WriteString(app.currentScreen.View().Content)
+	content := app.currentScreen.View().Content
+
+	if app.currentUser.Username != "" {
+		header := components.RenderHeader(app.currentUser)
+		layout := lipgloss.JoinVertical(lipgloss.Center, header, "\n\n", content)
+		container := lipgloss.NewStyle().Padding(0, 4).Render(layout)
+		s.WriteString(container)
+	} else {
+		s.WriteString(content)
+	}
 
 	var c *tea.Cursor
 	v := tea.NewView(s.String())
 	// Gắn con trỏ vào view chính
 	v.Cursor = c
-	v.AltScreen = true
+	// v.AltScreen = true
 	return v
 }
 
