@@ -39,7 +39,7 @@ func (c CasualScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+p":
 			cmds = append(cmds, func() tea.Msg { return types.ChangeScreenMsg(InitHomeScreen()) })
 		}
-	case services.ListGamesMsg:
+	case types.ListGamesMsg:
 		c.listGames = msg
 	}
 	return c, tea.Batch(cmds...)

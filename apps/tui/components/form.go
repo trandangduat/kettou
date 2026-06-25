@@ -66,10 +66,10 @@ func (form FormModel) Update(msg tea.Msg) (FormModel, tea.Cmd) {
 	var cmds []tea.Cmd
 	numInputs := len(form.inputs) + 1 // +1 for Submit button
 	switch msg := msg.(type) {
-	case services.ErrMsg:
+	case types.ErrMsg:
 		log.Printf("Error %v", msg)
 
-	case services.LoggedInMsg:
+	case types.LoggedInMsg:
 		log.Printf("get logged in command success")
 
 	case tea.KeyPressMsg:

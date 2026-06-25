@@ -44,13 +44,13 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return app, tea.Quit
 		}
-	case services.LoggedInMsg:
+	case types.LoggedInMsg:
 		cmd = services.FetchMe()
 		cmds = append(cmds, cmd)
-	case services.CurrentUserMsg:
+	case types.CurrentUserMsg:
 		app.currentUser = types.User(msg)
 		app.currentScreen = screens.InitHomeScreen()
-	case services.LogoutMsg:
+	case types.LogoutMsg:
 		app.currentUser = types.User{}
 		app.currentScreen = screens.InitLoginScreen()
 	case types.ChangeScreenMsg:
