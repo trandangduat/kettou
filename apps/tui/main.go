@@ -49,10 +49,14 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	case services.CurrentUserMsg:
 		app.currentUser = types.User(msg)
-		app.currentScreen = screens.InitHomeScreen(app.currentUser)
+		app.currentScreen = screens.InitHomeScreen()
 	case services.LogoutMsg:
 		app.currentUser = types.User{}
 		app.currentScreen = screens.InitLoginScreen()
+	case types.ChangeScreenMsg:
+		app.currentScreen = msg
+		cmd = app.currentScreen.Init()
+		cmds = append(cmds, cmd)
 	}
 
 	return app, tea.Batch(cmds...)
@@ -76,7 +80,7 @@ func (app App) View() tea.View {
 	v := tea.NewView(s.String())
 	// Gắn con trỏ vào view chính
 	v.Cursor = c
-	// v.AltScreen = true
+	v.AltScreen = true
 	return v
 }
 

@@ -21,7 +21,7 @@ type HomeScreen struct {
 	focusedMode focusedMode
 }
 
-func InitHomeScreen(cu types.User) HomeScreen {
+func InitHomeScreen() HomeScreen {
 	return HomeScreen{
 		focusedMode: modeRanked,
 	}
@@ -38,15 +38,20 @@ func (m HomeScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "left", "h":
-			if m.focusedMode > modeRanked {
-				m.focusedMode--
-			}
+			m.focusedMode = (m.focusedMode - 1 + 3) % 3
 		case "right", "l":
-			if m.focusedMode < modeJoinRoom {
-				m.focusedMode++
+			m.focusedMode = (m.focusedMode + 1) % 3
+		case "enter":
+			switch m.focusedMode {
+			case modeRanked:
+			case modeCasual:
+				cmds = append(cmds, func() tea.Msg { return types.ChangeScreenMsg(InitCasualScreen()) })
+			case modeJoinRoom:
 			}
+
 		case "alt+l":
 			cmds = append(cmds, services.Logout())
+
 		}
 	}
 	return m, tea.Batch(cmds...)
@@ -87,11 +92,7 @@ func (m HomeScreen) View() tea.View {
 	}
 
 	cardRow := lipgloss.JoinHorizontal(lipgloss.Top, renderedCards[0], "  ", renderedCards[1], "  ", renderedCards[2])
-
-	footer := footerStyle.Render("[←/→/h/l] Navigate   |   [Enter] Select   |   [q/Esc] Quit")
-
-	// Lắp ghép phần thẻ game và footer
-	layout := lipgloss.JoinVertical(lipgloss.Center, cardRow, "\n", footer)
+	layout := lipgloss.JoinVertical(lipgloss.Center, cardRow, "\n")
 
 	return tea.NewView(layout)
 }
