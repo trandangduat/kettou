@@ -40,6 +40,10 @@ export const deleteRoom = async ({
 }) => {
     const roomKey = getRoomKey(roomId);
     const lobbyKey = getLobbyKey(gameId);
+    const redisChain = redis.multi();
+    redisChain.zRem(lobbyKey, roomId);
+    redisChain.del(roomKey);
+    await redisChain.exec();
 };
 
 export const createRoom = async ({
