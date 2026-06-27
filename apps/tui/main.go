@@ -50,12 +50,19 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.CurrentUserMsg:
 		app.currentUser = types.User(msg)
 		app.currentScreen = screens.InitHomeScreen()
+
+		go services.ConnectSocket()
+		cmd = services.WaitForSocketMsg()
+		cmds = append(cmds, cmd)
 	case types.LogoutMsg:
 		app.currentUser = types.User{}
 		app.currentScreen = screens.InitLoginScreen()
 	case types.ChangeScreenMsg:
 		app.currentScreen = msg
 		cmd = app.currentScreen.Init()
+		cmds = append(cmds, cmd)
+	case types.SocketEventMsg:
+		cmd = services.WaitForSocketMsg()
 		cmds = append(cmds, cmd)
 	}
 

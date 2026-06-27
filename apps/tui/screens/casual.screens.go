@@ -27,7 +27,7 @@ func (c CasualScreen) Init() tea.Cmd {
 
 func (c CasualScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	// var cmd tea.Cmd
+	var cmd tea.Cmd
 	gamesCount := len(c.listGames)
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -36,6 +36,12 @@ func (c CasualScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			c.focusedGame = (c.focusedGame - 1 + gamesCount) % gamesCount
 		case "down", "j":
 			c.focusedGame = (c.focusedGame + 1) % gamesCount
+		case "enter":
+			cmd = func() tea.Msg {
+				gameId := c.listGames[c.focusedGame].Id
+				return types.ChangeScreenMsg(InitGameLobbyScreen(gameId))
+			}
+			cmds = append(cmds, cmd)
 		case "ctrl+p":
 			cmds = append(cmds, func() tea.Msg { return types.ChangeScreenMsg(InitHomeScreen()) })
 		}

@@ -5,8 +5,18 @@ import (
 )
 
 type ErrMsg error
+
 type LoggedInMsg string
+
 type CurrentUserMsg User
+
 type LogoutMsg string
+
 type ListGamesMsg []Game
+
 type ChangeScreenMsg tea.Model
+
+type SocketEventMsg struct {
+	Event string
+	Data  any
+}
