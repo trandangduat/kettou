@@ -6,7 +6,6 @@ import (
 	"kettou/screens"
 	"kettou/services"
 	"kettou/types"
-	"log"
 	"os"
 	"strings"
 
@@ -54,8 +53,6 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
-	log.Printf("3.NUMBER OF SCREENS: %v", len(app.screensStack))
-
 	currentScreen := app.GetCurrentScreen()
 	if currentScreen == nil {
 		return app, nil
@@ -76,7 +73,6 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.CurrentUserMsg:
 		app.currentUser = types.User(msg)
 		cmd = func() tea.Msg {
-			log.Print("1.USER LOGGED IN, INIT HOME SCREEN")
 			return types.PushScreenMsg(screens.InitHomeScreen())
 		}
 		cmds = append(cmds, cmd)
@@ -91,7 +87,6 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		cmds = append(cmds, cmd)
 	case types.PushScreenMsg:
-		log.Print("2.PUSH HOME SCREEN")
 		app.PushScreen(msg.(tea.Model))
 		cmd = msg.(tea.Model).Init()
 		cmds = append(cmds, cmd)
