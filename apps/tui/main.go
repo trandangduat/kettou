@@ -6,6 +6,7 @@ import (
 	"kettou/screens"
 	"kettou/services"
 	"kettou/types"
+	"log"
 	"os"
 	"strings"
 
@@ -13,21 +14,39 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+func (app *App) GetCurrentScreen() *tea.Model {
+	if len(app.screensStack) == 0 {
+		return nil
+	}
+	return &app.screensStack[len(app.screensStack)-1]
+}
+
+func (app *App) PushScreen(screen tea.Model) {
+	app.screensStack = append(app.screensStack, screen)
+}
+
+func (app *App) PopScreen() {
+	if len(app.screensStack) <= 1 {
+		return
+	}
+	app.screensStack = app.screensStack[:len(app.screensStack)-1]
+}
+
 type App struct {
-	currentScreen tea.Model
-	currentUser   types.User
+	currentUser  types.User
+	screensStack []tea.Model
 }
 
 func initApp() App {
 	return App{
-		currentScreen: screens.InitLoginScreen(),
+		screensStack: []tea.Model{screens.InitLoginScreen()},
 	}
 }
 
 func (app App) Init() tea.Cmd {
 	var cmds []tea.Cmd
 	cmds = append(cmds, services.FetchMe())
-	cmds = append(cmds, app.currentScreen.Init())
+	cmds = append(cmds, app.screensStack[len(app.screensStack)-1].Init())
 	return tea.Batch(cmds...)
 }
 
@@ -35,7 +54,14 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
-	app.currentScreen, cmd = app.currentScreen.Update(msg)
+	log.Printf("3.NUMBER OF SCREENS: %v", len(app.screensStack))
+
+	currentScreen := app.GetCurrentScreen()
+	if currentScreen == nil {
+		return app, nil
+	}
+
+	*currentScreen, cmd = (*currentScreen).Update(msg)
 	cmds = append(cmds, cmd)
 
 	switch msg := msg.(type) {
@@ -49,17 +75,29 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	case types.CurrentUserMsg:
 		app.currentUser = types.User(msg)
-		app.currentScreen = screens.InitHomeScreen()
+		cmd = func() tea.Msg {
+			log.Print("1.USER LOGGED IN, INIT HOME SCREEN")
+			return types.PushScreenMsg(screens.InitHomeScreen())
+		}
+		cmds = append(cmds, cmd)
 
 		go services.ConnectSocket()
 		cmd = services.WaitForSocketMsg()
 		cmds = append(cmds, cmd)
 	case types.LogoutMsg:
 		app.currentUser = types.User{}
-		app.currentScreen = screens.InitLoginScreen()
-	case types.ChangeScreenMsg:
-		app.currentScreen = msg
-		cmd = app.currentScreen.Init()
+		cmd = func() tea.Msg {
+			return types.PushScreenMsg(screens.InitLoginScreen())
+		}
+		cmds = append(cmds, cmd)
+	case types.PushScreenMsg:
+		log.Print("2.PUSH HOME SCREEN")
+		app.PushScreen(msg.(tea.Model))
+		cmd = msg.(tea.Model).Init()
+		cmds = append(cmds, cmd)
+	case types.PopScreenMsg:
+		app.PopScreen()
+		cmd = (*app.GetCurrentScreen()).Init()
 		cmds = append(cmds, cmd)
 	case types.SocketEventMsg:
 		cmd = services.WaitForSocketMsg()
@@ -72,7 +110,8 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (app App) View() tea.View {
 	var s strings.Builder
 
-	content := app.currentScreen.View().Content
+	currentScreen := app.GetCurrentScreen()
+	content := (*currentScreen).View().Content
 
 	if app.currentUser.Username != "" {
 		header := components.RenderHeader(app.currentUser)

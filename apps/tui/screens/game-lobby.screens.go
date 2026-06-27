@@ -43,7 +43,7 @@ func (s GameLobbyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "ctrl+p":
 			cmd = func() tea.Msg {
-				return types.ChangeScreenMsg(InitCasualScreen())
+				return types.PopScreenMsg{}
 			}
 			cmds = append(cmds, cmd)
 		}

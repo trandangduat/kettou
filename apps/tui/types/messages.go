@@ -14,7 +14,9 @@ type LogoutMsg string
 
 type ListGamesMsg []Game
 
-type ChangeScreenMsg tea.Model
+type PushScreenMsg tea.Model
+
+type PopScreenMsg struct{}
 
 type SocketEventMsg struct {
 	Event string

@@ -45,7 +45,9 @@ func (m HomeScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch m.focusedMode {
 			case modeRanked:
 			case modeCasual:
-				cmds = append(cmds, func() tea.Msg { return types.ChangeScreenMsg(InitCasualScreen()) })
+				cmds = append(cmds, func() tea.Msg {
+					return types.PushScreenMsg(InitCasualScreen())
+				})
 			case modeJoinRoom:
 			}
 

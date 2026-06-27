@@ -39,11 +39,13 @@ func (c CasualScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			cmd = func() tea.Msg {
 				gameId := c.listGames[c.focusedGame].Id
-				return types.ChangeScreenMsg(InitGameLobbyScreen(gameId))
+				return types.PushScreenMsg(InitGameLobbyScreen(gameId))
 			}
 			cmds = append(cmds, cmd)
 		case "ctrl+p":
-			cmds = append(cmds, func() tea.Msg { return types.ChangeScreenMsg(InitHomeScreen()) })
+			cmds = append(cmds, func() tea.Msg {
+				return types.PopScreenMsg{}
+			})
 		}
 	case types.ListGamesMsg:
 		c.listGames = msg
