@@ -3,7 +3,6 @@ package screens
 import (
 	"kettou/services"
 	"kettou/types"
-	"log"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -35,9 +34,13 @@ func (s GameLobbyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "up", "k":
-			s.focusedRoom = (s.focusedRoom - 1 + numRooms) % numRooms
+			if numRooms > 0 {
+				s.focusedRoom = (s.focusedRoom - 1 + numRooms) % numRooms
+			}
 		case "down", "j":
-			s.focusedRoom = (s.focusedRoom + 1) % numRooms
+			if numRooms > 0 {
+				s.focusedRoom = (s.focusedRoom + 1) % numRooms
+			}
 		case "ctrl+p":
 			cmd = func() tea.Msg {
 				return types.ChangeScreenMsg(InitCasualScreen())
@@ -47,10 +50,27 @@ func (s GameLobbyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.SocketEventMsg:
 		switch msg.Event {
 		case "lobby:rooms-update":
-			log.Printf("test lobby:rooms-update: %v\n", msg.Data)
 			res, ok := msg.Data.(types.LobbyUpdate)
 			if ok {
 				s.roomIds = res.RoomsId
+			}
+		case "room:create":
+			res, ok := msg.Data.(types.RoomCreate)
+			if ok {
+				s.roomIds = append(s.roomIds, res.RoomId)
+				s.focusedRoom = 0
+			}
+		case "room:leave":
+			res, ok := msg.Data.(types.RoomLeave)
+			var newRoomIds []string
+			if ok {
+				for _, roomId := range s.roomIds {
+					if roomId != res.RoomId {
+						newRoomIds = append(newRoomIds, roomId)
+					}
+				}
+				s.roomIds = newRoomIds
+				s.focusedRoom = 0
 			}
 		}
 	}

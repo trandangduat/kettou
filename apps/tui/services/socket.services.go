@@ -35,6 +35,26 @@ func ConnectSocket() {
 			Data:  handleSocketEventData[types.LobbyUpdate](data[0]),
 		}
 	})
+
+	client.On("room:create", func(data ...any) {
+		if len(data) == 0 {
+			return
+		}
+		SocketChan <- types.SocketEventMsg{
+			Event: "room:create",
+			Data:  handleSocketEventData[types.RoomCreate](data[0]),
+		}
+	})
+
+	client.On("room:leave", func(data ...any) {
+		if len(data) == 0 {
+			return
+		}
+		SocketChan <- types.SocketEventMsg{
+			Event: "room:leave",
+			Data:  handleSocketEventData[types.RoomLeave](data[0]),
+		}
+	})
 }
 
 func handleSocketEventData[T any](data any) T {
