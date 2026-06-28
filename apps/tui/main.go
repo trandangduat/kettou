@@ -73,7 +73,7 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.CurrentUserMsg:
 		app.currentUser = types.User(msg)
 		cmd = func() tea.Msg {
-			return types.PushScreenMsg(screens.InitHomeScreen())
+			return types.PushScreenMsg(screens.InitHomeScreen(app.currentUser))
 		}
 		cmds = append(cmds, cmd)
 

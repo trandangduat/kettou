@@ -15,3 +15,18 @@ type RoomLeave struct {
 type EmitLobbyJoin struct {
 	GameId string `json:"gameId"`
 }
+
+type EmitRoomJoin struct {
+	RoomId string            `json:"roomId"`
+	User   map[string]string `json:"user"`
+}
+
+type EmitRoomLeave struct {
+	RoomId string            `json:"roomId"`
+	User   map[string]string `json:"user"`
+}
+
+type EmitMatchAction struct {
+	RoomId string `json:"roomId"`
+	UserId string `json:"userId"`
+}

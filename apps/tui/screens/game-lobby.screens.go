@@ -12,13 +12,15 @@ type GameLobbyScreen struct {
 	gameId      string
 	roomIds     []string
 	focusedRoom int
+	currentUser types.User
 }
 
-func InitGameLobbyScreen(gameId string) GameLobbyScreen {
+func InitGameLobbyScreen(cu types.User, gameId string) GameLobbyScreen {
 	return GameLobbyScreen{
 		roomIds:     []string{},
 		gameId:      gameId,
 		focusedRoom: 0,
+		currentUser: cu,
 	}
 }
 
@@ -40,6 +42,16 @@ func (s GameLobbyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "down", "j":
 			if numRooms > 0 {
 				s.focusedRoom = (s.focusedRoom + 1) % numRooms
+			}
+		case "enter":
+			if numRooms > 0 {
+				cmd = func() tea.Msg {
+					return types.PushScreenMsg(InitMatchScreen(
+						s.roomIds[s.focusedRoom],
+						s.currentUser,
+					))
+				}
+				cmds = append(cmds, cmd)
 			}
 		case "ctrl+p":
 			cmd = func() tea.Msg {

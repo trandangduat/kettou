@@ -55,6 +55,17 @@ func ConnectSocket() {
 			Data:  handleSocketEventData[types.RoomLeave](data[0]),
 		}
 	})
+
+	client.On("room:update", func(data ...any) {
+		if len(data) == 0 {
+			return
+		}
+		SocketChan <- types.SocketEventMsg{
+			Event: "room:update",
+			Data:  handleSocketEventData[types.Match](data[0]),
+		}
+	})
+
 }
 
 func handleSocketEventData[T any](data any) T {
@@ -82,7 +93,7 @@ func EmitEventCmd(event string, data any) tea.Cmd {
 		if activeClient == nil {
 			return nil
 		}
-		log.Print("EMIT: ", event, data)
+		log.Printf("--->EMIT: %s, %+v", event, data)
 		activeClient.Emit(event, data)
 		return nil
 	}

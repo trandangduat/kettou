@@ -19,11 +19,13 @@ const (
 
 type HomeScreen struct {
 	focusedMode focusedMode
+	currentUser types.User
 }
 
-func InitHomeScreen() HomeScreen {
+func InitHomeScreen(cu types.User) HomeScreen {
 	return HomeScreen{
 		focusedMode: modeRanked,
+		currentUser: cu,
 	}
 }
 
@@ -46,7 +48,7 @@ func (m HomeScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case modeRanked:
 			case modeCasual:
 				cmds = append(cmds, func() tea.Msg {
-					return types.PushScreenMsg(InitCasualScreen())
+					return types.PushScreenMsg(InitCasualScreen(m.currentUser))
 				})
 			case modeJoinRoom:
 			}

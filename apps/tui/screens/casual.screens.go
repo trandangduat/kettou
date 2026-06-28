@@ -11,12 +11,14 @@ import (
 type CasualScreen struct {
 	focusedGame int
 	listGames   []types.Game
+	currentUser types.User
 }
 
-func InitCasualScreen() CasualScreen {
+func InitCasualScreen(cu types.User) CasualScreen {
 	return CasualScreen{
 		focusedGame: 0,
 		listGames:   []types.Game{},
+		currentUser: cu,
 	}
 }
 
@@ -39,7 +41,7 @@ func (c CasualScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			cmd = func() tea.Msg {
 				gameId := c.listGames[c.focusedGame].Id
-				return types.PushScreenMsg(InitGameLobbyScreen(gameId))
+				return types.PushScreenMsg(InitGameLobbyScreen(c.currentUser, gameId))
 			}
 			cmds = append(cmds, cmd)
 		case "ctrl+p":
