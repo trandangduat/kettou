@@ -15,7 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PublicRegisterRouteImport } from './routes/_public/register'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as GamesGameIdIndexRouteImport } from './routes/games/$gameId/index'
-import { Route as ProtectedRoomsRoomIdIndexRouteImport } from './routes/_protected/rooms.$roomId/index'
+import { Route as ProtectedMatchesMatchIdIndexRouteImport } from './routes/_protected/matches.$matchId/index'
 
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
@@ -45,10 +45,10 @@ const GamesGameIdIndexRoute = GamesGameIdIndexRouteImport.update({
   path: '/games/$gameId/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProtectedRoomsRoomIdIndexRoute =
-  ProtectedRoomsRoomIdIndexRouteImport.update({
-    id: '/rooms/$roomId/',
-    path: '/rooms/$roomId/',
+const ProtectedMatchesMatchIdIndexRoute =
+  ProtectedMatchesMatchIdIndexRouteImport.update({
+    id: '/matches/$matchId/',
+    path: '/matches/$matchId/',
     getParentRoute: () => ProtectedRoute,
   } as any)
 
@@ -57,14 +57,14 @@ export interface FileRoutesByFullPath {
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
   '/games/$gameId/': typeof GamesGameIdIndexRoute
-  '/rooms/$roomId/': typeof ProtectedRoomsRoomIdIndexRoute
+  '/matches/$matchId/': typeof ProtectedMatchesMatchIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
   '/games/$gameId': typeof GamesGameIdIndexRoute
-  '/rooms/$roomId': typeof ProtectedRoomsRoomIdIndexRoute
+  '/matches/$matchId': typeof ProtectedMatchesMatchIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -74,7 +74,7 @@ export interface FileRoutesById {
   '/_public/login': typeof PublicLoginRoute
   '/_public/register': typeof PublicRegisterRoute
   '/games/$gameId/': typeof GamesGameIdIndexRoute
-  '/_protected/rooms/$roomId/': typeof ProtectedRoomsRoomIdIndexRoute
+  '/_protected/matches/$matchId/': typeof ProtectedMatchesMatchIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -83,9 +83,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/games/$gameId/'
-    | '/rooms/$roomId/'
+    | '/matches/$matchId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/games/$gameId' | '/rooms/$roomId'
+  to: '/' | '/login' | '/register' | '/games/$gameId' | '/matches/$matchId'
   id:
     | '__root__'
     | '/'
@@ -94,7 +94,7 @@ export interface FileRouteTypes {
     | '/_public/login'
     | '/_public/register'
     | '/games/$gameId/'
-    | '/_protected/rooms/$roomId/'
+    | '/_protected/matches/$matchId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,22 +148,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesGameIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_protected/rooms/$roomId/': {
-      id: '/_protected/rooms/$roomId/'
-      path: '/rooms/$roomId'
-      fullPath: '/rooms/$roomId/'
-      preLoaderRoute: typeof ProtectedRoomsRoomIdIndexRouteImport
+    '/_protected/matches/$matchId/': {
+      id: '/_protected/matches/$matchId/'
+      path: '/matches/$matchId'
+      fullPath: '/matches/$matchId/'
+      preLoaderRoute: typeof ProtectedMatchesMatchIdIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
   }
 }
 
 interface ProtectedRouteChildren {
-  ProtectedRoomsRoomIdIndexRoute: typeof ProtectedRoomsRoomIdIndexRoute
+  ProtectedMatchesMatchIdIndexRoute: typeof ProtectedMatchesMatchIdIndexRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
-  ProtectedRoomsRoomIdIndexRoute: ProtectedRoomsRoomIdIndexRoute,
+  ProtectedMatchesMatchIdIndexRoute: ProtectedMatchesMatchIdIndexRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

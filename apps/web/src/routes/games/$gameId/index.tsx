@@ -8,18 +8,18 @@ export const Route = createFileRoute("/games/$gameId/")({
 
 function RouteComponent() {
     const { gameId } = Route.useParams();
-    const [roomsId, setRoomsId] = useState<string[]>([]);
+    const [matchIds, setMatchIds] = useState<string[]>([]);
     const router = useRouter();
 
-    const createRoom = async () => {
+    const createMatch = async () => {
         socket.emit(
-            "room:create",
+            "match:create",
             { gameId, matchType: "CUSTOM" },
-            async ({ roomId }: { roomId: string }) => {
-                if (roomId) {
+            async ({ matchId }: { matchId: string }) => {
+                if (matchId) {
                     await router.navigate({
-                        to: "/rooms/$roomId",
-                        params: { roomId },
+                        to: "/matches/$matchId",
+                        params: { matchId },
                     });
                 }
             },
@@ -27,14 +27,19 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        socket.emit("lobby:rooms-update", { gameId });
-        socket.on("lobby:rooms-update", ({ roomsId }) => setRoomsId(roomsId));
-        socket.on("room:create", ({ roomId }) => {
-            setRoomsId((prevRoomsId: string[]) => [roomId, ...prevRoomsId]);
+        socket.emit("lobby:matches-update", { gameId });
+        socket.on("lobby:matches-update", ({ matchIds }) =>
+            setMatchIds(matchIds),
+        );
+        socket.on("match:created", ({ matchId }) => {
+            setMatchIds((prevMatchesId: string[]) => [
+                matchId,
+                ...prevMatchesId,
+            ]);
         });
-        socket.on("room:leave", ({ roomId }) => {
-            setRoomsId((prevRoomsId: string[]) =>
-                prevRoomsId.filter((id) => id != roomId),
+        socket.on("match:deleted", ({ matchId }) => {
+            setMatchIds((prevMatchIds: string[]) =>
+                prevMatchIds.filter((id) => id != matchId),
             );
         });
     }, []);
@@ -43,15 +48,15 @@ function RouteComponent() {
         <>
             <h1 className="text-xl">Dice Territory</h1>
             <ul>
-                {roomsId.map((roomId: string) => (
-                    <li key={roomId}>
-                        <Link to="/rooms/$roomId" params={{ roomId: roomId }}>
-                            {roomId}
+                {matchIds.map((id: string) => (
+                    <li key={id}>
+                        <Link to="/matches/$matchId" params={{ matchId: id }}>
+                            {id}
                         </Link>
                     </li>
                 ))}
             </ul>
-            <button onClick={createRoom}>Create Room</button>
+            <button onClick={createMatch}>+ New Match</button>
         </>
     );
 }

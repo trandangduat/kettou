@@ -1,18 +1,18 @@
 import { socket } from "#/socket";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { initRoom, type Room } from "shared";
+import { initMatch, type Match } from "shared";
 import { GameBoard } from "./-components/game-board";
 
-export const Route = createFileRoute("/_protected/rooms/$roomId/")({
+export const Route = createFileRoute("/_protected/matches/$matchId/")({
     component: RouteComponent,
 });
 
 function RouteComponent() {
-    const { roomId } = Route.useParams();
+    const { matchId } = Route.useParams();
     const { user } = Route.useRouteContext();
-    const [room, setRoom] = useState<Room>(
-        initRoom({ gameId: "", matchType: "CUSTOM" }),
+    const [match, setMatch] = useState<Match>(
+        initMatch({ gameId: "", matchType: "CUSTOM" }),
     );
     const [waitingStart, setWaitingStart] = useState<boolean>(false);
     const [waitingDice, setWaitingDice] = useState<boolean>(false);
@@ -24,7 +24,7 @@ function RouteComponent() {
         rounds,
         turn,
         endState,
-    } = room;
+    } = match;
     let myTurn: boolean = false;
     let myDiceNumber: number = 0;
     let playerPoints: Record<string, number> = {};
@@ -45,7 +45,7 @@ function RouteComponent() {
         socket.emit(
             "match:start",
             {
-                roomId,
+                matchId,
                 userId: user.id,
             },
             ({ ok }: { ok: boolean }) => {
@@ -58,7 +58,7 @@ function RouteComponent() {
         setWaitingDice(true);
         setTimeout(() => {
             socket.emit("match:roll-dice", {
-                roomId,
+                matchId,
                 userId: user.id,
             });
             setWaitingDice(false);
@@ -66,24 +66,24 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        socket.emit("room:get-info", { roomId }, (room: Room) => {
-            setRoom(room);
+        socket.emit("match:get-info", { matchId }, (match: Match) => {
+            setMatch(match);
         });
-        socket.emit("room:join", {
-            roomId,
+        socket.emit("match:join", {
+            matchId,
             user: {
                 username: user.username,
                 id: user.id,
             },
         });
 
-        socket.on("room:update", (newState) => {
-            setRoom(newState);
+        socket.on("match:updated", (newState) => {
+            setMatch(newState);
         });
 
         return () => {
-            socket.emit("room:leave", {
-                roomId,
+            socket.emit("match:leave", {
+                matchId,
                 user: {
                     username: user.username,
                     id: user.id,
@@ -93,8 +93,8 @@ function RouteComponent() {
     }, []);
     return (
         <>
-            <h1>{roomId}</h1>
-            <p>{room.gameId}</p>
+            <h1>{matchId}</h1>
+            <p>{match.gameId}</p>
             {Array.from({ length: 2 }).map((_, i) => {
                 return (
                     <div key={i}>
@@ -161,10 +161,10 @@ function RouteComponent() {
             <div className="flex flex-col m-auto bg-gray-200">
                 <div>Enemy</div>
                 <GameBoard
-                    room={room}
+                    match={match}
                     myDiceNumber={myDiceNumber}
                     myTurn={myTurn}
-                    setRoom={setRoom}
+                    setMatch={setMatch}
                 />
                 <div>You</div>
             </div>

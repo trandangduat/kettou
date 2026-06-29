@@ -23,14 +23,14 @@ export interface EndGameState {
     playerPoints: Record<string, number>;
 }
 
-export type RoomStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
+export type MatchStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
 export type MatchType = "CUSTOM" | "RANKED";
 
-export interface Room {
+export interface Match {
     id: string;
     gameId: string;
     matchType: MatchType;
-    status: RoomStatus;
+    status: MatchStatus;
     players: Player[];
     roundNumber: number;
     rounds: Round[];
@@ -39,13 +39,13 @@ export interface Room {
     endState: EndGameState | null;
 }
 
-export const initRoom = ({
+export const initMatch = ({
     gameId,
     matchType,
 }: {
     gameId: string;
     matchType: MatchType;
-}): Room => ({
+}): Match => ({
     id: uuidv6(),
     gameId,
     matchType,
@@ -58,39 +58,47 @@ export const initRoom = ({
     endState: null,
 });
 
-export const debugRoom = (room: Room) => {
-    console.log("room:", JSON.stringify(room, null, 2));
+export const debugMatch = (m: Match) => {
+    console.log("match:", JSON.stringify(m, null, 2));
 };
 
-export const updateRoomReadyStatus = ({ room }: { room: Room }): Room => {
-    if (room.players.length === 2) {
-        room = {
-            ...room,
+export const updateMatchReadyStatus = ({
+    match: match,
+}: {
+    match: Match;
+}): Match => {
+    if (match.players.length === 2) {
+        match = {
+            ...match,
             status: "READY",
         };
     } else {
-        room = {
-            ...room,
+        match = {
+            ...match,
             status: "WAITING",
         };
     }
-    return room;
+    return match;
 };
 
-export const moveOnToNextRound = ({ room }: { room: Room }): Room => {
-    const totalPlayers = room.players.length;
-    if (room.roundNumber > 0) {
-        room = {
-            ...room,
-            roundNumber: room.roundNumber + 1,
-            turn: (room.turn + 1) % totalPlayers,
+export const moveOnToNextRound = ({
+    match: match,
+}: {
+    match: Match;
+}): Match => {
+    const totalPlayers = match.players.length;
+    if (match.roundNumber > 0) {
+        match = {
+            ...match,
+            roundNumber: match.roundNumber + 1,
+            turn: (match.turn + 1) % totalPlayers,
         };
     }
-    return room;
+    return match;
 };
 
-export const endMatch = ({ room }: { room: Room }): Room => {
-    const { rounds } = room;
+export const endMatch = ({ match: match }: { match: Match }): Match => {
+    const { rounds } = match;
     const points: Record<string, number> = {};
 
     let highestScore = 0;
@@ -105,25 +113,31 @@ export const endMatch = ({ room }: { room: Room }): Room => {
         ([playerId, score]) => score === highestScore,
     );
 
-    room = {
-        ...room,
+    match = {
+        ...match,
         status: "ENDED",
         endState: {
             winnerUserId: winners.length > 1 ? null : winners[0][0],
             playerPoints: points,
         },
     };
-    return room;
+    return match;
 };
 
-export const addMove = ({ room, move }: { room: Room; move: Move }): Room => {
-    const { roundNumber, rounds } = room;
+export const addMove = ({
+    match,
+    move,
+}: {
+    match: Match;
+    move: Move;
+}): Match => {
+    const { roundNumber, rounds } = match;
     const newRounds = [...rounds];
     newRounds[roundNumber - 1].move = move;
-    room = {
-        ...room,
+    match = {
+        ...match,
         rounds: newRounds,
     };
-    room = moveOnToNextRound({ room });
-    return room;
+    match = moveOnToNextRound({ match: match });
+    return match;
 };

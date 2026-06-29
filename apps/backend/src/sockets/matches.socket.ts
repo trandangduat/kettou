@@ -1,101 +1,187 @@
 import {
     addMove,
+    debugMatch,
     endMatch,
+    Match,
     moveOnToNextRound,
+    updateMatchReadyStatus,
     type Move,
-    type Room,
 } from "shared";
-import { saveEndedMatch, createMatch } from "../services/matches.services.js";
+import {
+    createMatch,
+    deleteMatch,
+    getMatchKey,
+    getMatchState,
+    saveEndedMatch,
+    saveMatch,
+    setMatchState,
+} from "../services/matches.services.js";
 import { getRandomNumber } from "../utils.js";
-import { saveAndBroadcastRoomState } from "./room-state.js";
 import type { SocketHandlerContext } from "./types.js";
-import { getRoomState } from "../services/rooms.services.js";
+import { Server } from "socket.io";
 
 const checkValidMove = ({
     currentMove,
     userId,
-    room,
+    match,
 }: {
     currentMove: Move;
     userId: string;
-    room: Room;
+    match: Match;
 }): boolean => {
     return true;
 };
 
+export const saveAndBroadcastMatchState = async ({
+    io,
+    match,
+}: {
+    io: Server;
+    match: Match;
+}) => {
+    const matchId = match.id;
+    io.to(getMatchKey(matchId)).emit("match:updated", match);
+    debugMatch(match);
+    await setMatchState({ matchId: matchId, matchState: match });
+};
+
 export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
-    const startMatch = async ({ roomId, userId }, ack) => {
+    const startMatch = async ({ matchId, userId }, ack) => {
         console.log("START MATCH");
-        let room = await getRoomState({ roomId });
+        let match = await getMatchState({ matchId });
         let startedAt = Date.now();
         try {
-            if (room.status === "READY" && userId === room.players[0].userId) {
-                room = {
-                    ...room,
+            if (
+                match.status === "READY" &&
+                userId === match.players[0].userId
+            ) {
+                match = {
+                    ...match,
                     roundNumber: 1,
                     status: "PLAYING",
                     turn: getRandomNumber(2),
                 };
                 ack({ ok: true });
             }
-            await saveAndBroadcastRoomState({ io, room });
-            // create the match in database
-            createMatch({ room, type: room.matchType, startedAt });
+            await saveAndBroadcastMatchState({ io, match });
+            // save the match in database
+            saveMatch({ match, type: match.matchType, startedAt });
         } catch (err) {}
     };
 
-    const rollDice = async ({ roomId, userId }) => {
+    const rollDice = async ({ matchId, userId }) => {
         console.log("ROLL DICE");
-        let room = await getRoomState({ roomId });
+        let match = await getMatchState({ matchId });
         try {
-            room.rounds.push({
+            match.rounds.push({
                 move: null,
                 diceNumber: getRandomNumber(6) + 1,
                 playerId: userId,
             });
-            await saveAndBroadcastRoomState({ io, room });
+            await saveAndBroadcastMatchState({ io, match });
         } catch (err) {}
     };
 
-    const finishMove = async ({ roomId, userId, move }) => {
+    const finishMove = async ({ matchId, userId, move }) => {
         console.log("FINISH MOVE");
-        let room = await getRoomState({ roomId });
+        let match = await getMatchState({ matchId });
         try {
-            const { roundNumber } = room;
+            const { roundNumber } = match;
             if (
                 roundNumber > 0 &&
                 checkValidMove({
                     currentMove: move,
                     userId,
-                    room,
+                    match: match,
                 })
             ) {
-                room = addMove({ room, move });
+                match = addMove({ match, move });
             } else {
                 console.log("Not a valid move, move again!");
             }
 
-            await saveAndBroadcastRoomState({ io, room });
+            await saveAndBroadcastMatchState({ io, match });
         } catch (err) {}
     };
 
-    const cannotMove = async ({ roomId, userId }) => {
+    const cannotMove = async ({ matchId, userId }) => {
         console.log("CANNOT MOVE");
-        let room = await getRoomState({ roomId });
+        let match = await getMatchState({ matchId });
         try {
-            const { roundNumber } = room;
+            const { roundNumber } = match;
 
             // if the other player could not move as well
-            if (roundNumber > 1 && !room.rounds[roundNumber - 2].move) {
+            if (roundNumber > 1 && !match.rounds[roundNumber - 2].move) {
                 let endedAt = Date.now();
-                room = endMatch({ room });
+                match = endMatch({ match });
                 // update the match in database
-                saveEndedMatch({ room, endedAt });
+                saveEndedMatch({ match, endedAt });
             } else {
-                room = moveOnToNextRound({ room });
+                match = moveOnToNextRound({ match });
             }
 
-            await saveAndBroadcastRoomState({ io, room });
+            await saveAndBroadcastMatchState({ io, match });
+        } catch (err) {}
+    };
+
+    const createNewMatch = async ({ gameId, matchType }, ack) => {
+        try {
+            const match = await createMatch({ gameId, matchType });
+            io.to(`lobby:${gameId}`).emit("match:created", {
+                matchId: match.id,
+            });
+            ack({ matchId: match.id });
+        } catch (err) {
+            ack({ matchId: null });
+        }
+    };
+
+    const joinMatch = async ({ matchId, user }) => {
+        console.log("JOIN MATCH");
+        socket.join(getMatchKey(matchId));
+        try {
+            let match = await getMatchState({ matchId });
+            if (match.players.find((player) => player.userId === user.id)) {
+                return;
+            }
+            match.players.push({
+                username: user.username,
+                userId: user.id,
+                elo: user.elo,
+            });
+            match = updateMatchReadyStatus({ match });
+            await saveAndBroadcastMatchState({ io, match });
+        } catch (err) {}
+    };
+
+    const leaveMatch = async ({ matchId, user }) => {
+        console.log("LEAVE MATCH");
+        socket.leave(getMatchKey(matchId));
+        try {
+            let match = await getMatchState({ matchId });
+            const { gameId, players } = match;
+            const leftPlayerId = players.findIndex((p) => p.userId === user.id);
+            if (leftPlayerId >= 0) {
+                players.splice(leftPlayerId, 1);
+            }
+            // no players left
+            if (players.length === 0) {
+                await deleteMatch({ matchId, gameId });
+                io.to(`lobby:${gameId}`).emit("match:deleted", {
+                    matchId,
+                });
+                return;
+            }
+            match = updateMatchReadyStatus({ match });
+            await saveAndBroadcastMatchState({ io, match });
+        } catch (err) {}
+    };
+
+    const getMatchInfo = async ({ matchId }, ack) => {
+        console.log("GET MATCH INFO");
+        try {
+            let match = await getMatchState({ matchId });
+            ack(match);
         } catch (err) {}
     };
 
@@ -103,4 +189,8 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
     socket.on("match:roll-dice", rollDice);
     socket.on("match:finish-move", finishMove);
     socket.on("match:cannot-move", cannotMove);
+    socket.on("match:get-info", getMatchInfo);
+    socket.on("match:create", createNewMatch);
+    socket.on("match:join", joinMatch);
+    socket.on("match:leave", leaveMatch);
 };

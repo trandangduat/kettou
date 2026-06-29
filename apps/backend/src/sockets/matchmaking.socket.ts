@@ -1,18 +1,18 @@
-import { updateRoomReadyStatus } from "shared";
+import { updateMatchReadyStatus } from "shared";
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
 import { logger } from "../logger.js";
 import {
     addToMatchmakingQueue,
-    getMatchesInMmQueue,
+    getPairsInMmQueue,
     removeFromMatchmakingQueue,
-    removeMatchesFromMmQueue,
+    removePairsFromMmQueue,
 } from "../services/matchmaking.services.js";
 import {
-    createRoom,
-    getRoomKey,
-    setRoomState,
-} from "../services/rooms.services.js";
+    createMatch,
+    getMatchKey,
+    setMatchState,
+} from "../services/matches.services.js";
 
 const getMatchmakingKey = (gameId: string) => {
     return `matchmaking:${gameId}`;
@@ -25,24 +25,24 @@ const processMatchmakingQueue = async ({
     io: Server;
     gameId: string;
 }) => {
-    const matches = await getMatchesInMmQueue({ gameId });
+    const pairs = await getPairsInMmQueue({ gameId });
 
-    for (let match of matches) {
-        logger.info(match, "MATCHED");
-        const { playerA, playerB } = match;
-        let room = await createRoom({ gameId, matchType: "RANKED" });
-        room.players.push({
+    for (let pair of pairs) {
+        logger.info(pair, "MATCHED: ");
+        const { playerA, playerB } = pair;
+        let match = await createMatch({ gameId, matchType: "RANKED" });
+        match.players.push({
             username: playerA.username,
             userId: playerA.userId,
             elo: playerA.elo,
         });
-        room.players.push({
+        match.players.push({
             username: playerB.username,
             userId: playerB.userId,
             elo: playerB.elo,
         });
-        room = updateRoomReadyStatus({ room });
-        await setRoomState({ roomId: room.id, roomState: room });
+        match = updateMatchReadyStatus({ match });
+        await setMatchState({ matchId: match.id, matchState: match });
 
         const socketA = io.sockets.sockets.get(playerA.socketId);
         const socketB = io.sockets.sockets.get(playerB.socketId);
@@ -51,14 +51,14 @@ const processMatchmakingQueue = async ({
         socketA?.leave(mmKey);
         socketB?.leave(mmKey);
 
-        const roomKey = getRoomKey(room.id);
-        socketA?.join(roomKey);
-        socketB?.join(roomKey);
+        const matchKey = getMatchKey(match.id);
+        socketA?.join(matchKey);
+        socketB?.join(matchKey);
 
-        io.to(roomKey).emit("matchmaking:matched", { room });
+        io.to(matchKey).emit("matchmaking:found", { match });
     }
 
-    await removeMatchesFromMmQueue({ gameId, matches });
+    await removePairsFromMmQueue({ gameId, pairs });
 };
 
 export const startMatchMakingWorker = (io: Server) => {
@@ -74,7 +74,7 @@ export const startMatchMakingWorker = (io: Server) => {
         } finally {
             isProcessing = false;
         }
-    }, 8000000);
+    }, 2000);
 };
 
 export const setUpMatchmakingSocket = ({

@@ -3,7 +3,7 @@ import { socket } from "#/socket";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import type { Room } from "shared";
+import type { Match } from "shared";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -54,12 +54,12 @@ function Home() {
     };
 
     useEffect(() => {
-        socket.on("matchmaking:matched", async ({ room }: { room: Room }) => {
-            console.log("Matched Found", room);
+        socket.on("matchmaking:found", async ({ match }: { match: Match }) => {
+            console.log("Matched Found", match);
             setIsInMm(false);
             await router.navigate({
-                to: "/rooms/$roomId",
-                params: { roomId: room.id },
+                to: "/matches/$matchId",
+                params: { matchId: match.id },
             });
         });
     }, []);

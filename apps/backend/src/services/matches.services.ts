@@ -1,17 +1,97 @@
-import { Round, Player, Room, MatchType } from "shared";
 import db from "../db.js";
 import { getNewElo } from "../logics/elo.logic.js";
+import { initMatch, Match, MatchType, Round, Player } from "shared";
+import { redis } from "../redis.js";
 
-export const createMatch = ({
-    room,
+export const getLobbyKey = (id: string) => {
+    return `game:${id}:lobby`;
+};
+
+export const getMatchKey = (id: string) => {
+    return `match:${id}`;
+};
+
+export const getMatchState = async ({
+    matchId,
+}: {
+    matchId: string;
+}): Promise<Match | null> => {
+    const data = await redis.get(getMatchKey(matchId));
+    if (!data) {
+        return null;
+    }
+    return JSON.parse(data.toString()) as Match;
+};
+
+export const setMatchState = async ({
+    matchId,
+    matchState,
+}: {
+    matchId: string;
+    matchState: Match;
+}) => {
+    await redis.set(getMatchKey(matchId), JSON.stringify(matchState));
+};
+
+export const deleteMatch = async ({
+    matchId,
+    gameId,
+}: {
+    matchId: string;
+    gameId: string;
+}) => {
+    const matchKey = getMatchKey(matchId);
+    const lobbyKey = getLobbyKey(gameId);
+    const redisChain = redis.multi();
+    redisChain.zRem(lobbyKey, matchId);
+    redisChain.del(matchKey);
+    await redisChain.exec();
+};
+
+export const createMatch = async ({
+    gameId,
+    matchType,
+}: {
+    gameId: string;
+    matchType: MatchType;
+}): Promise<Match> => {
+    const match = initMatch({ gameId, matchType });
+    const matchKey = getMatchKey(match.id);
+    const lobbyKey = getLobbyKey(gameId);
+    const createdAt = Date.now();
+    const redisChain = redis.multi();
+    redisChain.set(matchKey, JSON.stringify(match));
+    if (matchType === "CUSTOM") {
+        redisChain.zAdd(lobbyKey, [
+            {
+                score: createdAt,
+                value: match.id,
+            },
+        ]);
+    }
+    await redisChain.exec();
+    return match;
+};
+
+export const getAllMatchesInLobby = async ({
+    gameId,
+}: {
+    gameId: string;
+}): Promise<string[]> => {
+    const lobbyKey = getLobbyKey(gameId);
+    const matchesId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
+    return matchesId.map((matchId) => matchId.toString());
+};
+export const saveMatch = ({
+    match,
     type,
     startedAt,
 }: {
-    room: Room;
+    match: Match;
     type: MatchType;
     startedAt: number;
 }) => {
-    const { id, gameId, players } = room;
+    const { id, gameId, players } = match;
 
     // create match
     db.prepare(
@@ -31,13 +111,13 @@ export const createMatch = ({
 };
 
 export const saveEndedMatch = ({
-    room,
+    match,
     endedAt,
 }: {
-    room: Room;
+    match: Match;
     endedAt: number;
 }) => {
-    const { id, matchType, status, endState, rounds, players } = room;
+    const { id, matchType, status, endState, rounds, players } = match;
     const { winnerUserId, playerPoints } = endState;
 
     // update match status
