@@ -25,7 +25,7 @@ type Player struct {
 }
 
 type Round struct {
-	Moves      []Move `json:"moves"`
+	Move       Move   `json:"move"`
 	DiceNumber int    `json:"diceNumber"`
 	PlayerId   string `json:"playerId"`
 }

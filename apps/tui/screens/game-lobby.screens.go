@@ -1,6 +1,7 @@
 package screens
 
 import (
+	"kettou/screens/match"
 	"kettou/services"
 	"kettou/types"
 	"strings"
@@ -46,7 +47,7 @@ func (s GameLobbyScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if numMatches > 0 {
 				cmd = func() tea.Msg {
-					return types.PushScreenMsg(InitMatchScreen(
+					return types.PushScreenMsg(match.InitMatchScreen(
 						s.matchIds[s.focusedMatch],
 						s.currentUser,
 					))

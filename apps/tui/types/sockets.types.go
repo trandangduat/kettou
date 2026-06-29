@@ -30,3 +30,9 @@ type EmitMatchAction struct {
 	MatchId string `json:"matchId"`
 	UserId  string `json:"userId"`
 }
+
+type EmitMatchMove struct {
+	MatchId string `json:"matchId"`
+	UserId  string `json:"userId"`
+	Move    Move   `json:"move"`
+}

@@ -121,7 +121,7 @@ func (form FormModel) View() tea.View {
 	numInputs := len(form.inputs)
 	var s strings.Builder
 	for i := range numInputs {
-		s.WriteString(form.inputs[i].Model.Placeholder)
+		s.WriteString(form.inputs[i].Label)
 		s.WriteRune('\n')
 		s.WriteString(form.inputs[i].Model.View())
 		s.WriteRune('\n')

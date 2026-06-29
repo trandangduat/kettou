@@ -113,3 +113,5 @@ let room: Room = {
 
 room = endGame({ roomState: room });
 ```
+- Convert Room -> Match
+- Why need room:get-info when user navigate to the match web page?

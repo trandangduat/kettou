@@ -35,7 +35,6 @@ export interface Match {
     roundNumber: number;
     rounds: Round[];
     turn: number;
-    waitingQueues: Player[];
     endState: EndGameState | null;
 }
 
@@ -54,7 +53,6 @@ export const initMatch = ({
     roundNumber: 0,
     rounds: [],
     turn: 0,
-    waitingQueues: [],
     endState: null,
 });
 
