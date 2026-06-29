@@ -26,42 +26,42 @@ func ConnectSocket() {
 		SocketChan <- types.SocketEventMsg{Event: "connect"}
 	})
 
-	client.On("lobby:rooms-update", func(data ...any) {
+	client.On("lobby:matches-update", func(data ...any) {
 		if len(data) == 0 {
 			return
 		}
 		SocketChan <- types.SocketEventMsg{
-			Event: "lobby:rooms-update",
+			Event: "lobby:matches-update",
 			Data:  handleSocketEventData[types.LobbyUpdate](data[0]),
 		}
 	})
 
-	client.On("room:create", func(data ...any) {
+	client.On("match:created", func(data ...any) {
 		if len(data) == 0 {
 			return
 		}
 		SocketChan <- types.SocketEventMsg{
-			Event: "room:create",
-			Data:  handleSocketEventData[types.RoomCreate](data[0]),
+			Event: "match:created",
+			Data:  handleSocketEventData[types.MatchCreated](data[0]),
 		}
 	})
 
-	client.On("room:leave", func(data ...any) {
+	client.On("match:deleted", func(data ...any) {
 		if len(data) == 0 {
 			return
 		}
 		SocketChan <- types.SocketEventMsg{
-			Event: "room:leave",
-			Data:  handleSocketEventData[types.RoomLeave](data[0]),
+			Event: "match:deleted",
+			Data:  handleSocketEventData[types.MatchDeleted](data[0]),
 		}
 	})
 
-	client.On("room:update", func(data ...any) {
+	client.On("match:updated", func(data ...any) {
 		if len(data) == 0 {
 			return
 		}
 		SocketChan <- types.SocketEventMsg{
-			Event: "room:update",
+			Event: "match:updated",
 			Data:  handleSocketEventData[types.Match](data[0]),
 		}
 	})

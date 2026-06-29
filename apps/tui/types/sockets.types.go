@@ -1,32 +1,32 @@
 package types
 
 type LobbyUpdate struct {
-	RoomsId []string `json:"roomsId"`
+	MatchIds []string `json:"matchIds"`
 }
 
-type RoomCreate struct {
-	RoomId string `json:"roomId"`
+type MatchCreated struct {
+	MatchId string `json:"matchId"`
 }
 
-type RoomLeave struct {
-	RoomId string `json:"roomId"`
+type MatchDeleted struct {
+	MatchId string `json:"matchId"`
 }
 
 type EmitLobbyJoin struct {
 	GameId string `json:"gameId"`
 }
 
-type EmitRoomJoin struct {
-	RoomId string            `json:"roomId"`
-	User   map[string]string `json:"user"`
+type EmitMatchJoin struct {
+	MatchId string            `json:"matchId"`
+	User    map[string]string `json:"user"`
 }
 
-type EmitRoomLeave struct {
-	RoomId string            `json:"roomId"`
-	User   map[string]string `json:"user"`
+type EmitMatchLeave struct {
+	MatchId string            `json:"matchId"`
+	User    map[string]string `json:"user"`
 }
 
 type EmitMatchAction struct {
-	RoomId string `json:"roomId"`
-	UserId string `json:"userId"`
+	MatchId string `json:"matchId"`
+	UserId  string `json:"userId"`
 }

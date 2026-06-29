@@ -1,15 +1,15 @@
 package types
 
 type Match struct {
-	Id          string     `json:"id"`
-	GameID      string     `json:"gameId"`
-	MatchType   MatchType  `json:"matchType"`
-	Status      RoomStatus `json:"status"`
-	Players     []Player   `json:"players"`
-	RoundNumber int        `json:"roundNumber"`
-	Rounds      []Round    `json:"rounds"`
-	Turn        int        `json:"turn"`
-	EndState    EndState   `json:"endState"`
+	Id          string      `json:"id"`
+	GameID      string      `json:"gameId"`
+	MatchType   MatchType   `json:"matchType"`
+	Status      MatchStatus `json:"status"`
+	Players     []Player    `json:"players"`
+	RoundNumber int         `json:"roundNumber"`
+	Rounds      []Round     `json:"rounds"`
+	Turn        int         `json:"turn"`
+	EndState    EndState    `json:"endState"`
 }
 
 type Move struct {
@@ -35,14 +35,14 @@ type EndState struct {
 	PlayerPoints map[string]int `json:"playerPoints"`
 }
 
-type RoomStatus string
+type MatchStatus string
 type MatchType string
 
 const (
-	RoomStatusWaiting RoomStatus = "WAITING"
-	RoomStatusReady   RoomStatus = "READY"
-	RoomStatusPlaying RoomStatus = "PLAYING"
-	RoomStatusEnded   RoomStatus = "ENDED"
+	MatchStatusWaiting MatchStatus = "WAITING"
+	MatchStatusReady   MatchStatus = "READY"
+	MatchStatusPlaying MatchStatus = "PLAYING"
+	MatchStatusEnded   MatchStatus = "ENDED"
 )
 
 const (

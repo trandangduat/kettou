@@ -74,7 +74,7 @@ export const startMatchMakingWorker = (io: Server) => {
         } finally {
             isProcessing = false;
         }
-    }, 2000);
+    }, 2000000);
 };
 
 export const setUpMatchmakingSocket = ({

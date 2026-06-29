@@ -33,8 +33,8 @@ func InitMatchScreen(matchId string, currentUser types.User) MatchScreen {
 
 func updateMatchScreen(s MatchScreen, match types.Match) MatchScreen {
 	s.match = match
-	s.isPlaying = s.match.Status == types.RoomStatusPlaying
-	s.isEnded = s.match.Status == types.RoomStatusEnded
+	s.isPlaying = s.match.Status == types.MatchStatusPlaying
+	s.isEnded = s.match.Status == types.MatchStatusEnded
 	s.myTurn = false
 	s.myDiceNumber = 0
 	s.isAWinner = false
@@ -56,8 +56,8 @@ func (s MatchScreen) Init() tea.Cmd {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
-	cmd = services.EmitEventCmd("room:join", types.EmitRoomJoin{
-		RoomId: s.match.Id,
+	cmd = services.EmitEventCmd("match:join", types.EmitMatchJoin{
+		MatchId: s.match.Id,
 		User: map[string]string{
 			"id":       s.currentUser.Id,
 			"username": s.currentUser.Username,
@@ -79,8 +79,8 @@ func (s MatchScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd = services.EmitEventCmd(
 					"match:start",
 					types.EmitMatchAction{
-						RoomId: s.match.Id,
-						UserId: s.currentUser.Id,
+						MatchId: s.match.Id,
+						UserId:  s.currentUser.Id,
 					},
 				)
 				cmds = append(cmds, cmd)
@@ -91,17 +91,17 @@ func (s MatchScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd = services.EmitEventCmd(
 					"match:roll-dice",
 					types.EmitMatchAction{
-						RoomId: s.match.Id,
-						UserId: s.currentUser.Id,
+						MatchId: s.match.Id,
+						UserId:  s.currentUser.Id,
 					},
 				)
 				cmds = append(cmds, cmd)
 			}
 		case "ctrl+p":
 			cmd = services.EmitEventCmd(
-				"room:leave",
-				types.EmitRoomLeave{
-					RoomId: s.match.Id,
+				"match:leave",
+				types.EmitMatchLeave{
+					MatchId: s.match.Id,
 					User: map[string]string{
 						"id":       s.currentUser.Id,
 						"username": s.currentUser.Username,
@@ -117,7 +117,7 @@ func (s MatchScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case types.SocketEventMsg:
 		switch msg.Event {
-		case "room:update":
+		case "match:updated":
 			s = updateMatchScreen(s, msg.Data.(types.Match))
 		}
 	}
@@ -185,7 +185,7 @@ func (s MatchScreen) View() tea.View {
 
 	var footer string
 
-	if s.match.Status == types.RoomStatusReady && s.currentUser.Id == s.match.Players[0].UserId {
+	if s.match.Status == types.MatchStatusReady && s.currentUser.Id == s.match.Players[0].UserId {
 		keyStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#0087ff")).
 			Bold(true).
