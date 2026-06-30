@@ -1,9 +1,9 @@
 package match
 
 import (
+	. "kettou/screens/match/games-logic"
 	"kettou/services"
 	"kettou/types"
-	"log"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -15,17 +15,12 @@ func updateMatchScreen(s MatchScreen, match types.Match) MatchScreen {
 	s.myTurn = false
 	s.myDiceNumber = 0
 	s.isAWinner = false
-	if s.isPlaying {
-		s.myTurn = s.currentUser.Id == s.match.Players[s.match.Turn].UserId
-	}
-	if s.myTurn && s.match.RoundNumber > 0 && len(s.match.Rounds) == s.match.RoundNumber {
-		s.myDiceNumber = s.match.Rounds[s.match.RoundNumber-1].DiceNumber
-	}
-	if s.isEnded {
-		s.playerPoints = s.match.EndState.PlayerPoints
-		s.isAWinner = s.currentUser.Id == s.match.EndState.WinnerUserId
-	}
+	s.noValidMoves = false
 	if s.match.Rounds != nil {
+		// putting the square in the bottom edge of the board is always valid
+		for j := 1; j <= BOARD_COLS; j++ {
+			s.board[0][j] = 1
+		}
 		for k := range s.match.Rounds {
 			round := s.match.Rounds[k]
 			isYours := round.PlayerId == s.currentUser.Id
@@ -50,7 +45,19 @@ func updateMatchScreen(s MatchScreen, match types.Match) MatchScreen {
 			}
 		}
 	}
-	log.Printf("---@UPDATE: %+v", s)
+	if s.isPlaying {
+		s.myTurn = s.currentUser.Id == s.match.Players[s.match.Turn].UserId
+	}
+	if s.myTurn && s.match.RoundNumber > 0 && len(s.match.Rounds) == s.match.RoundNumber {
+		s.myDiceNumber = s.match.Rounds[s.match.RoundNumber-1].DiceNumber
+	}
+	if s.myTurn && s.myDiceNumber > 0 {
+		s.validMoveBoard, s.noValidMoves = CalcValidMoveMatrix(s.board, s.myDiceNumber)
+	}
+	if s.isEnded {
+		s.playerPoints = s.match.EndState.PlayerPoints
+		s.isAWinner = s.currentUser.Id == s.match.EndState.WinnerUserId
+	}
 	return s
 }
 
@@ -77,7 +84,6 @@ func (s MatchScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "r":
 			if s.myTurn && s.myDiceNumber == 0 {
-				log.Print("what the hell")
 				cmd = services.EmitEventCmd(
 					"match:roll-dice",
 					types.EmitMatchAction{
@@ -90,20 +96,23 @@ func (s MatchScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if s.myTurn && s.myDiceNumber > 0 {
 				moveStr := s.moveInput.Value()
-				cmd = services.EmitEventCmd(
-					"match:finish-move",
-					types.EmitMatchMove{
-						MatchId: s.match.Id,
-						UserId:  s.currentUser.Id,
-						Move: types.Move{
-							R:   int(moveStr[0]-'a') + 1,
-							C:   int(moveStr[1]-'1') + 1,
-							Len: s.myDiceNumber,
+				move := types.Move{
+					R:   int(moveStr[0]-'a') + 1,
+					C:   int(moveStr[1]-'1') + 1,
+					Len: s.myDiceNumber,
+				}
+				if s.validMoveBoard[move.R][move.C] {
+					cmd = services.EmitEventCmd(
+						"match:finish-move",
+						types.EmitMatchMove{
+							MatchId: s.match.Id,
+							UserId:  s.currentUser.Id,
+							Move:    move,
 						},
-					},
-				)
-				cmds = append(cmds, cmd)
-				s.moveInput.Reset()
+					)
+					cmds = append(cmds, cmd)
+					s.moveInput.Reset()
+				}
 			}
 		case "ctrl+p":
 			cmd = services.EmitEventCmd(
@@ -127,6 +136,16 @@ func (s MatchScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Event {
 		case "match:updated":
 			s = updateMatchScreen(s, msg.Data.(types.Match))
+			if s.noValidMoves {
+				cmd = services.EmitEventCmd(
+					"match:cannot-move",
+					types.EmitMatchAction{
+						MatchId: s.match.Id,
+						UserId:  s.currentUser.Id,
+					},
+				)
+				cmds = append(cmds, cmd)
+			}
 		}
 	}
 	return s, tea.Batch(cmds...)

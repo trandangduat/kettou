@@ -1,6 +1,7 @@
 package match
 
 import (
+	. "kettou/screens/match/games-logic"
 	"kettou/services"
 	"kettou/types"
 
@@ -8,20 +9,19 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-const BOARD_ROWS = 8
-const BOARD_COLS = 8
-
 type MatchScreen struct {
-	match        types.Match
-	currentUser  types.User
-	isPlaying    bool
-	isEnded      bool
-	myTurn       bool
-	myDiceNumber int
-	isAWinner    bool
-	board        [BOARD_ROWS + 2][BOARD_COLS + 2]int
-	playerPoints map[string]int
-	moveInput    textinput.Model
+	match          types.Match
+	currentUser    types.User
+	isPlaying      bool
+	isEnded        bool
+	myTurn         bool
+	myDiceNumber   int
+	isAWinner      bool
+	board          [BOARD_ROWS + BOARD_XTRA][BOARD_COLS + BOARD_XTRA]int
+	validMoveBoard [BOARD_ROWS + BOARD_XTRA][BOARD_COLS + BOARD_XTRA]bool
+	noValidMoves   bool
+	playerPoints   map[string]int
+	moveInput      textinput.Model
 }
 
 func InitMatchScreen(matchId string, currentUser types.User) MatchScreen {

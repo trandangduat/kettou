@@ -1,6 +1,7 @@
 package match
 
 import (
+	. "kettou/screens/match/games-logic"
 	"kettou/theme"
 	"kettou/types"
 	"strconv"
