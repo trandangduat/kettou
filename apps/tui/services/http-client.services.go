@@ -10,16 +10,20 @@ import (
 
 var Client *http.Client
 var jar *jujuCookiejar.Jar
+var configDir string
 
 func init() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		homeDir = "."
 	}
-	configDir := filepath.Join(homeDir, ".kettou")
+	configDir = filepath.Join(homeDir, ".kettou")
 	_ = os.MkdirAll(configDir, 0755)
+	SwitchSession("cookies.json")
+}
 
-	jarFile := filepath.Join(configDir, "cookies.json")
+func SwitchSession(cookieFile string) {
+	jarFile := filepath.Join(configDir, cookieFile)
 
 	var jarErr error
 	jar, jarErr = jujuCookiejar.New(&jujuCookiejar.Options{
