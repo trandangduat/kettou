@@ -10,29 +10,37 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-func Login(u types.LoginRequest) tea.Cmd {
+func Login(u types.LoginRequest) (string, error) {
+	jsonData, err := json.Marshal(u)
+	if err != nil {
+		return "Login failed", err
+	}
+	res, err := Client.Post(
+		"http://localhost:3000/login", "application/json",
+		bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "Login failed", err
+	}
+	defer res.Body.Close()
+
+	bodyBytes, err := io.ReadAll(res.Body)
+	bodyPayload := string(bodyBytes)
+
+	log.Printf("Response Status: %v\n", res.Status)
+	log.Printf("Login response: %+v", bodyPayload)
+
+	_ = SaveCookies()
+
+	return bodyPayload, nil
+}
+
+func LoginCmd(u types.LoginRequest) tea.Cmd {
 	return func() tea.Msg {
-		jsonData, err := json.Marshal(u)
+		res, err := Login(u)
 		if err != nil {
 			return types.ErrMsg(err)
 		}
-		res, err := Client.Post(
-			"http://localhost:3000/login", "application/json",
-			bytes.NewBuffer(jsonData))
-		if err != nil {
-			return types.ErrMsg(err)
-		}
-		defer res.Body.Close()
-
-		bodyBytes, err := io.ReadAll(res.Body)
-		bodyPayload := string(bodyBytes)
-
-		log.Printf("Response Status: %v\n", res.Status)
-		log.Printf("Login response: %+v", bodyPayload)
-
-		_ = SaveCookies()
-
-		return types.LoggedInMsg("login success")
+		return types.LoggedInMsg(res)
 	}
 }
 

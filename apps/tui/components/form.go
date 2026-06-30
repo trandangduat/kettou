@@ -102,7 +102,7 @@ func (form FormModel) Update(msg tea.Msg) (FormModel, tea.Cmd) {
 					Username: formValues["username"],
 					Password: formValues["password"],
 				}
-				return form, services.Login(user)
+				return form, services.LoginCmd(user)
 			}
 		}
 
