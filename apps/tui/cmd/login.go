@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"kettou/services"
+	"io"
+	"kettou/cmd/daemon"
 	"kettou/types"
 
 	"github.com/spf13/cobra"
@@ -12,28 +15,47 @@ var username string
 var password string
 
 var loginCmd = &cobra.Command{
-    Use:   "login",
-    Short: "Login to Kettou",
-    Run: func(cmd *cobra.Command, args []string) {
-    	res, err := services.Login(types.LoginRequest{
-    		Username: username,
-    		Password: password,
-    	})
-    	if err != nil {
-    		fmt.Println(err)
-    		return
-    	}
+	Use:   "login",
+	Short: "Login to Kettou",
+	Run: func(cmd *cobra.Command, args []string) {
+		client := daemon.NewHttpClient()
+		payload := types.LoginRequest{
+			Username: username,
+			Password: password,
+		}
+		bodyData, err := json.Marshal(payload)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
-        fmt.Println(res)
-    },
+		res, err := client.Post("http://daemon/login", "application/json", bytes.NewReader(bodyData))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode != 200 {
+			fmt.Println("Status code:", res.StatusCode)
+			return
+		}
+
+		resBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("Daemon response:", string(resBytes))
+	},
 }
 
 func init() {
-    cliCmd.AddCommand(loginCmd)
+	cliCmd.AddCommand(loginCmd)
 
-    loginCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
-    loginCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
+	loginCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
+	loginCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
 
-    loginCmd.MarkFlagRequired("username")
-    loginCmd.MarkFlagRequired("password")
+	loginCmd.MarkFlagRequired("username")
+	loginCmd.MarkFlagRequired("password")
 }
