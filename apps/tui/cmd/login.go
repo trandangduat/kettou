@@ -29,7 +29,7 @@ var loginCmd = &cobra.Command{
 			return
 		}
 
-		res, err := client.Post("http://daemon/login", "application/json", bytes.NewReader(bodyData))
+		res, err := client.Post("http://kettoud/login", "application/json", bytes.NewReader(bodyData))
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -46,7 +46,7 @@ var loginCmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("Daemon response:", string(resBytes))
+		fmt.Println(string(resBytes))
 	},
 }
 

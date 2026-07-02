@@ -46,6 +46,6 @@ const (
 )
 
 const (
-	CUSTOM MatchType = "CUSTOM"
-	RANKED MatchType = "RANKED"
+	MatchTypeCustom MatchType = "CUSTOM"
+	MatchTypeRanked MatchType = "RANKED"
 )

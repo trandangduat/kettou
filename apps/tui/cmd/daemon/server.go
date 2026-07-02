@@ -49,5 +49,23 @@ func StartDaemon() error {
 		json.NewEncoder(w).Encode(res)
 	})
 
+	mux.HandleFunc("/match/create", func(w http.ResponseWriter, r *http.Request) {
+		var payload types.EmitMatchCreate
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		res := services.EmitEventWithAck[types.EmitMatchCreateAck]("match:create",
+			types.EmitMatchCreate{
+				GameId:    payload.GameId,
+				MatchType: payload.MatchType,
+			})
+
+		w.Header().Set("Content-Type", "application/json")
+
+		json.NewEncoder(w).Encode(res)
+	})
+
 	return http.Serve(ln, mux)
 }

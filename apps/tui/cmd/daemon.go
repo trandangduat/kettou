@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"kettou/cmd/daemon"
 	"kettou/services"
 
@@ -17,6 +18,12 @@ var daemonStartCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		services.SwitchSession("cli_cookies.json")
 		services.ConnectSocket()
+		go func() {
+			for {
+				fmt.Println("Wait for socket...")
+				services.WaitForSocket()
+			}
+		}()
 		return daemon.StartDaemon()
 	},
 }

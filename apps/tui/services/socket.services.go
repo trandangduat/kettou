@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
 	"kettou/types"
 	"log"
 
@@ -22,17 +23,13 @@ func ConnectSocket() {
 
 	activeClient = client
 
-	client.On("connect", func(...any) {
-		SocketChan <- types.SocketEventMsg{Event: "connect"}
-	})
-
 	client.On("lobby:matches-update", func(data ...any) {
 		if len(data) == 0 {
 			return
 		}
 		SocketChan <- types.SocketEventMsg{
 			Event: "lobby:matches-update",
-			Data:  handleSocketEventData[types.LobbyUpdate](data[0]),
+			Data:  convertMapToStructType[types.LobbyUpdate](data[0]),
 		}
 	})
 
@@ -42,7 +39,7 @@ func ConnectSocket() {
 		}
 		SocketChan <- types.SocketEventMsg{
 			Event: "match:created",
-			Data:  handleSocketEventData[types.MatchCreated](data[0]),
+			Data:  convertMapToStructType[types.MatchCreated](data[0]),
 		}
 	})
 
@@ -52,7 +49,7 @@ func ConnectSocket() {
 		}
 		SocketChan <- types.SocketEventMsg{
 			Event: "match:deleted",
-			Data:  handleSocketEventData[types.MatchDeleted](data[0]),
+			Data:  convertMapToStructType[types.MatchDeleted](data[0]),
 		}
 	})
 
@@ -62,13 +59,13 @@ func ConnectSocket() {
 		}
 		SocketChan <- types.SocketEventMsg{
 			Event: "match:updated",
-			Data:  handleSocketEventData[types.Match](data[0]),
+			Data:  convertMapToStructType[types.Match](data[0]),
 		}
 	})
 
 }
 
-func handleSocketEventData[T any](data any) T {
+func convertMapToStructType[T any](data any) T {
 	var result T
 	bytes, err := json.Marshal(data)
 	if err != nil {
@@ -81,6 +78,10 @@ func handleSocketEventData[T any](data any) T {
 	return result
 }
 
+func WaitForSocket() {
+	fmt.Printf("SOCKET CHAN: %+v\n", <-SocketChan)
+}
+
 func WaitForSocketMsg() tea.Cmd {
 	log.Print("===========WAITING FOR SOCKET MSG=============")
 	return func() tea.Msg {
@@ -88,13 +89,45 @@ func WaitForSocketMsg() tea.Cmd {
 	}
 }
 
+func EmitEvent(event string, data any) {
+	if activeClient == nil {
+		return
+	}
+	err := activeClient.Emit(event, data)
+	if err != nil {
+		fmt.Print(err)
+	}
+	fmt.Printf("--->EMITED: %s, %+v", event, data)
+}
+
+func EmitEventWithAck[T any](event string, data any) *T {
+	var res *T = nil
+	if activeClient == nil {
+		return res
+	}
+	done := make(chan struct{})
+	activeClient.EmitWithAck(event, data)(func(args []any, err error) {
+		defer close(done)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		if len(args) > 0 {
+			value := convertMapToStructType[T](args[0])
+			res = &value
+		}
+	})
+	<-done
+
+	fmt.Printf("--->EMITTED WITH ACK: %s, %+v", event, data)
+	return res
+}
+
 func EmitEventCmd(event string, data any) tea.Cmd {
 	return func() tea.Msg {
-		if activeClient == nil {
-			return nil
-		}
-		log.Printf("--->EMIT: %s, %+v", event, data)
-		activeClient.Emit(event, data)
+		EmitEvent(event, data)
 		return nil
 	}
 }

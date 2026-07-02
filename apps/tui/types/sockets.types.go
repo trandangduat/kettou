@@ -16,6 +16,15 @@ type EmitLobbyJoin struct {
 	GameId string `json:"gameId"`
 }
 
+type EmitMatchCreate struct {
+	GameId    string    `json:"gameId"`
+	MatchType MatchType `json:"matchType"`
+}
+
+type EmitMatchCreateAck struct {
+	MatchId string `json:"matchId"`
+}
+
 type EmitMatchJoin struct {
 	MatchId string            `json:"matchId"`
 	User    map[string]string `json:"user"`
