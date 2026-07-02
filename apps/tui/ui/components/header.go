@@ -2,8 +2,8 @@ package components
 
 import (
 	"fmt"
-	"kettou/theme"
 	"kettou/types"
+	"kettou/ui/theme"
 	"strings"
 
 	"charm.land/lipgloss/v2"

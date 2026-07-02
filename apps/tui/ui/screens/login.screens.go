@@ -1,7 +1,7 @@
 package screens
 
 import (
-	"kettou/components"
+	"kettou/ui/components"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"

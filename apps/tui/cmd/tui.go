@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"kettou/components"
-	"kettou/screens"
 	"kettou/services"
 	"kettou/types"
+	"kettou/ui/components"
+	"kettou/ui/screens"
 	"os"
 	"strings"
 

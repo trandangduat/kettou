@@ -2,8 +2,8 @@ package screens
 
 import (
 	"kettou/services"
-	"kettou/theme"
 	"kettou/types"
+	"kettou/ui/theme"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"

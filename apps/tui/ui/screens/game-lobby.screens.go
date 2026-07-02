@@ -1,9 +1,9 @@
 package screens
 
 import (
-	"kettou/screens/match"
 	"kettou/services"
 	"kettou/types"
+	"kettou/ui/screens/match"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"

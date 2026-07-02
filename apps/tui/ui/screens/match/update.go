@@ -1,9 +1,9 @@
 package match
 
 import (
-	. "kettou/screens/match/games-logic"
 	"kettou/services"
 	"kettou/types"
+	. "kettou/ui/screens/match/games-logic"
 
 	tea "charm.land/bubbletea/v2"
 )
