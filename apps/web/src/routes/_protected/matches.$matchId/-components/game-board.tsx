@@ -2,6 +2,7 @@ import {
     addMove,
     createPrefixSumMatrix,
     isValidSquareMove,
+    moveOnToNextRound,
     type Match,
     type Move,
 } from "shared";
@@ -109,10 +110,18 @@ export function GameBoard({
             }
         }
         if (countValid === 0) {
-            socket.emit("match:cannot-move", {
-                matchId: match.id,
-                userId: user.id,
-            });
+            socket.emit(
+                "match:cannot-move",
+                {
+                    matchId: match.id,
+                    userId: user.id,
+                },
+                ({ ok, error }: { ok: boolean; error?: string }) => {
+                    if (!ok) {
+                        console.log(error);
+                    }
+                },
+            );
         }
     }
 
@@ -128,17 +137,27 @@ export function GameBoard({
         if (isAValidMove[r][c]) {
             //optimistic UI update
             const move: Move = { r, c, len: myDiceNumber };
-            setMatch((prev) =>
-                addMove({
+            setMatch((prev) => {
+                let newMatch = addMove({
                     match: prev,
                     move,
-                }),
-            );
-            socket.emit("match:finish-move", {
-                matchId: match.id,
-                userId: user.id,
-                move,
+                });
+                newMatch = moveOnToNextRound({ match: newMatch });
+                return newMatch;
             });
+            socket.emit(
+                "match:submit-move",
+                {
+                    matchId: match.id,
+                    userId: user.id,
+                    move,
+                },
+                ({ ok, error }: { ok: boolean; error?: string }) => {
+                    if (!ok) {
+                        console.log(error);
+                    }
+                },
+            );
         }
         setCurrentMove({ r: 0, c: 0, len: -1 });
     };

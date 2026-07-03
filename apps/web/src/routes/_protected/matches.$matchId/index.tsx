@@ -48,8 +48,11 @@ function RouteComponent() {
                 matchId,
                 userId: user.id,
             },
-            ({ ok }: { ok: boolean }) => {
-                if (ok) setWaitingStart(false);
+            ({ ok, error }: { ok: boolean; error?: string }) => {
+                setWaitingStart(false);
+                if (!ok) {
+                    console.log(error);
+                }
             },
         );
     };
@@ -57,38 +60,68 @@ function RouteComponent() {
     const rollDice = () => {
         setWaitingDice(true);
         setTimeout(() => {
-            socket.emit("match:roll-dice", {
-                matchId,
-                userId: user.id,
-            });
+            socket.emit(
+                "match:roll-dice",
+                {
+                    matchId,
+                    userId: user.id,
+                },
+                ({ ok, error }: { ok: boolean; error?: string }) => {
+                    if (!ok) {
+                        console.log(error);
+                    }
+                },
+            );
             setWaitingDice(false);
         }, 1000);
     };
 
     useEffect(() => {
-        socket.emit("match:get-info", { matchId }, (match: Match) => {
-            setMatch(match);
-        });
-        socket.emit("match:join", {
-            matchId,
-            user: {
-                username: user.username,
-                id: user.id,
+        socket.emit(
+            "match:get-info",
+            { matchId },
+            ({
+                ok,
+                error,
+                match,
+            }: {
+                ok: boolean;
+                error: string;
+                match: Match;
+            }) => {
+                if (ok) {
+                    setMatch(match);
+                } else {
+                    console.log(error);
+                }
             },
-        });
-
-        socket.on("match:updated", (newState) => {
-            setMatch(newState);
+        );
+        socket.emit(
+            "match:join",
+            { matchId, user },
+            ({ ok, error }: { ok: boolean; error?: string }) => {
+                if (!ok) {
+                    console.log(error);
+                }
+            },
+        );
+        socket.on("match:updated", (updatedMatch) => {
+            setMatch(updatedMatch);
         });
 
         return () => {
-            socket.emit("match:leave", {
-                matchId,
-                user: {
-                    username: user.username,
-                    id: user.id,
+            socket.emit(
+                "match:leave",
+                {
+                    matchId,
+                    userId: user.id,
                 },
-            });
+                ({ ok, error }: { ok: boolean; error?: string }) => {
+                    if (!ok) {
+                        console.log(error);
+                    }
+                },
+            );
         };
     }, []);
     return (

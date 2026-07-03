@@ -15,12 +15,22 @@ function RouteComponent() {
         socket.emit(
             "match:create",
             { gameId, matchType: "CUSTOM" },
-            async ({ matchId }: { matchId: string }) => {
-                if (matchId) {
+            async ({
+                ok,
+                matchId,
+                error,
+            }: {
+                ok: boolean;
+                matchId: string;
+                error: string;
+            }) => {
+                if (ok) {
                     await router.navigate({
                         to: "/matches/$matchId",
                         params: { matchId },
                     });
+                } else {
+                    console.log(error);
                 }
             },
         );

@@ -136,6 +136,5 @@ export const addMove = ({
         ...match,
         rounds: newRounds,
     };
-    match = moveOnToNextRound({ match: match });
     return match;
 };
