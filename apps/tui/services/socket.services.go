@@ -79,7 +79,7 @@ func convertMapToStructType[T any](data any) T {
 }
 
 func WaitForSocket() {
-	fmt.Printf("SOCKET CHAN: %+v\n", <-SocketChan)
+	fmt.Printf("--->SOCKET CHAN: %+v\n", <-SocketChan)
 }
 
 func WaitForSocketMsg() tea.Cmd {
@@ -97,7 +97,7 @@ func EmitEvent(event string, data any) {
 	if err != nil {
 		fmt.Print(err)
 	}
-	fmt.Printf("--->EMITED: %s, %+v", event, data)
+	fmt.Printf("--->EMITED: %s, %+v\n", event, data)
 }
 
 func EmitEventWithAck[T any](event string, data any) *T {
@@ -121,7 +121,7 @@ func EmitEventWithAck[T any](event string, data any) *T {
 	})
 	<-done
 
-	fmt.Printf("--->EMITTED WITH ACK: %s, %+v", event, data)
+	fmt.Printf("--->EMITTED WITH ACK: %s, %+v\n", event, data)
 	return res
 }
 

@@ -70,7 +70,7 @@ func initApp() App {
 
 func (app App) Init() tea.Cmd {
 	var cmds []tea.Cmd
-	cmds = append(cmds, services.FetchMe())
+	cmds = append(cmds, services.GetCurrentUserCmd())
 	cmds = append(cmds, app.screensStack[len(app.screensStack)-1].Init())
 	return tea.Batch(cmds...)
 }
@@ -94,7 +94,7 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return app, tea.Quit
 		}
 	case types.LoggedInMsg:
-		cmd = services.FetchMe()
+		cmd = services.GetCurrentUserCmd()
 		cmds = append(cmds, cmd)
 	case types.CurrentUserMsg:
 		app.currentUser = types.User(msg)

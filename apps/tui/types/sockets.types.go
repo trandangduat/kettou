@@ -26,13 +26,13 @@ type EmitMatchCreateAck struct {
 }
 
 type EmitMatchJoin struct {
-	MatchId string            `json:"matchId"`
-	User    map[string]string `json:"user"`
+	MatchId string `json:"matchId"`
+	User    User   `json:"user"`
 }
 
 type EmitMatchLeave struct {
-	MatchId string            `json:"matchId"`
-	User    map[string]string `json:"user"`
+	MatchId string `json:"matchId"`
+	User    User   `json:"user"`
 }
 
 type EmitMatchAction struct {

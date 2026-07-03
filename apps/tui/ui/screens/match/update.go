@@ -119,9 +119,9 @@ func (s MatchScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				"match:leave",
 				types.EmitMatchLeave{
 					MatchId: s.match.Id,
-					User: map[string]string{
-						"id":       s.currentUser.Id,
-						"username": s.currentUser.Username,
+					User: types.User{
+						Id:       s.currentUser.Id,
+						Username: s.currentUser.Username,
 					},
 				},
 			)

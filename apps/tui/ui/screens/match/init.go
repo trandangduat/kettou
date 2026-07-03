@@ -46,9 +46,9 @@ func (s MatchScreen) Init() tea.Cmd {
 
 	cmd = services.EmitEventCmd("match:join", types.EmitMatchJoin{
 		MatchId: s.match.Id,
-		User: map[string]string{
-			"id":       s.currentUser.Id,
-			"username": s.currentUser.Username,
+		User: types.User{
+			Id:       s.currentUser.Id,
+			Username: s.currentUser.Username,
 		},
 	})
 	cmds = append(cmds, cmd)
