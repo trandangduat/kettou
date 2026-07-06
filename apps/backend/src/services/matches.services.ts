@@ -101,11 +101,11 @@ export const saveMatch = ({
 
     // insert match players
     const insertPlayer = db.prepare(
-        `INSERT INTO match_players (match_id, user_id, player_slot) VALUES (?, ?, ?)`,
+        `INSERT INTO match_players (match_id, user_id, elo_before) VALUES (?, ?, ?)`,
     );
     const insertManyPlayers = db.transaction((players: Player[]) => {
-        for (let i = 0; i < players.length; i++) {
-            insertPlayer.run(id, players[i].userId, i);
+        for (const { userId, elo } of players) {
+            insertPlayer.run(id, userId, elo);
         }
     });
     insertManyPlayers(players);
@@ -119,38 +119,28 @@ export const saveEndedMatch = ({
     endedAt: number;
 }) => {
     const { id, type, status, players, gameState } = match;
-    const { rounds, endState } = gameState;
+    const { endState } = gameState;
     const { winnerUserId, playerPoints } = endState;
 
     // update match status
-    db.prepare(
-        `UPDATE matches SET status = ?, ended_at = ?, winner_id = ? WHERE id = ?`,
-    ).run(status, endedAt, endState.winnerUserId, id);
-
-    // update players status
-    const updatePlayer = db.prepare(`
-      UPDATE match_players SET score = ?, result = ? WHERE match_id = ? AND user_id = ?`);
-
-    const updateManyPlayers = db.transaction(
-        (playerPoints: Record<string, number>) => {
-            for (let playerId in playerPoints) {
-                let score = playerPoints[playerId];
-                let isDraw = !winnerUserId;
-                let isWinner = playerId === winnerUserId;
-                let result = isDraw ? "DRAW" : isWinner ? "WIN" : "LOSS";
-                updatePlayer.run(score, result, id, playerId);
-            }
-        },
+    db.prepare(`UPDATE matches SET status = ?, ended_at = ? WHERE id = ?`).run(
+        status,
+        endedAt,
+        id,
     );
-    updateManyPlayers(playerPoints);
 
     // update players elo
+    const newPlayerElos: Record<string, number> = {};
+    for (let i = 0; i < players.length; i++) {
+        newPlayerElos[players[i].userId] = players[i].elo;
+    }
+
     if (type === "RANKED") {
         const updatePlayerElo = db.prepare(`
         UPDATE users SET elo = ? WHERE id = ?`);
 
         const updateManyPlayersElo = db.transaction(() => {
-            for (let i = 0; i < 2; i++) {
+            for (let i = 0; i < players.length; i++) {
                 let isDraw = !winnerUserId;
                 let isWinner = players[i].userId === winnerUserId;
                 let result = isDraw ? 0.5 : isWinner ? 1 : 0;
@@ -160,20 +150,26 @@ export const saveEndedMatch = ({
                     result: result,
                 });
                 updatePlayerElo.run(newElo, players[i].userId);
+                newPlayerElos[players[i].userId] = newElo;
             }
         });
         updateManyPlayersElo();
     }
 
-    // insert players moves
-    const insertMove = db.prepare(
-        `INSERT INTO match_moves(match_id, player_id, move, move_number) VALUES (?, ?, ?, ?)`,
+    // update players status
+    const updatePlayer = db.prepare(`
+      UPDATE match_players SET result = ?, elo_after = ? WHERE match_id = ? AND user_id = ?`);
+
+    const updateManyPlayers = db.transaction(
+        (playerPoints: Record<string, number>) => {
+            for (let playerId in playerPoints) {
+                let isDraw = !winnerUserId;
+                let isWinner = playerId === winnerUserId;
+                let result = isDraw ? "DRAW" : isWinner ? "WIN" : "LOSS";
+                let newElo = newPlayerElos[playerId];
+                updatePlayer.run(result, newElo, id, playerId);
+            }
+        },
     );
-    const insertManyMoves = db.transaction((rounds: Round[]) => {
-        for (let i = 0; i < rounds.length; i++) {
-            const { move, playerId } = rounds[i];
-            insertMove.run(id, playerId, JSON.stringify(move), i);
-        }
-    });
-    insertManyMoves(rounds);
+    updateManyPlayers(playerPoints);
 };

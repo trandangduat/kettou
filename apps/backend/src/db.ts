@@ -68,17 +68,70 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_match_moves_player_id ON match_moves(player_id);
 `);
 
-db.prepare(`INSERT OR IGNORE INTO games(id, description) VALUES (?, ?)`).run(
-    "dice-territory",
-    "Dice territory description",
-);
-
 const migrations = [
     {
         version: 1,
         sql: `
         ALTER TABLE users ADD COLUMN elo INTEGER DEFAULT 1000;
         UPDATE users SET elo = 1000 WHERE elo IS NULL;
+        `,
+    },
+    {
+        version: 2,
+        sql: `
+        ALTER TABLE games ADD COLUMN rules TEXT;
+
+        PRAGMA foreign_keys = OFF;
+
+        CREATE TABLE new_matches (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          status TEXT NOT NULL,
+          game_id TEXT NOT NULL,
+          started_at TEXT NOT NULL,
+          ended_at TEXT,
+
+          FOREIGN KEY (game_id) REFERENCES games(id),
+          CHECK (type IN ('CUSTOM', 'RANKED')),
+          CHECK (status IN ('PLAYING', 'ENDED'))
+        );
+
+        INSERT INTO new_matches (id, type, status, game_id, started_at, ended_at)
+        SELECT id, type, status, game_id, started_at, ended_at FROM matches;
+
+        DROP TABLE matches;
+        ALTER TABLE new_matches RENAME TO matches;
+
+        CREATE TABLE new_match_players (
+          match_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          result TEXT,
+          elo_before REAL,
+          elo_after REAL,
+
+          PRIMARY KEY (match_id, user_id),
+          FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(id),
+
+          CHECK (result in ('WIN', 'LOSS', 'DRAW', 'FORFEIT'))
+        );
+
+        INSERT INTO new_match_players (match_id, user_id, result)
+        SELECT match_id, user_id, result FROM match_players;
+        DROP TABLE match_players;
+        ALTER TABLE new_match_players RENAME TO match_players;
+
+        PRAGMA foreign_keys = ON;
+
+        CREATE TABLE match_game_states (
+          match_id TEXT NOT NULL,
+          state TEXT NOT NULL,
+          end_state TEXT,
+
+          FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE
+        );
+
+        DROP TABLE match_moves;
         `,
     },
 ];
@@ -100,5 +153,13 @@ const migrate = db.transaction(() => {
 });
 
 migrate();
+
+db.prepare(
+    `INSERT OR IGNORE INTO games(id, description, rules) VALUES (?, ?, ?)`,
+).run("dice-territory", "Dice territory game", "this is dice territory rules");
+
+db.prepare(
+    `INSERT OR IGNORE INTO games(id, description, rules) VALUES (?, ?, ?)`,
+).run("card-durak", "Durak card game", "this is durak rules");
 
 export default db;
