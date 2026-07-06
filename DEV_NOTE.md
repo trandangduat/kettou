@@ -113,5 +113,6 @@ let room: Room = {
 
 room = endGame({ roomState: room });
 ```
-- Convert Room -> Match
-- Why need room:get-info when user navigate to the match web page?
+
+## Refactor code to handle multiple games instead of one
+Create a `GameRegistry` class inside a core package that manages the registration and retrieval of game engines. Each game has it own package that exports the game engine and registers it with the `GameRegistry`. In backend, all games will be registered using `setUpGameEngines` in file `backend/src/games.ts`.

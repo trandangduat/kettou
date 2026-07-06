@@ -1,0 +1,9 @@
+{
+    "name": "@mini-games/game-dice-territory",
+    "version": "1.0.0",
+    "main": "./src/index.ts",
+    "type": "module",
+    "dependencies": {
+        "@mini-games/core": "workspace:*"
+    }
+}

@@ -2,8 +2,11 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { setUpGameEngines } from "./games";
 
 const queryClient = new QueryClient();
+
+setUpGameEngines();
 
 const router = createRouter({
     routeTree,

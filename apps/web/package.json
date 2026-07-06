@@ -21,9 +21,10 @@
         "lucide-react": "^0.545.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "shared": "workspace:*",
         "socket.io-client": "^4.8.3",
-        "tailwindcss": "^4.1.18"
+        "tailwindcss": "^4.1.18",
+        "@mini-games/core": "workspace:*",
+        "@mini-games/game-dice-territory": "workspace:*"
     },
     "devDependencies": {
         "@tailwindcss/typography": "^0.5.16",

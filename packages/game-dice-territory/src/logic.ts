@@ -77,10 +77,7 @@ export const isValidSquareMove = ({
     ownCellsPrefixSum,
 }: IsValidSquareMoveParams): boolean => {
     // The square must fit inside the playable board.
-    if (
-        row + squareSize - 1 > boardHeight ||
-        col + squareSize - 1 > boardWidth
-    )
+    if (row + squareSize - 1 > boardHeight || col + squareSize - 1 > boardWidth)
         return false;
 
     // The square cannot overlap any occupied cell.

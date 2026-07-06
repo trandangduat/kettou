@@ -209,6 +209,12 @@ importers:
 
   apps/backend:
     dependencies:
+      '@mini-games/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@mini-games/game-dice-territory':
+        specifier: workspace:*
+        version: link:../../packages/game-dice-territory
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -239,9 +245,6 @@ importers:
       redis:
         specifier: ^5.12.1
         version: 5.12.1
-      shared:
-        specifier: workspace:*
-        version: link:../../packages/shared
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3
@@ -279,6 +282,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@mini-games/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@mini-games/game-dice-territory':
+        specifier: workspace:*
+        version: link:../../packages/game-dice-territory
       '@tailwindcss/vite':
         specifier: ^4.1.18
         version: 4.3.0(vite@8.0.11(@types/node@22.19.18)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.1))
@@ -306,9 +315,6 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.2.6(react@19.2.6)
-      shared:
-        specifier: workspace:*
-        version: link:../../packages/shared
       socket.io-client:
         specifier: ^4.8.3
         version: 4.8.3
@@ -353,15 +359,17 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@22.19.18)(jsdom@28.1.0)(vite@8.0.11(@types/node@22.19.18)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.1))
 
-  packages/shared:
+  packages/core:
     dependencies:
       uuid:
         specifier: ^14.0.0
         version: 14.0.0
-    devDependencies:
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
+
+  packages/game-dice-territory:
+    dependencies:
+      '@mini-games/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

@@ -1,0 +1,10 @@
+{
+    "name": "@mini-games/core",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Core package for games",
+    "main": "./src/index.ts",
+    "dependencies": {
+        "uuid": "^14.0.0"
+    }
+}

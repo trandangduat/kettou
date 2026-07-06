@@ -1,7 +1,8 @@
 import db from "../db.js";
 import { getNewElo } from "../logics/elo.logic.js";
-import { initMatch, Match, MatchType, Round, Player } from "shared";
 import { redis } from "../redis.js";
+import { GameRegistry, Match, MatchType, Player } from "@mini-games/core";
+import { Round } from "@mini-games/game-dice-territory";
 
 export const getLobbyKey = (id: string) => {
     return `game:${id}:lobby`;
@@ -15,12 +16,12 @@ export const getMatchState = async ({
     matchId,
 }: {
     matchId: string;
-}): Promise<Match | null> => {
+}): Promise<Match<any> | null> => {
     const data = await redis.get(getMatchKey(matchId));
     if (!data) {
         return null;
     }
-    return JSON.parse(data.toString()) as Match;
+    return JSON.parse(data.toString()) as Match<any>;
 };
 
 export const setMatchState = async ({
@@ -28,7 +29,7 @@ export const setMatchState = async ({
     matchState,
 }: {
     matchId: string;
-    matchState: Match;
+    matchState: Match<any>;
 }) => {
     await redis.set(getMatchKey(matchId), JSON.stringify(matchState));
 };
@@ -54,8 +55,10 @@ export const createMatch = async ({
 }: {
     gameId: string;
     matchType: MatchType;
-}): Promise<Match> => {
-    const match = initMatch({ gameId, matchType });
+}): Promise<Match<any>> => {
+    const gameEngine = GameRegistry.getEngine(gameId);
+    const match = gameEngine.createNewMatchState(matchType);
+
     const matchKey = getMatchKey(match.id);
     const lobbyKey = getLobbyKey(gameId);
     const createdAt = Date.now();
@@ -84,19 +87,17 @@ export const getAllMatchesInLobby = async ({
 };
 export const saveMatch = ({
     match,
-    type,
     startedAt,
 }: {
-    match: Match;
-    type: MatchType;
+    match: Match<any>;
     startedAt: number;
 }) => {
-    const { id, gameId, players } = match;
+    const { id, gameId, status, players, type } = match;
 
     // create match
     db.prepare(
         `INSERT INTO matches(id, type, status, game_id, started_at) VALUES (?, ?, ?, ?, ?)`,
-    ).run(id, type, "PLAYING", gameId, startedAt);
+    ).run(id, type, status, gameId, startedAt);
 
     // insert match players
     const insertPlayer = db.prepare(
@@ -114,10 +115,11 @@ export const saveEndedMatch = ({
     match,
     endedAt,
 }: {
-    match: Match;
+    match: Match<any>;
     endedAt: number;
 }) => {
-    const { id, matchType, status, endState, rounds, players } = match;
+    const { id, type, status, players, gameState } = match;
+    const { rounds, endState } = gameState;
     const { winnerUserId, playerPoints } = endState;
 
     // update match status
@@ -143,7 +145,7 @@ export const saveEndedMatch = ({
     updateManyPlayers(playerPoints);
 
     // update players elo
-    if (matchType === "RANKED") {
+    if (type === "RANKED") {
         const updatePlayerElo = db.prepare(`
         UPDATE users SET elo = ? WHERE id = ?`);
 

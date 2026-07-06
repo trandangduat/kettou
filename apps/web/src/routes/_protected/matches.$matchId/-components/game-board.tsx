@@ -1,20 +1,22 @@
-import {
-    addMove,
-    createPrefixSumMatrix,
-    isValidSquareMove,
-    moveOnToNextRound,
-    type Match,
-    type Move,
-} from "shared";
 import { Route } from "..";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
+import {
+    createPrefixSumMatrix,
+    isValidSquareMove,
+    type MatchState,
+    type Move,
+} from "@mini-games/game-dice-territory";
+import {
+    addMove,
+    moveOnToNextRound,
+} from "@mini-games/game-dice-territory/src/utils";
 
 interface GameBoardProps {
-    match: Match;
+    match: MatchState;
     myTurn: boolean;
     myDiceNumber: number;
-    setMatch: Dispatch<SetStateAction<Match>>;
+    setMatch: Dispatch<SetStateAction<MatchState>>;
 }
 
 export function GameBoard({
@@ -23,7 +25,8 @@ export function GameBoard({
     myDiceNumber,
     setMatch,
 }: GameBoardProps) {
-    const { status: gameStatus, rounds } = match;
+    const { status, gameState } = match;
+    const { rounds } = gameState;
     const { user } = Route.useRouteContext();
     const W = 8;
     const H = 8;
@@ -93,7 +96,7 @@ export function GameBoard({
         });
     }
 
-    if (gameStatus === "PLAYING" && myTurn && myDiceNumber > 0) {
+    if (status === "PLAYING" && myTurn && myDiceNumber > 0) {
         let countValid = 0;
         for (let r = 1; r <= H; r++) {
             for (let c = 1; c <= W; c++) {
@@ -111,14 +114,17 @@ export function GameBoard({
         }
         if (countValid === 0) {
             socket.emit(
-                "match:cannot-move",
+                "match:action",
                 {
                     matchId: match.id,
-                    userId: user.id,
+                    action: {
+                        type: "SKIP_TURN",
+                        userId: user.id,
+                    },
                 },
                 ({ ok, error }: { ok: boolean; error?: string }) => {
                     if (!ok) {
-                        console.log(error);
+                        console.error(error);
                     }
                 },
             );
@@ -137,24 +143,22 @@ export function GameBoard({
         if (isAValidMove[r][c]) {
             //optimistic UI update
             const move: Move = { r, c, len: myDiceNumber };
-            setMatch((prev) => {
-                let newMatch = addMove({
-                    match: prev,
-                    move,
-                });
-                newMatch = moveOnToNextRound({ match: newMatch });
-                return newMatch;
+            setMatch((prevMatchState) => {
+                return moveOnToNextRound(addMove(prevMatchState, move));
             });
             socket.emit(
-                "match:submit-move",
+                "match:action",
                 {
                     matchId: match.id,
-                    userId: user.id,
-                    move,
+                    action: {
+                        type: "MOVE",
+                        userId: user.id,
+                        move,
+                    },
                 },
                 ({ ok, error }: { ok: boolean; error?: string }) => {
                     if (!ok) {
-                        console.log(error);
+                        console.error(error);
                     }
                 },
             );

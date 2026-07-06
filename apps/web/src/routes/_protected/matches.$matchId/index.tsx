@@ -1,8 +1,8 @@
 import { socket } from "#/socket";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { initMatch, type Match } from "shared";
 import { GameBoard } from "./-components/game-board";
+import { GameRegistry, type Match } from "@mini-games/core";
 
 export const Route = createFileRoute("/_protected/matches/$matchId/")({
     component: RouteComponent,
@@ -11,47 +11,46 @@ export const Route = createFileRoute("/_protected/matches/$matchId/")({
 function RouteComponent() {
     const { matchId } = Route.useParams();
     const { user } = Route.useRouteContext();
-    const [match, setMatch] = useState<Match>(
-        initMatch({ gameId: "", matchType: "CUSTOM" }),
+    const engine = GameRegistry.getEngine("dice-territory");
+    const [match, setMatch] = useState<Match<any>>(
+        engine.createNewMatchState("CUSTOM"),
     );
     const [waitingStart, setWaitingStart] = useState<boolean>(false);
     const [waitingDice, setWaitingDice] = useState<boolean>(false);
 
-    const {
-        status: gameStatus,
-        players,
-        roundNumber,
-        rounds,
-        turn,
-        endState,
-    } = match;
+    const { status, players, gameState } = match;
+    const { roundNumber, rounds, turn, endState } = gameState;
+
     let myTurn: boolean = false;
     let myDiceNumber: number = 0;
     let playerPoints: Record<string, number> = {};
     let isAWinner = false;
-    if (gameStatus === "PLAYING") {
+    if (status === "PLAYING") {
         myTurn = user.id === players[turn].userId;
     }
     if (myTurn && roundNumber > 0 && rounds.length === roundNumber) {
         myDiceNumber = rounds[roundNumber - 1].diceNumber;
     }
-    if (gameStatus === "ENDED") {
+    if (status === "ENDED") {
         playerPoints = endState!.playerPoints;
         isAWinner = user.id == endState!.winnerUserId;
     }
 
-    const startGame = () => {
+    const startMatch = () => {
         setWaitingStart(true);
         socket.emit(
-            "match:start",
+            "match:action",
             {
                 matchId,
-                userId: user.id,
+                action: {
+                    type: "START_MATCH",
+                    userId: user.id,
+                },
             },
             ({ ok, error }: { ok: boolean; error?: string }) => {
                 setWaitingStart(false);
                 if (!ok) {
-                    console.log(error);
+                    console.error(error);
                 }
             },
         );
@@ -61,10 +60,13 @@ function RouteComponent() {
         setWaitingDice(true);
         setTimeout(() => {
             socket.emit(
-                "match:roll-dice",
+                "match:action",
                 {
                     matchId,
-                    userId: user.id,
+                    action: {
+                        type: "ROLL_DICE",
+                        userId: user.id,
+                    },
                 },
                 ({ ok, error }: { ok: boolean; error?: string }) => {
                     if (!ok) {
@@ -77,25 +79,6 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        socket.emit(
-            "match:get-info",
-            { matchId },
-            ({
-                ok,
-                error,
-                match,
-            }: {
-                ok: boolean;
-                error: string;
-                match: Match;
-            }) => {
-                if (ok) {
-                    setMatch(match);
-                } else {
-                    console.log(error);
-                }
-            },
-        );
         socket.emit(
             "match:join",
             { matchId, user },
@@ -138,12 +121,11 @@ function RouteComponent() {
             })}
             <div className="flex flex-row">
                 <button
-                    onClick={startGame}
+                    onClick={startMatch}
                     className="p-2 border"
                     style={{
                         backgroundColor:
-                            gameStatus === "READY" &&
-                            user.id === players[0].userId
+                            status === "READY" && user.id === players[0].userId
                                 ? "cyan"
                                 : "grey",
                     }}
@@ -156,13 +138,13 @@ function RouteComponent() {
                 isPlaying:
                 <b
                     style={{
-                        color: gameStatus === "PLAYING" ? "green" : "red",
+                        color: status === "PLAYING" ? "green" : "red",
                     }}
                 >
-                    {gameStatus === "PLAYING" ? "true" : "false"}
+                    {status === "PLAYING" ? "true" : "false"}
                 </b>
             </p>
-            {gameStatus === "PLAYING" && (
+            {status === "PLAYING" && (
                 <div>
                     {myTurn ? (
                         <>
@@ -201,7 +183,7 @@ function RouteComponent() {
                 />
                 <div>You</div>
             </div>
-            {gameStatus === "ENDED" && (
+            {status === "ENDED" && (
                 <>
                     {isAWinner ? "Winner" : "Loser"}
                     <p>Points: {playerPoints?.[user.id]}</p>

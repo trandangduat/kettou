@@ -1,4 +1,3 @@
-import { updateMatchReadyStatus } from "shared";
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
 import { logger } from "../logger.js";
@@ -13,6 +12,7 @@ import {
     getMatchKey,
     setMatchState,
 } from "../services/matches.services.js";
+import { updateReadyStatus } from "@mini-games/core";
 
 const getMatchmakingKey = (gameId: string) => {
     return `matchmaking:${gameId}`;
@@ -41,7 +41,7 @@ const processMatchmakingQueue = async ({
             userId: playerB.userId,
             elo: playerB.elo,
         });
-        match = updateMatchReadyStatus({ match });
+        match = updateReadyStatus(match);
         await setMatchState({ matchId: match.id, matchState: match });
 
         const socketA = io.sockets.sockets.get(playerA.socketId);
