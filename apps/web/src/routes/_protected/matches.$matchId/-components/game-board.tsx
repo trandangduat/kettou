@@ -2,15 +2,13 @@ import { Route } from "..";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
 import {
+    addMove,
     createPrefixSumMatrix,
     isValidSquareMove,
+    moveOnToNextRound,
     type MatchState,
     type Move,
 } from "@mini-games/game-dice-territory";
-import {
-    addMove,
-    moveOnToNextRound,
-} from "@mini-games/game-dice-territory/src/utils";
 
 interface GameBoardProps {
     match: MatchState;

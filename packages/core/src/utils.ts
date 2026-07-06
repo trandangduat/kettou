@@ -27,7 +27,7 @@ export const addUserToMatch = (match: Match<any>, user: any): Match<any> => {
     const { username, id: userId, elo } = user;
     const isPlayer = match.players.find((p) => p.userId === userId);
     if (isPlayer) {
-        return;
+        return match;
     }
     match = {
         ...match,

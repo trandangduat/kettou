@@ -206,3 +206,4 @@ export const gameId = "dice-territory";
 export const createEngine = () => new DiceTerritoryEngine();
 export * from "./types.js";
 export * from "./logic.js";
+export * from "./utils.js";
