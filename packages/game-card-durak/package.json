@@ -1,0 +1,9 @@
+{
+    "name": "@mini-games/game-card-durak",
+    "version": "1.0.0",
+    "main": "./src/index.ts",
+    "type": "module",
+    "dependencies": {
+        "@mini-games/core": "workspace:*"
+    }
+}
