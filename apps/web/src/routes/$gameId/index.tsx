@@ -1,8 +1,10 @@
+import { getGameById } from "#/api/games";
 import { socket } from "#/socket";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-export const Route = createFileRoute("/games/$gameId/")({
+export const Route = createFileRoute("/$gameId/")({
     component: RouteComponent,
 });
 
@@ -10,6 +12,10 @@ function RouteComponent() {
     const { gameId } = Route.useParams();
     const [matchIds, setMatchIds] = useState<string[]>([]);
     const router = useRouter();
+    const { data: game, isLoading: isLoadingGame } = useQuery({
+        queryKey: ["get-game", gameId],
+        queryFn: () => getGameById(gameId),
+    });
 
     const createMatch = async () => {
         socket.emit(
@@ -26,8 +32,8 @@ function RouteComponent() {
             }) => {
                 if (ok) {
                     await router.navigate({
-                        to: "/matches/$matchId",
-                        params: { matchId },
+                        to: "/$gameId/$matchId",
+                        params: { gameId, matchId },
                     });
                 } else {
                     console.log(error);
@@ -55,18 +61,27 @@ function RouteComponent() {
     }, []);
 
     return (
-        <>
-            <h1 className="text-xl">Dice Territory</h1>
-            <ul>
-                {matchIds.map((id: string) => (
-                    <li key={id}>
-                        <Link to="/matches/$matchId" params={{ matchId: id }}>
-                            {id}
-                        </Link>
-                    </li>
-                ))}
-            </ul>
-            <button onClick={createMatch}>+ New Match</button>
-        </>
+        <div>
+            {isLoadingGame ? (
+                <p>Loading game information...</p>
+            ) : (
+                <>
+                    <h1 className="text-xl">{game.name}</h1>
+                    <ul>
+                        {matchIds.map((id: string) => (
+                            <li key={id}>
+                                <Link
+                                    to="/$gameId/$matchId"
+                                    params={{ gameId, matchId: id }}
+                                >
+                                    {id}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                    <button onClick={createMatch}>+ New Match</button>
+                </>
+            )}
+        </div>
     );
 }

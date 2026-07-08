@@ -8,9 +8,13 @@ import {
 import { DurakState } from "./types.js";
 import { createOrderedDeck } from "./utils.js";
 
-export type MatchState = Match<DurakState>;
+export const gameDefinition = {
+    id: "card-durak",
+    createEngine: () => new DurakEngine(),
+};
 
-type DurakAction = { type: "START_MATCH"; userId: string };
+export type MatchState = Match<DurakState>;
+export type DurakAction = { type: "START_MATCH"; userId: string };
 
 const startMatch = (state: MatchState, userId: string): MatchState => {
     return state;
@@ -19,7 +23,7 @@ const startMatch = (state: MatchState, userId: string): MatchState => {
 export class DurakEngine implements IGameEngine<DurakState, DurakAction> {
     createNewMatchState(matchType: MatchType): MatchState {
         return {
-            ...newMatch(gameId, matchType),
+            ...newMatch(gameDefinition.id, matchType),
             gameState: {
                 drawPile: createOrderedDeck(),
                 discardPile: [],
@@ -56,7 +60,5 @@ export class DurakEngine implements IGameEngine<DurakState, DurakAction> {
     }
 }
 
-export const gameId = "card-durak";
-export const createEngine = () => new DurakEngine();
 export * from "./types.js";
 export * from "./utils.js";

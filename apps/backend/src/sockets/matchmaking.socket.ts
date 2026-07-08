@@ -55,7 +55,7 @@ const processMatchmakingQueue = async ({
         socketA?.join(matchKey);
         socketB?.join(matchKey);
 
-        io.to(matchKey).emit("matchmaking:found", { match });
+        io.to(matchKey).emit("matchmaking:found", match.id);
     }
 
     await removePairsFromMmQueue({ gameId, pairs });

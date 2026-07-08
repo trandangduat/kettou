@@ -1,4 +1,3 @@
-import { Route } from "..";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
 import {
@@ -11,6 +10,7 @@ import {
 } from "@mini-games/game-dice-territory";
 
 interface GameBoardProps {
+    user: any;
     match: MatchState;
     myTurn: boolean;
     myDiceNumber: number;
@@ -18,6 +18,7 @@ interface GameBoardProps {
 }
 
 export function GameBoard({
+    user,
     match,
     myTurn,
     myDiceNumber,
@@ -25,7 +26,6 @@ export function GameBoard({
 }: GameBoardProps) {
     const { status, gameState } = match;
     const { rounds } = gameState;
-    const { user } = Route.useRouteContext();
     const W = 8;
     const H = 8;
     const board: number[][] = Array.from({ length: H + 2 }, () =>

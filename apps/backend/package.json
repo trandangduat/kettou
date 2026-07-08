@@ -27,7 +27,8 @@
         "socket.io": "^4.8.3",
         "uuid": "^14.0.0",
         "@mini-games/core": "workspace:*",
-        "@mini-games/game-dice-territory": "workspace:*"
+        "@mini-games/game-dice-territory": "workspace:*",
+        "@mini-games/game-card-durak": "workspace:*"
     },
     "devDependencies": {
         "@types/bcrypt": "^6.0.0",

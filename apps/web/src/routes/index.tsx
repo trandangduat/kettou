@@ -1,9 +1,9 @@
 import { fetchMe } from "#/api/auth";
+import { getAllGames } from "#/api/games";
 import { socket } from "#/socket";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import type { Match } from "shared";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -15,6 +15,10 @@ function Home() {
         queryKey: ["me"],
         queryFn: fetchMe,
         retry: false,
+    });
+    const { data: games, isLoading: isLoadingGames } = useQuery({
+        queryKey: ["list-games"],
+        queryFn: getAllGames,
     });
     const router = useRouter();
 
@@ -54,12 +58,12 @@ function Home() {
     };
 
     useEffect(() => {
-        socket.on("matchmaking:found", async ({ match }: { match: Match }) => {
-            console.log("Matched Found", match);
+        socket.on("matchmaking:found", async (matchId: string) => {
+            console.log("Matched Found");
             setIsInMm(false);
             await router.navigate({
-                to: "/matches/$matchId",
-                params: { matchId: match.id },
+                to: "/$gameId/$matchId",
+                params: { gameId: "dice-territory", matchId },
             });
         });
     }, []);
@@ -67,7 +71,7 @@ function Home() {
     return (
         <div className="p-8">
             <h1 className="text-4xl">
-                Welcome to <b>DuelHub</b>
+                Welcome to <b>Kettou</b>
             </h1>
             <div className="flex flex-col">
                 <div className="flex gap-2 items-center">
@@ -81,23 +85,35 @@ function Home() {
                     ) : (
                         <button
                             onClick={findGame}
-                            className="flex hover:font-bold"
+                            className="flex hover:bg-amber-200 p-2 border font-bold"
                         >
                             Find game
                         </button>
                     )}
                     <p
                         className="text-2xl"
-                        style={{
-                            visibility: isInMm ? "visible" : "hidden",
-                        }}
+                        style={{ visibility: isInMm ? "visible" : "hidden" }}
                     >
                         {mmTimer}
                     </p>
                 </div>
-                <Link to="/games/$gameId" params={{ gameId: "dice-territory" }}>
-                    Dice Territory
-                </Link>
+                <p>List of games:</p>
+                {isLoadingGames ? (
+                    <p>Loading games...</p>
+                ) : (
+                    <ul className="list-disc">
+                        {games.map((game: any) => (
+                            <li key={game.id} className="hover:font-bold">
+                                <Link
+                                    to="/$gameId"
+                                    params={{ gameId: game.id }}
+                                >
+                                    {game.name}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
         </div>
     );

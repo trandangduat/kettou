@@ -1,7 +1,6 @@
 import { DiceTerritoryState, Move, Round } from "./types.js";
 import {
     ActionResult,
-    GameRegistry,
     IGameEngine,
     Match,
     MatchType,
@@ -14,16 +13,19 @@ import {
     moveOnToNextRound,
 } from "./utils.js";
 
+export const gameDefinition = {
+    id: "dice-territory",
+    createEngine: () => new DiceTerritoryEngine(),
+};
+
 const NOT_A_PLAYER_MSG =
     "You must be a player of this match to perform such actions.";
 const INVALID_MOVE_MSG = "Invalid move. Move again";
 const NOT_YOUR_TURN_MSG = "It is not your turn.";
 const GAME_NOT_STARTED_MSG = "Game has not started yet.";
 const NOT_HOST_MSG = "You must be the host to perform such actions.";
-
 export type MatchState = Match<DiceTerritoryState>;
-
-type DiceTerritoryAction =
+export type DiceTerritoryAction =
     | { type: "START_MATCH"; userId: string }
     | { type: "ROLL_DICE"; userId: string }
     | { type: "MOVE"; userId: string; move: Move }
@@ -150,7 +152,7 @@ export class DiceTerritoryEngine implements IGameEngine<
 > {
     createNewMatchState(matchType: MatchType): Match<DiceTerritoryState> {
         return {
-            ...newMatch(gameId, matchType),
+            ...newMatch(gameDefinition.id, matchType),
             gameState: {
                 roundNumber: 0,
                 rounds: [],
@@ -202,8 +204,6 @@ export class DiceTerritoryEngine implements IGameEngine<
     }
 }
 
-export const gameId = "dice-territory";
-export const createEngine = () => new DiceTerritoryEngine();
 export * from "./types.js";
 export * from "./logic.js";
 export * from "./utils.js";

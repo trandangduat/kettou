@@ -288,6 +288,9 @@ importers:
       '@mini-games/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@mini-games/game-card-durak':
+        specifier: workspace:*
+        version: link:../../packages/game-card-durak
       '@mini-games/game-dice-territory':
         specifier: workspace:*
         version: link:../../packages/game-dice-territory

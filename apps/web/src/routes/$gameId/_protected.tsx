@@ -1,7 +1,7 @@
 import { fetchMe } from "#/api/auth";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_protected")({
+export const Route = createFileRoute("/$gameId/_protected")({
     beforeLoad: async ({ context }) => {
         const user = await context.queryClient.ensureQueryData({
             queryKey: ["me"],
