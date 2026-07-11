@@ -29,3 +29,11 @@ export interface IGameEngine<TGameState, TAction> {
         action: TAction,
     ): ActionResult<Match<TGameState>>;
 }
+
+export const NOT_A_PLAYER_MSG =
+    "You must be a player of this match to perform such actions.";
+export const NOT_YOUR_TURN_MSG = "It is not your turn.";
+export const GAME_NOT_STARTED_MSG = "Game has not started yet.";
+export const NOT_HOST_MSG = "You must be the host to perform such actions.";
+export const MATCH_NOT_READY_MSG = "Match is not ready yet.";
+export const INVALID_ACTION_MSG = "Invalid action.";

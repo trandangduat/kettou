@@ -1,23 +1,306 @@
 import {
     ActionResult,
     IGameEngine,
-    Match,
+    INVALID_ACTION_MSG,
+    MATCH_NOT_READY_MSG,
     MatchType,
     newMatch,
+    NOT_A_PLAYER_MSG,
+    NOT_HOST_MSG,
+    NOT_YOUR_TURN_MSG,
 } from "@mini-games/core";
-import { DurakState } from "./types.js";
-import { createOrderedDeck } from "./utils.js";
+import { Card, DurakAction, DurakState, MatchState } from "./types.js";
+import {
+    createOrderedDeck,
+    defensible,
+    isSameCard,
+    shuffleDeck,
+} from "./utils.js";
 
 export const gameDefinition = {
     id: "card-durak",
     createEngine: () => new DurakEngine(),
 };
 
-export type MatchState = Match<DurakState>;
-export type DurakAction = { type: "START_MATCH"; userId: string };
+export const DURAK_DRAW_CARD_LIMIT = 6;
+export const INVALID_ATTACK_MSG =
+    "Invalid attack. Attack again with different cards.";
+export const INVALID_DEFEND_MSG =
+    "Invalid defend. Defend again with different cards.";
 
 const startMatch = (state: MatchState, userId: string): MatchState => {
-    return state;
+    const { players, status } = state;
+
+    let isPlayer = players.some((p) => p.userId === userId);
+    let isHost = players[0].userId === userId;
+    let isReady = status === "READY";
+    if (!isPlayer) {
+        throw new Error(NOT_A_PLAYER_MSG);
+    }
+    if (!isHost) {
+        throw new Error(NOT_HOST_MSG);
+    }
+    if (!isReady) {
+        throw new Error("Match is not ready yet.");
+    }
+
+    let deck = shuffleDeck(createOrderedDeck());
+    let playerHands: Record<string, Card[]> = {};
+    let drawPile: Card[] = [];
+    let trumpCard: Card;
+    let attackerId = players[(Math.random() * players.length) | 0].userId;
+
+    for (let p of players) {
+        const { userId } = p;
+        playerHands[userId] = [];
+        for (let i = 0; i < DURAK_DRAW_CARD_LIMIT; i++) {
+            let lastCard = deck.pop();
+            playerHands[userId].push(lastCard);
+        }
+    }
+    trumpCard = deck.pop();
+    drawPile = deck;
+
+    return {
+        ...state,
+        status: "PLAYING",
+        gameState: {
+            ...state.gameState,
+            trumpCard,
+            drawPile,
+            playerHands,
+            attackerId,
+        },
+    };
+};
+
+const attack = (
+    state: MatchState,
+    userId: string,
+    cards: Card[],
+): MatchState => {
+    const { players, status, gameState } = state;
+    const { attackerId, playerHands, tablePairs } = gameState;
+
+    let isPlayer = players.some((p) => p.userId === userId);
+    let isReady = status === "READY";
+    let isAttacker = attackerId === userId;
+    if (!isPlayer) {
+        throw new Error(NOT_A_PLAYER_MSG);
+    }
+    if (!isReady) {
+        throw new Error(MATCH_NOT_READY_MSG);
+    }
+    if (!isAttacker) {
+        throw new Error(NOT_YOUR_TURN_MSG);
+    }
+
+    let tableRanks = new Set<string>();
+    for (let pair of tablePairs) {
+        tableRanks.add(pair.attackCard.rank);
+        tableRanks.add(pair.defendCard!.rank);
+    }
+    for (let card of cards) {
+        if (!tableRanks.has(card.rank)) {
+            throw new Error(INVALID_ATTACK_MSG);
+        }
+    }
+
+    let newPlayerHands = { ...playerHands };
+    newPlayerHands[userId] = newPlayerHands[userId].filter(
+        (card) => !cards.some((c) => isSameCard(card, c)),
+    );
+
+    let newTablePairs = [...tablePairs];
+    for (let card of cards) {
+        newTablePairs.push({ attackCard: card });
+    }
+
+    return {
+        ...state,
+        status: "PLAYING",
+        gameState: {
+            ...state.gameState,
+            playerHands: newPlayerHands,
+            tablePairs: newTablePairs,
+        },
+    };
+};
+
+const pass = (state: MatchState, userId: string): MatchState => {
+    const { players, status, gameState } = state;
+    const { attackerId, playerHands, tablePairs, discardPile, drawPile } =
+        gameState;
+
+    let isPlayer = players.some((p) => p.userId === userId);
+    let isReady = status === "READY";
+    let isAttacker = attackerId === userId;
+    if (!isPlayer) {
+        throw new Error(NOT_A_PLAYER_MSG);
+    }
+    if (!isReady) {
+        throw new Error(MATCH_NOT_READY_MSG);
+    }
+    if (!isAttacker) {
+        throw new Error(NOT_YOUR_TURN_MSG);
+    }
+
+    // can only pass if every attack card has a defend card
+    for (let pair of tablePairs) {
+        if (!pair.defendCard) {
+            throw new Error(INVALID_ACTION_MSG);
+        }
+    }
+
+    // throw away table pairs
+    let newDiscardPile = [...discardPile];
+    for (let { attackCard, defendCard } of tablePairs) {
+        newDiscardPile.push(attackCard);
+        newDiscardPile.push(defendCard);
+    }
+
+    // fill player hands
+    let newDrawPile = [...drawPile];
+    let newPlayerHands = { ...playerHands };
+    for (let id in newPlayerHands) {
+        while (
+            newPlayerHands[id].length < DURAK_DRAW_CARD_LIMIT &&
+            newDrawPile.length > 0
+        ) {
+            newPlayerHands[id].push(newDrawPile.pop());
+        }
+    }
+
+    // next attacker id
+    let id = players.findIndex((p) => p.userId === attackerId);
+    let newAttackerId = players[(id + 1) % players.length].userId;
+
+    return {
+        ...state,
+        status: "PLAYING",
+        gameState: {
+            ...gameState,
+            tablePairs: [],
+            playerHands: newPlayerHands,
+            drawPile: newDrawPile,
+            attackerId: newAttackerId,
+        },
+    };
+};
+
+const defend = (
+    state: MatchState,
+    userId: string,
+    cards: Card[],
+): MatchState => {
+    const { players, status, gameState } = state;
+    const { trumpCard, attackerId, playerHands, tablePairs } = gameState;
+
+    let isPlayer = players.some((p) => p.userId === userId);
+    let isReady = status === "READY";
+    let isDefender = attackerId != userId;
+    if (!isPlayer) {
+        throw new Error(NOT_A_PLAYER_MSG);
+    }
+    if (!isReady) {
+        throw new Error(MATCH_NOT_READY_MSG);
+    }
+    if (!isDefender) {
+        throw new Error(NOT_YOUR_TURN_MSG);
+    }
+
+    let countDefended = 0;
+    for (let pair of tablePairs) {
+        if (
+            !pair.defendCard &&
+            defensible({
+                attackCard: pair.attackCard,
+                defendCard: cards[countDefended],
+                trumpSuit: trumpCard.suit,
+            })
+        ) {
+            countDefended++;
+        }
+    }
+
+    if (countDefended !== cards.length) {
+        throw new Error(INVALID_DEFEND_MSG);
+    }
+
+    let newPlayerHands = { ...playerHands };
+    newPlayerHands[userId] = newPlayerHands[userId].filter(
+        (card) => !cards.some((c) => isSameCard(card, c)),
+    );
+
+    let newTablePairs = [...tablePairs];
+    let j = 0;
+    for (let i = 0; i < newTablePairs.length; i++) {
+        let { defendCard } = newTablePairs[i];
+        if (!defendCard) {
+            newTablePairs[i] = { ...newTablePairs[i], defendCard: cards[j] };
+            j++;
+        }
+    }
+
+    return {
+        ...state,
+        status: "PLAYING",
+        gameState: {
+            ...state.gameState,
+            playerHands: newPlayerHands,
+            tablePairs: newTablePairs,
+        },
+    };
+};
+
+const take = (state: MatchState, userId: string): MatchState => {
+    const { players, status, gameState } = state;
+    const { attackerId, playerHands, tablePairs, discardPile, drawPile } =
+        gameState;
+
+    let isPlayer = players.some((p) => p.userId === userId);
+    let isReady = status === "READY";
+    let isDefender = attackerId != userId;
+    if (!isPlayer) {
+        throw new Error(NOT_A_PLAYER_MSG);
+    }
+    if (!isReady) {
+        throw new Error(MATCH_NOT_READY_MSG);
+    }
+    if (!isDefender) {
+        throw new Error(NOT_YOUR_TURN_MSG);
+    }
+
+    // push all table pairs into player hands
+    let newPlayerHands = { ...playerHands };
+    for (let { attackCard, defendCard } of tablePairs) {
+        newPlayerHands[userId].push(attackCard);
+        if (!defendCard) {
+            newPlayerHands[userId].push(defendCard);
+        }
+    }
+
+    // fill player hands
+    let newDrawPile = [...drawPile];
+    for (let id in newPlayerHands) {
+        while (
+            newPlayerHands[id].length < DURAK_DRAW_CARD_LIMIT &&
+            newDrawPile.length > 0
+        ) {
+            newPlayerHands[id].push(newDrawPile.pop());
+        }
+    }
+
+    return {
+        ...state,
+        status: "PLAYING",
+        gameState: {
+            ...gameState,
+            tablePairs: [],
+            playerHands: newPlayerHands,
+            drawPile: newDrawPile,
+        },
+    };
 };
 
 export class DurakEngine implements IGameEngine<DurakState, DurakAction> {
@@ -25,7 +308,7 @@ export class DurakEngine implements IGameEngine<DurakState, DurakAction> {
         return {
             ...newMatch(gameDefinition.id, matchType),
             gameState: {
-                drawPile: createOrderedDeck(),
+                drawPile: [],
                 discardPile: [],
                 playerHands: {},
                 tablePairs: [],
@@ -43,6 +326,26 @@ export class DurakEngine implements IGameEngine<DurakState, DurakAction> {
                 case "START_MATCH": {
                     const { userId } = action;
                     newState = startMatch(state, userId);
+                    break;
+                }
+                case "ATTACK": {
+                    const { userId, cards } = action;
+                    newState = attack(state, userId, cards);
+                    break;
+                }
+                case "PASS": {
+                    const { userId } = action;
+                    newState = pass(state, userId);
+                    break;
+                }
+                case "DEFEND": {
+                    const { userId, cards } = action;
+                    newState = defend(state, userId, cards);
+                    break;
+                }
+                case "TAKE": {
+                    const { userId } = action;
+                    newState = take(state, userId);
                     break;
                 }
             }

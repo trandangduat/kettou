@@ -5,6 +5,8 @@ import {
     Match,
     MatchType,
     newMatch,
+    NOT_A_PLAYER_MSG,
+    NOT_HOST_MSG,
 } from "@mini-games/core";
 import {
     addMove,
@@ -18,12 +20,6 @@ export const gameDefinition = {
     createEngine: () => new DiceTerritoryEngine(),
 };
 
-const NOT_A_PLAYER_MSG =
-    "You must be a player of this match to perform such actions.";
-const INVALID_MOVE_MSG = "Invalid move. Move again";
-const NOT_YOUR_TURN_MSG = "It is not your turn.";
-const GAME_NOT_STARTED_MSG = "Game has not started yet.";
-const NOT_HOST_MSG = "You must be the host to perform such actions.";
 export type MatchState = Match<DiceTerritoryState>;
 export type DiceTerritoryAction =
     | { type: "START_MATCH"; userId: string }

@@ -1,4 +1,4 @@
-import { Card, CARD_RANKS, CARD_SUITS } from "./types.js";
+import { Card, CARD_RANKS, CARD_SUITS, CardSuit } from "./types.js";
 
 export const createOrderedDeck = (): Card[] => {
     const deck: Card[] = [];
@@ -18,4 +18,38 @@ export const shuffleDeck = (deck: Card[]): Card[] => {
         [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
     }
     return newDeck;
+};
+
+export const isSameCard = (a: Card, b: Card): boolean => {
+    return a.rank === b.rank && a.suit === b.suit;
+};
+
+export const compareRank = (a: Card, b: Card): boolean => {
+    let x = CARD_RANKS.findIndex((r) => r === a.rank);
+    let y = CARD_RANKS.findIndex((r) => r === b.rank);
+    if (x < 0 || y < 0) {
+        return false;
+    }
+    return x > y;
+};
+
+export const defensible = ({
+    attackCard,
+    defendCard,
+    trumpSuit,
+}: {
+    attackCard: Card;
+    defendCard: Card;
+    trumpSuit: CardSuit;
+}): boolean => {
+    if (defendCard.suit === trumpSuit) {
+        if (attackCard.suit === trumpSuit) {
+            return compareRank(defendCard, attackCard);
+        }
+        return true;
+    }
+    return (
+        defendCard.suit === attackCard.suit &&
+        compareRank(defendCard, attackCard)
+    );
 };
