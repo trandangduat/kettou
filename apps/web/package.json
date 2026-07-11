@@ -12,20 +12,21 @@
         "test": "vitest run"
     },
     "dependencies": {
+        "@mini-games/core": "workspace:*",
+        "@mini-games/game-card-durak": "workspace:*",
+        "@mini-games/game-dice-territory": "workspace:*",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/react-devtools": "latest",
         "@tanstack/react-query": "^5.100.9",
         "@tanstack/react-router": "latest",
         "@tanstack/react-router-devtools": "latest",
         "@tanstack/router-plugin": "^1.132.0",
+        "cnfast": "^0.0.8",
         "lucide-react": "^0.545.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "socket.io-client": "^4.8.3",
-        "tailwindcss": "^4.1.18",
-        "@mini-games/core": "workspace:*",
-        "@mini-games/game-dice-territory": "workspace:*",
-        "@mini-games/game-card-durak": "workspace:*"
+        "tailwindcss": "^4.1.18"
     },
     "devDependencies": {
         "@tailwindcss/typography": "^0.5.16",

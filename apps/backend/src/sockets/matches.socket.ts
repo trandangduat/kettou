@@ -64,14 +64,18 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         console.log("PROCESS ACTION: ", action.type);
         try {
             let match = await getMatchState({ matchId });
+
             if (!match) {
                 throw new Error("Match not found");
             }
+
             const engine = GameRegistry.getEngine(match.gameId);
             const res = engine.processAction(match, action);
+
             if (!res.isValid) {
-                throw new Error(res.error);
+                throw res.error;
             }
+
             match = res.newState;
             if (action.type === "START_MATCH") {
                 saveMatch({ match, startedAt: Date.now() });
@@ -82,7 +86,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             await saveAndBroadcastMatchState({ io, match });
             ack({ ok: true });
         } catch (err) {
-            ack({ ok: false, error: err });
+            ack({ ok: false, error: String(err) });
         }
     };
 

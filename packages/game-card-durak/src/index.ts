@@ -1,5 +1,6 @@
 import {
     ActionResult,
+    GAME_NOT_STARTED_MSG,
     IGameEngine,
     INVALID_ACTION_MSG,
     MATCH_NOT_READY_MSG,
@@ -79,20 +80,30 @@ const attack = (
     userId: string,
     cards: Card[],
 ): MatchState => {
+      console.log("i got here", state, userId, cards)
+
     const { players, status, gameState } = state;
     const { attackerId, playerHands, tablePairs } = gameState;
 
     let isPlayer = players.some((p) => p.userId === userId);
-    let isReady = status === "READY";
+    let isPlaying = status === "PLAYING";
     let isAttacker = attackerId === userId;
     if (!isPlayer) {
         throw new Error(NOT_A_PLAYER_MSG);
     }
-    if (!isReady) {
-        throw new Error(MATCH_NOT_READY_MSG);
+    if (!isPlaying) {
+        throw new Error(GAME_NOT_STARTED_MSG);
     }
     if (!isAttacker) {
         throw new Error(NOT_YOUR_TURN_MSG);
+    }
+    // first cards attack must all have the same rank
+    if (!tablePairs.length) {
+        for (let card of cards) {
+            if (card.rank !== cards[0].rank) {
+                throw new Error(INVALID_ATTACK_MSG);
+            }
+        }
     }
 
     let tableRanks = new Set<string>();
@@ -100,11 +111,14 @@ const attack = (
         tableRanks.add(pair.attackCard.rank);
         tableRanks.add(pair.defendCard!.rank);
     }
-    for (let card of cards) {
-        if (!tableRanks.has(card.rank)) {
-            throw new Error(INVALID_ATTACK_MSG);
+    if (tablePairs.length > 0) {
+        for (let card of cards) {
+            if (!tableRanks.has(card.rank)) {
+                throw new Error(INVALID_ATTACK_MSG);
+            }
         }
     }
+    console.log("comeeeeeeeeeeeeeeeee")
 
     let newPlayerHands = { ...playerHands };
     newPlayerHands[userId] = newPlayerHands[userId].filter(
@@ -118,7 +132,6 @@ const attack = (
 
     return {
         ...state,
-        status: "PLAYING",
         gameState: {
             ...state.gameState,
             playerHands: newPlayerHands,
@@ -133,13 +146,13 @@ const pass = (state: MatchState, userId: string): MatchState => {
         gameState;
 
     let isPlayer = players.some((p) => p.userId === userId);
-    let isReady = status === "READY";
+    let isPlaying = status === "PLAYING";
     let isAttacker = attackerId === userId;
     if (!isPlayer) {
         throw new Error(NOT_A_PLAYER_MSG);
     }
-    if (!isReady) {
-        throw new Error(MATCH_NOT_READY_MSG);
+    if (!isPlaying) {
+        throw new Error(GAME_NOT_STARTED_MSG);
     }
     if (!isAttacker) {
         throw new Error(NOT_YOUR_TURN_MSG);
@@ -177,13 +190,13 @@ const pass = (state: MatchState, userId: string): MatchState => {
 
     return {
         ...state,
-        status: "PLAYING",
         gameState: {
             ...gameState,
             tablePairs: [],
             playerHands: newPlayerHands,
             drawPile: newDrawPile,
             attackerId: newAttackerId,
+            discardPile: newDiscardPile
         },
     };
 };
@@ -197,13 +210,13 @@ const defend = (
     const { trumpCard, attackerId, playerHands, tablePairs } = gameState;
 
     let isPlayer = players.some((p) => p.userId === userId);
-    let isReady = status === "READY";
+    let isPlaying = status === "PLAYING";
     let isDefender = attackerId != userId;
     if (!isPlayer) {
         throw new Error(NOT_A_PLAYER_MSG);
     }
-    if (!isReady) {
-        throw new Error(MATCH_NOT_READY_MSG);
+    if (!isPlaying) {
+        throw new Error(GAME_NOT_STARTED_MSG);
     }
     if (!isDefender) {
         throw new Error(NOT_YOUR_TURN_MSG);
@@ -244,7 +257,6 @@ const defend = (
 
     return {
         ...state,
-        status: "PLAYING",
         gameState: {
             ...state.gameState,
             playerHands: newPlayerHands,
@@ -259,13 +271,13 @@ const take = (state: MatchState, userId: string): MatchState => {
         gameState;
 
     let isPlayer = players.some((p) => p.userId === userId);
-    let isReady = status === "READY";
+    let isPlaying = status === "PLAYING";
     let isDefender = attackerId != userId;
     if (!isPlayer) {
         throw new Error(NOT_A_PLAYER_MSG);
     }
-    if (!isReady) {
-        throw new Error(MATCH_NOT_READY_MSG);
+    if (!isPlaying) {
+        throw new Error(GAME_NOT_STARTED_MSG);
     }
     if (!isDefender) {
         throw new Error(NOT_YOUR_TURN_MSG);
@@ -275,7 +287,7 @@ const take = (state: MatchState, userId: string): MatchState => {
     let newPlayerHands = { ...playerHands };
     for (let { attackCard, defendCard } of tablePairs) {
         newPlayerHands[userId].push(attackCard);
-        if (!defendCard) {
+        if (defendCard) {
             newPlayerHands[userId].push(defendCard);
         }
     }
@@ -293,7 +305,6 @@ const take = (state: MatchState, userId: string): MatchState => {
 
     return {
         ...state,
-        status: "PLAYING",
         gameState: {
             ...gameState,
             tablePairs: [],
@@ -357,7 +368,7 @@ export class DurakEngine implements IGameEngine<DurakState, DurakAction> {
             return {
                 newState: null,
                 isValid: false,
-                error: error instanceof Error ? error.message : String(error),
+                error: error,
             };
         }
     }

@@ -40,6 +40,20 @@ function RouteComponent() {
             },
         );
     };
+    const handleAction = (action: any) => {
+      socket.emit(
+          "match:action",
+          {
+              matchId: match.id,
+              action: action,
+          },
+          ({ ok, error }: { ok: boolean; error?: any }) => {
+              if (!ok) {
+                  console.error(error);
+              }
+          },
+      );
+    }
 
     useEffect(() => {
         socket.emit(
@@ -113,6 +127,7 @@ function RouteComponent() {
                 setMatch={setMatch}
                 user={user}
                 engine={engine}
+                handleAction={handleAction}
             />
         </>
     );
