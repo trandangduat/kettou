@@ -26,8 +26,11 @@ export interface TablePair {
     defendCard?: Card;
 }
 
+export type EndReason = "EMPTY_HAND" | "FORFEIT";
+
 export interface EndGameState {
-    winnerUserId: string | null;
+    reason: EndReason;
+    winnerUserId: string;
 }
 
 export interface DurakState {

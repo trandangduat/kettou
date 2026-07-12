@@ -10,7 +10,13 @@ import {
     NOT_HOST_MSG,
     NOT_YOUR_TURN_MSG,
 } from "@mini-games/core";
-import { Card, DurakAction, DurakState, MatchState } from "./types.js";
+import {
+    Card,
+    DurakAction,
+    DurakState,
+    EndGameState,
+    MatchState,
+} from "./types.js";
 import {
     createOrderedDeck,
     defensible,
@@ -59,7 +65,7 @@ const startMatch = (state: MatchState, userId: string): MatchState => {
             playerHands[userId].push(lastCard);
         }
     }
-    trumpCard = deck.pop();
+    trumpCard = deck[0];
     drawPile = deck;
 
     return {
@@ -80,8 +86,6 @@ const attack = (
     userId: string,
     cards: Card[],
 ): MatchState => {
-      console.log("i got here", state, userId, cards)
-
     const { players, status, gameState } = state;
     const { attackerId, playerHands, tablePairs } = gameState;
 
@@ -118,7 +122,6 @@ const attack = (
             }
         }
     }
-    console.log("comeeeeeeeeeeeeeeeee")
 
     let newPlayerHands = { ...playerHands };
     newPlayerHands[userId] = newPlayerHands[userId].filter(
@@ -130,12 +133,22 @@ const attack = (
         newTablePairs.push({ attackCard: card });
     }
 
+    let endState: EndGameState | null = null;
+    if (newPlayerHands[userId].length === 0) {
+        endState = {
+            reason: "EMPTY_HAND",
+            winnerUserId: userId,
+        };
+    }
+
     return {
         ...state,
+        status: endState ? "ENDED" : "PLAYING",
         gameState: {
             ...state.gameState,
             playerHands: newPlayerHands,
             tablePairs: newTablePairs,
+            endState,
         },
     };
 };
@@ -172,15 +185,24 @@ const pass = (state: MatchState, userId: string): MatchState => {
         newDiscardPile.push(defendCard);
     }
 
-    // fill player hands
+    // fill player hands, attacker first
     let newDrawPile = [...drawPile];
     let newPlayerHands = { ...playerHands };
+    let attackerHand = newPlayerHands[attackerId];
+    while (
+        attackerHand.length < DURAK_DRAW_CARD_LIMIT &&
+        newDrawPile.length > 0
+    ) {
+        attackerHand.push(newDrawPile.pop());
+    }
     for (let id in newPlayerHands) {
-        while (
-            newPlayerHands[id].length < DURAK_DRAW_CARD_LIMIT &&
-            newDrawPile.length > 0
-        ) {
-            newPlayerHands[id].push(newDrawPile.pop());
+        if (id !== attackerId) {
+            while (
+                newPlayerHands[id].length < DURAK_DRAW_CARD_LIMIT &&
+                newDrawPile.length > 0
+            ) {
+                newPlayerHands[id].push(newDrawPile.pop());
+            }
         }
     }
 
@@ -196,7 +218,7 @@ const pass = (state: MatchState, userId: string): MatchState => {
             playerHands: newPlayerHands,
             drawPile: newDrawPile,
             attackerId: newAttackerId,
-            discardPile: newDiscardPile
+            discardPile: newDiscardPile,
         },
     };
 };
@@ -255,12 +277,22 @@ const defend = (
         }
     }
 
+    let endState: EndGameState | null = null;
+    if (newPlayerHands[userId].length === 0) {
+        endState = {
+            reason: "EMPTY_HAND",
+            winnerUserId: userId,
+        };
+    }
+
     return {
         ...state,
+        status: endState ? "ENDED" : "PLAYING",
         gameState: {
             ...state.gameState,
             playerHands: newPlayerHands,
             tablePairs: newTablePairs,
+            endState,
         },
     };
 };
@@ -292,14 +324,23 @@ const take = (state: MatchState, userId: string): MatchState => {
         }
     }
 
-    // fill player hands
+    // fill player hands, attacker first
     let newDrawPile = [...drawPile];
+    let attackerHand = newPlayerHands[attackerId];
+    while (
+        attackerHand.length < DURAK_DRAW_CARD_LIMIT &&
+        newDrawPile.length > 0
+    ) {
+        attackerHand.push(newDrawPile.pop());
+    }
     for (let id in newPlayerHands) {
-        while (
-            newPlayerHands[id].length < DURAK_DRAW_CARD_LIMIT &&
-            newDrawPile.length > 0
-        ) {
-            newPlayerHands[id].push(newDrawPile.pop());
+        if (id !== attackerId) {
+            while (
+                newPlayerHands[id].length < DURAK_DRAW_CARD_LIMIT &&
+                newDrawPile.length > 0
+            ) {
+                newPlayerHands[id].push(newDrawPile.pop());
+            }
         }
     }
 

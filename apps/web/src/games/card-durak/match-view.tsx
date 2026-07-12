@@ -31,11 +31,12 @@ export function MatchView({
         tablePairs,
         playerHands,
         attackerId,
+        endState,
     } = gameState;
 
     const [chosenCards, setChosenCards] = useState<Card[]>([]);
 
-    if (status !== "PLAYING") {
+    if (status == "WAITING" || status == "READY") {
         return null;
     }
 
@@ -86,13 +87,13 @@ export function MatchView({
             <p>
                 {isAttacker ? "You are the attacker" : "You are the defender"}
             </p>
-            <Board>
-                <div className="flex flex-row gap-1 h-full justify-between items-center px-6">
+            <Board className="flex flex-col items-center">
+                <div className="grid grid-cols-[0.2fr_0.6fr_0.2fr] gap-1 h-full justify-items-center items-center px-6">
                     <DrawPile
                         quantity={drawPile.length}
                         trumpCard={trumpCard}
                     />
-                    <div className="flex flex-col justify-between items-center h-full flex-1">
+                    <div className="flex flex-col justify-between items-center h-full">
                         <EnemyHand quantity={enemyHandLength} />
                         <div className="flex flex-row gap-4">
                             {tablePairs.map((pair, _) => (
@@ -114,23 +115,35 @@ export function MatchView({
                     </div>
                     <DiscardPile quantity={discardPile.length} />
                 </div>
+                <div className="">
+                    {isAttacker ? (
+                        <AttackActions
+                            handleAttack={handleAttack}
+                            handlePass={handlePass}
+                        />
+                    ) : (
+                        <DefendActions
+                            handleDefend={handleDefend}
+                            handleTake={handleTake}
+                        />
+                    )}
+                </div>
             </Board>
-            {isAttacker ? (
-                <AttackActions
-                    handleAttack={handleAttack}
-                    handlePass={handlePass}
-                />
-            ) : (
-                <DefendActions
-                    handleDefend={handleDefend}
-                    handleTake={handleTake}
-                />
+            {endState && endState.winnerUserId === user.id && (
+                <div>
+                    You <b className="text-emerald-600">won!</b>
+                </div>
+            )}
+            {endState && endState.winnerUserId !== user.id && (
+                <div>
+                    You <b className="text-red-500">lost!</b>
+                </div>
             )}
         </div>
     );
 }
 
-const buttonStyle = `hover:font-bold cursor-pointer`;
+const buttonStyle = `text-white hover:font-bold cursor-pointer`;
 
 function AttackActions({
     className,
@@ -284,7 +297,7 @@ function DrawPile({
                 <PlayingCard
                     suit={trumpCard.suit}
                     rank={trumpCard.rank}
-                    className="col-start-1 row-start-1 -translate-6 -rotate-7"
+                    className="col-start-1 row-start-1 -translate-y-12"
                 />
             )}
             {Array.from({ length: quantity }).map((_, i) => (
