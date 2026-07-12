@@ -28,13 +28,10 @@ export const saveAndBroadcastMatchState = async ({
 }) => {
     const { id: matchId, players, gameId } = match;
     const engine = GameRegistry.getEngine(gameId);
-    console.log("PLAYERSS ", players)
     for (const { userId, socketId } of players) {
         // convert the match state to the client's perspective
         // so that the client only sees their own state, not the state of all players
         const matchForUser = engine.convertToClientMatchState(match, userId);
-        console.log("User Id:", userId)
-        console.log("Match for User:", matchForUser)
         io.to(socketId).emit(
             "match:updated",
             matchForUser,
@@ -66,8 +63,6 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             let match = await getMatchState({ matchId });
             let socketId = socket.id;
             match = addUserToMatch(match, user, socketId);
-
-            console.log("MATCHHH", match)
 
             await saveAndBroadcastMatchState({ io, match });
             ack({ ok: true });

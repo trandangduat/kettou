@@ -35,11 +35,13 @@ const processMatchmakingQueue = async ({
             username: playerA.username,
             userId: playerA.userId,
             elo: playerA.elo,
+            socketId: playerA.socketId,
         });
         match.players.push({
             username: playerB.username,
             userId: playerB.userId,
             elo: playerB.elo,
+            socketId: playerB.socketId,
         });
         match = updateReadyStatus(match);
         await setMatchState({ matchId: match.id, matchState: match });
