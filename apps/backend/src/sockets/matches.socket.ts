@@ -51,7 +51,8 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             });
             ack({ ok: true, matchId: match.id });
         } catch (err) {
-            ack({ ok: false, error: err });
+            console.error(err);
+            ack({ ok: false, error: String(err) });
         }
     };
 
@@ -98,6 +99,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             await saveAndBroadcastMatchState({ io, match });
             ack({ ok: true });
         } catch (err) {
+            console.error(err);
             ack({ ok: false, error: String(err) });
         }
     };
@@ -124,7 +126,8 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             await saveAndBroadcastMatchState({ io, match });
             ack({ ok: true });
         } catch (err) {
-            ack({ ok: false, error: err });
+            console.error(err);
+            ack({ ok: false, error: String(err) });
         }
     };
 
