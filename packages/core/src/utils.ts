@@ -1,5 +1,6 @@
 import { v6 as uuidv6 } from "uuid";
 import { Match, MatchType } from "./types.js";
+import { GameRegistry } from "./index.js";
 
 export const debugMatch = (m: any) => {
     console.log("MATCH:", JSON.stringify(m, null, 2));
@@ -51,4 +52,15 @@ export const removeUserFromMatch = (
         players.splice(removedPlayerIndex, 1);
     }
     return updateReadyStatus(newMatch);
+};
+
+export const sanitizeMatchStateForClient = (match: Match<any>, userId: string): Match<any> => {
+    const { gameId, players } = match;
+    const engine = GameRegistry.getEngine(gameId)
+    const newMatchState = engine.convertToClientMatchState(match, userId);
+    const sanitizedPlayers = players.map((p) => ({ ...p, socketId: undefined }));
+    return {
+        ...newMatchState,
+        players: sanitizedPlayers,
+    }
 };

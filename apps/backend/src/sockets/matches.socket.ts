@@ -3,6 +3,7 @@ import {
     Match,
     GameRegistry,
     addUserToMatch,
+    sanitizeMatchStateForClient,
 } from "@mini-games/core";
 import {
     createMatch,
@@ -26,12 +27,11 @@ export const saveAndBroadcastMatchState = async ({
     io: Server;
     match: Match<any>;
 }) => {
-    const { id: matchId, players, gameId } = match;
-    const engine = GameRegistry.getEngine(gameId);
+    const { id: matchId, players } = match;
     for (const { userId, socketId } of players) {
         // convert the match state to the client's perspective
         // so that the client only sees their own state, not the state of all players
-        const matchForUser = engine.convertToClientMatchState(match, userId);
+        const matchForUser = sanitizeMatchStateForClient(match, userId);
         io.to(socketId).emit(
             "match:updated",
             matchForUser,
