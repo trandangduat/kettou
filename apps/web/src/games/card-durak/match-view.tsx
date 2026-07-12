@@ -3,14 +3,14 @@ import {
     isSameCard,
     type Card,
     type DurakEngine,
-    type MatchState,
+    type MatchStateClient,
 } from "@mini-games/game-card-durak";
 import { PlayingCard, PlayingCardBack } from "./card";
 import cn from "cnfast";
 
 type MatchViewParams = {
-    match: MatchState;
-    setMatch: Dispatch<SetStateAction<MatchState>>;
+    match: MatchStateClient;
+    setMatch: Dispatch<SetStateAction<MatchStateClient>>;
     user: any;
     engine: DurakEngine;
     handleAction: (action: any) => void;
@@ -26,10 +26,11 @@ export function MatchView({
     const { gameState, players, status } = match;
     const {
         trumpCard,
-        drawPile,
-        discardPile,
+        drawPileCount,
+        discardPileCount,
         tablePairs,
-        playerHands,
+        playerHand,
+        enemyHandCount,
         attackerId,
         endState,
     } = gameState;
@@ -40,11 +41,7 @@ export function MatchView({
         return null;
     }
 
-    // drawPile, enemy hand and discard pile must be secret
     let isAttacker = attackerId === user.id;
-    let handCards: Card[] = playerHands[user.id];
-    let enemyId = players.filter((p) => p.userId !== user.id)[0].userId;
-    let enemyHandLength = playerHands[enemyId]?.length ?? 0;
     const isPlaying = status === "PLAYING";
     const hasTablePairs = tablePairs.length > 0;
     const hasUndefendedAttack = tablePairs.some((pair) => !pair.defendCard);
@@ -124,11 +121,11 @@ export function MatchView({
             <Board className="flex flex-col items-center">
                 <div className="grid h-full w-full grid-cols-[7rem_minmax(0,1fr)_7rem] items-center justify-items-center gap-3 px-2">
                     <DrawPile
-                        quantity={drawPile.length}
+                        quantity={drawPileCount}
                         trumpCard={trumpCard}
                     />
                     <div className="flex h-full min-w-0 flex-col items-center justify-between gap-3 overflow-hidden py-1">
-                        <EnemyHand quantity={enemyHandLength} />
+                        <EnemyHand quantity={enemyHandCount} />
                         <div className="flex max-w-full flex-row flex-wrap justify-center gap-x-6 gap-y-5 px-2">
                             {tablePairs.map((pair, _) => (
                                 <TablePair
@@ -144,12 +141,12 @@ export function MatchView({
                         <YourHand
                             chosenCards={chosenCards}
                             setChosenCards={setChosenCards}
-                            cards={handCards}
+                            cards={playerHand}
                             disabled={!canSelectCards}
                             showSelectionOrder={!isAttacker && hasUndefendedAttack}
                         />
                     </div>
-                    <DiscardPile quantity={discardPile.length} />
+                    <DiscardPile quantity={discardPileCount} />
                 </div>
                 <div className="mt-3">
                     {isAttacker ? (

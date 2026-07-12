@@ -43,10 +43,26 @@ export interface DurakState {
     endState?: EndGameState;
 }
 
+export interface DurakStateClient {
+    drawPile: undefined;
+    discardPile: undefined;
+    playerHands: undefined;
+
+    trumpCard?: Card;
+    drawPileCount: number;
+    discardPileCount: number;
+    attackerId?: string;
+    playerHand: Card[];
+    enemyHandCount: number;
+    tablePairs: TablePair[];
+    endState?: EndGameState;
+}
+
 export type MatchState = Match<DurakState>;
+export type MatchStateClient = Match<DurakStateClient>;
 export type DurakAction =
     | { type: "START_MATCH"; userId: string }
     | { type: "ATTACK"; userId: string; cards: Card[] }
     | { type: "PASS"; userId: string }
     | { type: "DEFEND"; userId: string; cards: Card[] }
-    | { type: "TAKE"; userId: string }
+    | { type: "TAKE"; userId: string };

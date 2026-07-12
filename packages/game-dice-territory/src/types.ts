@@ -1,3 +1,5 @@
+import { Match } from "@mini-games/core";
+
 export interface Move {
     r: number;
     c: number;
@@ -21,3 +23,18 @@ export interface DiceTerritoryState {
     turn: number;
     endState: EndGameState | null;
 }
+
+export interface DiceTerritoryStateClient {
+    roundNumber: number;
+    rounds: Round[];
+    turn: number;
+    endState: EndGameState | null;
+}
+
+export type MatchState = Match<DiceTerritoryState>;
+export type MatchStateClient = Match<DiceTerritoryStateClient>;
+export type DiceTerritoryAction =
+    | { type: "START_MATCH"; userId: string }
+    | { type: "ROLL_DICE"; userId: string }
+    | { type: "MOVE"; userId: string; move: Move }
+    | { type: "SKIP_TURN"; userId: string };

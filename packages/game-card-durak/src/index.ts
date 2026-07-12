@@ -3,7 +3,7 @@ import {
     GAME_NOT_STARTED_MSG,
     IGameEngine,
     INVALID_ACTION_MSG,
-    MATCH_NOT_READY_MSG,
+    Match,
     MatchType,
     newMatch,
     NOT_A_PLAYER_MSG,
@@ -16,6 +16,8 @@ import {
     DurakState,
     EndGameState,
     MatchState,
+    DurakStateClient,
+    MatchStateClient,
 } from "./types.js";
 import {
     createOrderedDeck,
@@ -355,7 +357,11 @@ const take = (state: MatchState, userId: string): MatchState => {
     };
 };
 
-export class DurakEngine implements IGameEngine<DurakState, DurakAction> {
+export class DurakEngine implements IGameEngine<
+    DurakState,
+    DurakAction,
+    DurakStateClient
+> {
     createNewMatchState(matchType: MatchType): MatchState {
         return {
             ...newMatch(gameDefinition.id, matchType),
@@ -412,6 +418,33 @@ export class DurakEngine implements IGameEngine<DurakState, DurakAction> {
                 error: error,
             };
         }
+    }
+
+    convertToClientMatchState(
+        match: Match<DurakState>,
+        userId: string,
+    ): MatchStateClient {
+        const { gameState, players } = match;
+        const { drawPile, discardPile, playerHands } = gameState;
+        const playerHand = playerHands[userId] ?? [];
+        const enemyHandCount = (
+            playerHands[players.find((p) => p.userId !== userId)?.userId] ?? []
+        ).length;
+
+        return {
+            ...match,
+            gameState: {
+                ...gameState,
+                drawPile: undefined,
+                discardPile: undefined,
+                playerHands: undefined,
+
+                drawPileCount: drawPile.length,
+                discardPileCount: discardPile.length,
+                playerHand,
+                enemyHandCount,
+            },
+        };
     }
 }
 

@@ -1,4 +1,5 @@
 export interface Player {
+    socketId: string;
     userId: string;
     username: string;
     elo: number;
@@ -22,12 +23,16 @@ export interface ActionResult<TGameState> {
     error?: string;
 }
 
-export interface IGameEngine<TGameState, TAction> {
+export interface IGameEngine<TGameState, TAction, TGameStateClient> {
     createNewMatchState(matchType: MatchType): Match<TGameState>;
     processAction(
         state: Match<TGameState>,
         action: TAction,
     ): ActionResult<Match<TGameState>>;
+    convertToClientMatchState(
+        match: Match<TGameState>,
+        userId: string,
+    ): Match<TGameStateClient>;
 }
 
 export const NOT_A_PLAYER_MSG =

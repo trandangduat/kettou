@@ -23,27 +23,32 @@ export const updateReadyStatus = (match: Match<any>): Match<any> => {
     };
 };
 
-export const addUserToMatch = (match: Match<any>, user: any): Match<any> => {
+export const addUserToMatch = (
+    match: Match<any>,
+    user: any,
+    socketId: string,
+): Match<any> => {
     const { username, id: userId, elo } = user;
     const isPlayer = match.players.find((p) => p.userId === userId);
     if (isPlayer) {
         return match;
     }
-    match = {
+    let newMatch = {
         ...match,
-        players: [...match.players, { username, userId, elo }],
+        players: [...match.players, { username, userId, elo, socketId }],
     };
-    return updateReadyStatus(match);
+    return updateReadyStatus(newMatch);
 };
 
 export const removeUserFromMatch = (
     match: Match<any>,
     userId: string,
 ): Match<any> => {
-    const { players } = match;
+    let newMatch = { ...match }
+    const { players } = newMatch;
     const removedPlayerIndex = players.findIndex((p) => p.userId === userId);
     if (removedPlayerIndex >= 0) {
         players.splice(removedPlayerIndex, 1);
     }
-    return updateReadyStatus(match);
+    return updateReadyStatus(newMatch);
 };

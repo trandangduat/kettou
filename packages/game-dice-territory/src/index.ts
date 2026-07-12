@@ -1,12 +1,14 @@
-import { DiceTerritoryState, Move, Round } from "./types.js";
+import { DiceTerritoryAction, DiceTerritoryState, DiceTerritoryStateClient, MatchState, MatchStateClient, Move, Round } from "./types.js";
 import {
     ActionResult,
+    GAME_NOT_STARTED_MSG,
     IGameEngine,
     Match,
     MatchType,
     newMatch,
     NOT_A_PLAYER_MSG,
     NOT_HOST_MSG,
+    NOT_YOUR_TURN_MSG,
 } from "@mini-games/core";
 import {
     addMove,
@@ -19,13 +21,6 @@ export const gameDefinition = {
     id: "dice-territory",
     createEngine: () => new DiceTerritoryEngine(),
 };
-
-export type MatchState = Match<DiceTerritoryState>;
-export type DiceTerritoryAction =
-    | { type: "START_MATCH"; userId: string }
-    | { type: "ROLL_DICE"; userId: string }
-    | { type: "MOVE"; userId: string; move: Move }
-    | { type: "SKIP_TURN"; userId: string };
 
 const startMatch = (state: MatchState, userId: string): MatchState => {
     const { players, status, gameState } = state;
@@ -144,7 +139,8 @@ const skipTurn = (state: MatchState, userId: string): MatchState => {
 
 export class DiceTerritoryEngine implements IGameEngine<
     DiceTerritoryState,
-    DiceTerritoryAction
+    DiceTerritoryAction,
+    DiceTerritoryStateClient
 > {
     createNewMatchState(matchType: MatchType): Match<DiceTerritoryState> {
         return {
@@ -197,6 +193,13 @@ export class DiceTerritoryEngine implements IGameEngine<
                 error: error instanceof Error ? error.message : String(error),
             };
         }
+    }
+
+    convertToClientMatchState(
+        match: Match<DiceTerritoryState>,
+        userId: string,
+    ): MatchStateClient {
+        return match;
     }
 }
 

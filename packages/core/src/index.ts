@@ -1,9 +1,9 @@
 import { IGameEngine } from "./types.js";
 
 class Registry {
-    private gameRegistry: Map<string, IGameEngine<any, any>> = new Map();
+    private gameRegistry: Map<string, IGameEngine<any, any, any>> = new Map();
 
-    register(gameId: string, engine: IGameEngine<any, any>): void {
+    register(gameId: string, engine: IGameEngine<any, any, any>): void {
         this.gameRegistry.set(gameId, engine);
     }
 
