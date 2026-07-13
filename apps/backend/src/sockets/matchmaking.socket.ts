@@ -13,10 +13,8 @@ import {
     setMatchState,
 } from "../services/matches.services.js";
 import { updateReadyStatus } from "@mini-games/core";
-
-const getMatchmakingKey = (gameId: string) => {
-    return `matchmaking:${gameId}`;
-};
+import { getCurrentUser } from "../services/auth.services.js";
+import { getMatchmakingRoomKey, getUserRoomKey } from "./utils.js";
 
 const processMatchmakingQueue = async ({
     io,
@@ -35,29 +33,28 @@ const processMatchmakingQueue = async ({
             username: playerA.username,
             userId: playerA.userId,
             elo: playerA.elo,
-            socketId: playerA.socketId,
+            status: "ONLINE"
         });
         match.players.push({
             username: playerB.username,
             userId: playerB.userId,
             elo: playerB.elo,
-            socketId: playerB.socketId,
+            status: "ONLINE"
         });
         match = updateReadyStatus(match);
         await setMatchState({ matchId: match.id, matchState: match });
 
-        const socketA = io.sockets.sockets.get(playerA.socketId);
-        const socketB = io.sockets.sockets.get(playerB.socketId);
-
-        const mmKey = getMatchmakingKey(gameId);
-        socketA?.leave(mmKey);
-        socketB?.leave(mmKey);
-
-        const matchKey = getMatchKey(match.id);
-        socketA?.join(matchKey);
-        socketB?.join(matchKey);
-
-        io.to(matchKey).emit("matchmaking:found", match.id);
+        // remove players from matchmaking room
+        // and announce user that they have been matched
+        for (let player of match.players) {
+            const { userId } = player;
+            const userRoomKey = getUserRoomKey(userId);
+            const sockets = await io.in(userRoomKey).fetchSockets();
+            for (let s of sockets) {
+                s.leave(getMatchmakingRoomKey(gameId));
+            }
+            io.to(userRoomKey).emit("matchmaking:found", match.id)
+        }
     }
 
     await removePairsFromMmQueue({ gameId, pairs });
@@ -76,29 +73,33 @@ export const startMatchMakingWorker = (io: Server) => {
         } finally {
             isProcessing = false;
         }
-    }, 20000000);
+    }, 2000);
 };
 
 export const setUpMatchmakingSocket = ({
     io,
     socket,
 }: SocketHandlerContext) => {
-    const joinMatchmaking = async ({ gameId, user }, ack) => {
-        socket.join(getMatchmakingKey(gameId));
-        const { id, elo, username } = user;
+    const joinMatchmaking = async (gameId: string, ack: any) => {
+        socket.join(getMatchmakingRoomKey(gameId));
+
+        const { userId } = socket.data;
+        const { elo, username } = getCurrentUser(userId);
+
         const player = {
-            userId: id,
+            userId,
             elo,
             username,
-            socketId: socket.id,
             joinedAt: Date.now(),
         };
         await addToMatchmakingQueue({ gameId, player });
         ack(true);
     };
-    const leaveMatchmaking = async ({ gameId, user }, ack) => {
-        socket.leave(getMatchmakingKey(gameId));
-        await removeFromMatchmakingQueue({ gameId, userId: user.id });
+    const leaveMatchmaking = async (gameId: string, ack: any) => {
+        const { userId } = socket.data;
+
+        socket.leave(getMatchmakingRoomKey(gameId));
+        await removeFromMatchmakingQueue({ gameId, userId });
         ack(true);
     };
     socket.on("matchmaking:join", joinMatchmaking);

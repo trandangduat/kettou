@@ -1,12 +1,13 @@
-export interface Player {
-    socketId: string;
-    userId: string;
-    username: string;
-    elo: number;
-}
-
+export type PlayerStatus = "ONLINE" | "OFFLINE";
 export type MatchStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
 export type MatchType = "CUSTOM" | "RANKED";
+
+export interface Player {
+    userId: string;
+    username: string;
+    status: PlayerStatus;
+    elo: number;
+}
 
 export interface Match<TGameState> {
     id: string;

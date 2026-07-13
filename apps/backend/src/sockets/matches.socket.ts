@@ -8,7 +8,6 @@ import {
 import {
     createMatch,
     deleteMatch,
-    getMatchKey,
     getMatchState,
     saveEndedMatch,
     saveMatch,
@@ -16,6 +15,8 @@ import {
 } from "../services/matches.services.js";
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
+import { getLobbyRoomKey, getUserRoomKey } from "./utils.js";
+import { getCurrentUser } from "../services/auth.services.js";
 
 const NOT_A_PLAYER_MSG =
     "You must be a player of this match to perform such actions.";
@@ -28,27 +29,21 @@ export const saveAndBroadcastMatchState = async ({
     match: Match<any>;
 }) => {
     const { id: matchId, players } = match;
-    for (const { userId, socketId } of players) {
+    for (const { userId } of players) {
         // convert the match state to the client's perspective
         // so that the client only sees their own state, not the state of all players
         const matchForUser = sanitizeMatchStateForClient(match, userId);
-        io.to(socketId).emit(
-            "match:updated",
-            matchForUser,
-        );
+        io.to(getUserRoomKey(userId)).emit("match:updated", matchForUser);
     }
-    // io.to(getMatchKey(matchId)).emit("match:updated", match);
     await setMatchState({ matchId, matchState: match });
 };
 
 export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
-    const createNewMatch = async ({ gameId, matchType }, ack) => {
+    const createNewMatch = async ({ gameId, matchType }, ack: any) => {
         console.log("CREATE NEW MATCH");
         try {
             const match = await createMatch({ gameId, matchType });
-            io.to(`lobby:${gameId}`).emit("match:created", {
-                matchId: match.id,
-            });
+            io.to(getLobbyRoomKey(gameId)).emit("match:created", match.id);
             ack({ ok: true, matchId: match.id });
         } catch (err) {
             console.error(err);
@@ -56,35 +51,34 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         }
     };
 
-    const joinMatch = async ({ matchId, user }, ack) => {
+    const joinMatch = async (matchId: string, ack: any) => {
         console.log("JOIN MATCH");
         try {
-            socket.join(getMatchKey(matchId));
-
+            const { userId } = socket.data;
+            let user = getCurrentUser(userId);
             let match = await getMatchState({ matchId });
-            let socketId = socket.id;
-            match = addUserToMatch(match, user, socketId);
+            match = addUserToMatch(match, user);
 
             await saveAndBroadcastMatchState({ io, match });
             ack({ ok: true });
         } catch (err) {
-            console.error(err)
+            console.error(err);
             ack({ ok: false, error: String(err) });
         }
     };
 
-    const processAction = async ({ matchId, action }, ack) => {
+    const processAction = async ({ matchId, action }, ack: any) => {
         console.log("PROCESS ACTION: ", action.type);
         try {
-            let match = await getMatchState({ matchId });
+            action.userId = socket.data.userId;
 
+            let match = await getMatchState({ matchId });
             if (!match) {
                 throw new Error("Match not found");
             }
 
             const engine = GameRegistry.getEngine(match.gameId);
             const res = engine.processAction(match, action);
-
             if (!res.isValid) {
                 throw res.error;
             }
@@ -104,23 +98,21 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         }
     };
 
-    const leaveMatch = async ({ matchId, userId }, ack) => {
+    const leaveMatch = async (matchId: string, ack: any) => {
         console.log("LEAVE MATCH");
         try {
+            const { userId } = socket.data;
             let match = await getMatchState({ matchId });
             let isPlayer = match.players.some((p) => p.userId === userId);
             if (!isPlayer) {
                 throw new Error(NOT_A_PLAYER_MSG);
             }
-            socket.leave(getMatchKey(matchId));
             match = removeUserFromMatch(match, userId);
             const { gameId, players } = match;
-            // no players remaining
+            // if no players remaining
             if (!players.length) {
                 await deleteMatch({ matchId, gameId });
-                io.to(`lobby:${gameId}`).emit("match:deleted", {
-                    matchId,
-                });
+                io.to(getLobbyRoomKey(gameId)).emit("match:deleted", matchId);
                 return;
             }
             await saveAndBroadcastMatchState({ io, match });

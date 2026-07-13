@@ -24,19 +24,23 @@ export const updateReadyStatus = (match: Match<any>): Match<any> => {
     };
 };
 
-export const addUserToMatch = (
-    match: Match<any>,
-    user: any,
-    socketId: string,
-): Match<any> => {
+export const addUserToMatch = (match: Match<any>, user: any): Match<any> => {
     const { username, id: userId, elo } = user;
     const isPlayer = match.players.find((p) => p.userId === userId);
     if (isPlayer) {
         return match;
     }
-    let newMatch = {
+    let newMatch: Match<any> = {
         ...match,
-        players: [...match.players, { username, userId, elo, socketId }],
+        players: [
+            ...match.players,
+            {
+                username,
+                userId,
+                elo,
+                status: "ONLINE",
+            },
+        ],
     };
     return updateReadyStatus(newMatch);
 };
@@ -45,7 +49,7 @@ export const removeUserFromMatch = (
     match: Match<any>,
     userId: string,
 ): Match<any> => {
-    let newMatch = { ...match }
+    let newMatch = { ...match };
     const { players } = newMatch;
     const removedPlayerIndex = players.findIndex((p) => p.userId === userId);
     if (removedPlayerIndex >= 0) {
@@ -54,13 +58,16 @@ export const removeUserFromMatch = (
     return updateReadyStatus(newMatch);
 };
 
-export const sanitizeMatchStateForClient = (match: Match<any>, userId: string): Match<any> => {
+export const sanitizeMatchStateForClient = (
+    match: Match<any>,
+    userId: string,
+): Match<any> => {
     const { gameId, players } = match;
-    const engine = GameRegistry.getEngine(gameId)
+    const engine = GameRegistry.getEngine(gameId);
     const newMatchState = engine.convertToClientMatchState(match, userId);
-    const sanitizedPlayers = players.map((p) => ({ ...p, socketId: undefined }));
+    const sanitizedPlayers = players.map((p) => ({ ...p, elo: undefined }));
     return {
         ...newMatchState,
         players: sanitizedPlayers,
-    }
+    };
 };

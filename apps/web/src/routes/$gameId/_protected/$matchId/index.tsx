@@ -41,28 +41,24 @@ function RouteComponent() {
         );
     };
     const handleAction = (action: any) => {
-      socket.emit(
-          "match:action",
-          {
-              matchId: match.id,
-              action: action,
-          },
-          ({ ok, error }: { ok: boolean; error?: any }) => {
-              if (!ok) {
-                  console.error(error);
-              }
-          },
-      );
-    }
+        socket.emit(
+            "match:action",
+            {
+                matchId: match.id,
+                action: action,
+            },
+            ({ ok, error }: { ok: boolean; error?: any }) => {
+                if (!ok) console.error(error);
+            },
+        );
+    };
 
     useEffect(() => {
         socket.emit(
             "match:join",
-            { matchId, user },
+            matchId,
             ({ ok, error }: { ok: boolean; error?: string }) => {
-                if (!ok) {
-                    console.log(error);
-                }
+                if (!ok) console.error(error);
             },
         );
         socket.on("match:updated", (updatedMatch) => {
@@ -72,14 +68,9 @@ function RouteComponent() {
         return () => {
             socket.emit(
                 "match:leave",
-                {
-                    matchId,
-                    userId: user.id,
-                },
+                matchId,
                 ({ ok, error }: { ok: boolean; error?: string }) => {
-                    if (!ok) {
-                        console.log(error);
-                    }
+                    if (!ok) console.log(error);
                 },
             );
         };

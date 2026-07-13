@@ -11,11 +11,6 @@ function Home() {
     const [isInMm, setIsInMm] = useState<boolean>(false);
     const [mmTimer, setMmTimer] = useState<number>(0);
     const intervalId = useRef<ReturnType<typeof setInterval>>(null);
-    const { data: user } = useQuery({
-        queryKey: ["me"],
-        queryFn: fetchMe,
-        retry: false,
-    });
     const { data: games, isLoading: isLoadingGames } = useQuery({
         queryKey: ["list-games"],
         queryFn: getAllGames,
@@ -29,10 +24,7 @@ function Home() {
         setIsInMm(true);
         socket.emit(
             "matchmaking:join",
-            {
-                gameId: "dice-territory",
-                user,
-            },
+            "dice-territory",
             (ok: boolean) => {
                 if (!ok) cancelFindGame();
             },
@@ -42,10 +34,7 @@ function Home() {
     const cancelFindGame = () => {
         socket.emit(
             "matchmaking:leave",
-            {
-                gameId: "dice-territory",
-                user,
-            },
+            "dice-territory",
             (ok: boolean) => {
                 if (!ok) return;
                 setMmTimer(0);

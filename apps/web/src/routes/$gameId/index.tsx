@@ -43,17 +43,17 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        socket.emit("lobby:matches-update", { gameId });
-        socket.on("lobby:matches-update", ({ matchIds }) =>
+        socket.emit("lobby:join", gameId);
+        socket.on("lobby:matches-updated", (matchIds: string[]) =>
             setMatchIds(matchIds),
         );
-        socket.on("match:created", ({ matchId }) => {
+        socket.on("match:created", (matchId: string) => {
             setMatchIds((prevMatchesId: string[]) => [
                 matchId,
                 ...prevMatchesId,
             ]);
         });
-        socket.on("match:deleted", ({ matchId }) => {
+        socket.on("match:deleted", (matchId: string) => {
             setMatchIds((prevMatchIds: string[]) =>
                 prevMatchIds.filter((id) => id != matchId),
             );

@@ -72,39 +72,25 @@ export function MatchView({
 
     const handleAttack = () => {
         if (!canAttack) return;
-        handleAction({
-            type: "ATTACK",
-            userId: user.id,
-            cards: chosenCards,
-        });
+        handleAction({ type: "ATTACK", cards: chosenCards });
         setChosenCards([]);
     };
 
     const handlePass = () => {
         if (!canPass) return;
-        handleAction({
-            type: "PASS",
-            userId: user.id,
-        });
+        handleAction({ type: "PASS" });
         setChosenCards([]);
     };
 
     const handleDefend = () => {
         if (!canDefend) return;
-        handleAction({
-            type: "DEFEND",
-            userId: user.id,
-            cards: chosenCards,
-        });
+        handleAction({ type: "DEFEND", cards: chosenCards });
         setChosenCards([]);
     };
 
     const handleTake = () => {
         if (!canTake) return;
-        handleAction({
-            type: "TAKE",
-            userId: user.id,
-        });
+        handleAction({ type: "TAKE" });
         setChosenCards([]);
     };
 

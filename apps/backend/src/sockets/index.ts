@@ -5,12 +5,53 @@ import {
     setUpMatchmakingSocket,
     startMatchMakingWorker,
 } from "./matchmaking.socket.js";
+import { jwtVerify } from "jose";
+import { JWT_SECRET } from "../config.js";
+import * as cookie from "cookie";
+import { getUserRoomKey } from "./utils.js";
 
 export const setUpSocket = (io: Server) => {
     startMatchMakingWorker(io);
 
+    io.use(async (socket, next) => {
+        const { cookie: cookieHeader } = socket.handshake.headers;
+        if (!cookieHeader) {
+            return next(new Error("No cookie available."));
+        }
+
+        const cookies = cookie.parseCookie(cookieHeader);
+        const { accessToken } = cookies;
+        if (!accessToken) {
+            return next(new Error("No access token available."));
+        }
+
+        try {
+            const { payload: user } = await jwtVerify(accessToken, JWT_SECRET);
+            socket.data.userId = user.id;
+
+            next();
+        } catch (err) {
+            console.error(err);
+            next(new Error("Unknown user"));
+        }
+    });
+
+    io.use((socket, next) => {
+        try {
+            const { userId } = socket.data;
+            socket.join(getUserRoomKey(userId));
+
+            next();
+        } catch (err) {
+            console.error(err);
+            next(err);
+        }
+    })
+
     io.on("connection", (socket) => {
         console.log("socket connected: ", socket.id);
+        console.log("socket user: ", socket.data.userId);
+        console.log("socket user room: ", socket.rooms);
 
         setupLobbySocket({ io, socket });
         setupMatchesSocket({ io, socket });

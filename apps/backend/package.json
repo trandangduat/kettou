@@ -14,8 +14,12 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "@mini-games/core": "workspace:*",
+        "@mini-games/game-card-durak": "workspace:*",
+        "@mini-games/game-dice-territory": "workspace:*",
         "bcrypt": "^6.0.0",
         "better-sqlite3": "^12.9.0",
+        "cookie": "^2.0.1",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.6",
         "dotenv": "^17.4.2",
@@ -25,10 +29,7 @@
         "pino": "^10.3.1",
         "redis": "^5.12.1",
         "socket.io": "^4.8.3",
-        "uuid": "^14.0.0",
-        "@mini-games/core": "workspace:*",
-        "@mini-games/game-dice-territory": "workspace:*",
-        "@mini-games/game-card-durak": "workspace:*"
+        "uuid": "^14.0.0"
     },
     "devDependencies": {
         "@types/bcrypt": "^6.0.0",

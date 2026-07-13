@@ -2,7 +2,6 @@ import db from "../db.js";
 import { getNewElo } from "../logics/elo.logic.js";
 import { redis } from "../redis.js";
 import { GameRegistry, Match, MatchType, Player } from "@mini-games/core";
-import { Round } from "@mini-games/game-dice-territory";
 
 export const getLobbyKey = (id: string) => {
     return `game:${id}:lobby`;
