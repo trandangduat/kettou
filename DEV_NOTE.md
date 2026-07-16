@@ -116,3 +116,22 @@ room = endGame({ roomState: room });
 
 ## Refactor code to handle multiple games instead of one
 Create a `GameRegistry` class inside a core package that manages the registration and retrieval of game engines. Each game has it own package that exports the game engine and registers it with the `GameRegistry`. In backend, all games will be registered using `setUpGameEngines` in file `backend/src/games.ts`.
+
+## Slow TypeScript diagnostics / IntelliSense after edits
+Editor diagnostics (red underlines, popups) started taking ~6–7 seconds after code changes, in both Cursor and Zed. The app source itself is small; the bottleneck was TypeScript checking the backend.
+
+Running `tsc --noEmit --extendedDiagnostics` in `apps/backend` showed roughly:
+- Check time ~4.7s, total ~5.6s
+- Memory ~1 GB
+- Very high symbol / instantiation counts
+
+`apps/web` stayed relatively fast (~1.6s total). File counts were similar between apps; the difference came from dependency types. The biggest backend-only contributor was `redis` / `@redis/client` (especially `multi()` and `RedisClientType`). This matches a known issue: [redis/node-redis#2975](https://github.com/redis/node-redis/issues/2975) (`RedisClientType` is expensive to typecheck). Upgrading within `redis@5.12.x` was unlikely to help; `redis@6` reports were mixed.
+
+**Fix:** keep the real `createClient().connect()` client, but export it through a narrow local `RedisClient` / `RedisMulti` interface that only declares the methods this backend uses (`get`, `set`, `del`, `zAdd`, `zRem`, `zRange`, `multi` / `exec`). Cast once at the boundary in `apps/backend/src/redis.ts` so service files never pull in the full Redis generic type graph.
+
+After that change, backend diagnostics dropped to roughly:
+- Check time ~0.4s, total ~1.3s
+- Memory ~191 MB
+- Instantiations from ~735k down to ~17k
+
+If you add a new Redis command later, extend those narrow interfaces in `redis.ts` instead of exporting the library’s full client type.
