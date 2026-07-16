@@ -2,62 +2,34 @@ import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
 import { logger } from "../logger.js";
 import {
-    addToMatchmakingQueue,
+    addPlayerToMmQueue,
     getPairsInMmQueue,
-    removeFromMatchmakingQueue,
+    removePlayerFromMmQueue,
     removePairsFromMmQueue,
 } from "../services/matchmaking.services.js";
 import {
     createMatch,
-    getMatchKey,
     setMatchState,
 } from "../services/matches.services.js";
-import { updateReadyStatus } from "@mini-games/core";
 import { getCurrentUser } from "../services/auth.services.js";
-import { getMatchmakingRoomKey, getUserRoomKey } from "./utils.js";
+import { getUserRoomKey } from "./utils.js";
+import { getUserEloOfGames } from "../services/games.services.js";
+import { MATCHMAKING_DEBOUNCE } from "../config.js";
 
-const processMatchmakingQueue = async ({
-    io,
-    gameId,
-}: {
-    io: Server;
-    gameId: string;
-}) => {
-    const pairs = await getPairsInMmQueue({ gameId });
+const processMatchmakingQueue = async (io: Server) => {
+    const pairs = await getPairsInMmQueue();
 
     for (let pair of pairs) {
         logger.info(pair, "MATCHED: ");
-        const { playerA, playerB } = pair;
+        const { player1Id, player2Id, gameId } = pair;
         let match = await createMatch({ gameId, matchType: "RANKED" });
-        match.players.push({
-            username: playerA.username,
-            userId: playerA.userId,
-            elo: playerA.elo,
-            status: "ONLINE"
-        });
-        match.players.push({
-            username: playerB.username,
-            userId: playerB.userId,
-            elo: playerB.elo,
-            status: "ONLINE"
-        });
-        match = updateReadyStatus(match);
         await setMatchState({ matchId: match.id, matchState: match });
 
-        // remove players from matchmaking room
-        // and announce user that they have been matched
-        for (let player of match.players) {
-            const { userId } = player;
-            const userRoomKey = getUserRoomKey(userId);
-            const sockets = await io.in(userRoomKey).fetchSockets();
-            for (let s of sockets) {
-                s.leave(getMatchmakingRoomKey(gameId));
-            }
-            io.to(userRoomKey).emit("matchmaking:found", match.id)
-        }
+        io.to(getUserRoomKey(player1Id)).emit("matchmaking:found", match.id, gameId);
+        io.to(getUserRoomKey(player2Id)).emit("matchmaking:found", match.id, gameId);
     }
 
-    await removePairsFromMmQueue({ gameId, pairs });
+    await removePairsFromMmQueue(pairs);
 };
 
 export const startMatchMakingWorker = (io: Server) => {
@@ -69,39 +41,34 @@ export const startMatchMakingWorker = (io: Server) => {
         isProcessing = true;
         try {
             logger.info("PROCESSING MM QUEUE");
-            await processMatchmakingQueue({ io, gameId: "dice-territory" });
+            await processMatchmakingQueue(io);
         } finally {
             isProcessing = false;
         }
-    }, 2000);
+    }, MATCHMAKING_DEBOUNCE);
 };
 
 export const setUpMatchmakingSocket = ({
     io,
     socket,
 }: SocketHandlerContext) => {
-    const joinMatchmaking = async (gameId: string, ack: any) => {
-        socket.join(getMatchmakingRoomKey(gameId));
-
+    const joinMatchmaking = async (gameIds: string[], ack: any) => {
         const { userId } = socket.data;
-        const { elo, username } = getCurrentUser(userId);
-
         const player = {
             userId,
-            elo,
-            username,
+            elos: getUserEloOfGames(userId, gameIds),
             joinedAt: Date.now(),
         };
-        await addToMatchmakingQueue({ gameId, player });
+        await addPlayerToMmQueue({ gameIds, player });
         ack(true);
     };
-    const leaveMatchmaking = async (gameId: string, ack: any) => {
-        const { userId } = socket.data;
 
-        socket.leave(getMatchmakingRoomKey(gameId));
-        await removeFromMatchmakingQueue({ gameId, userId });
+    const leaveMatchmaking = async (ack: any) => {
+        const { userId } = socket.data;
+        await removePlayerFromMmQueue(userId);
         ack(true);
     };
+
     socket.on("matchmaking:join", joinMatchmaking);
     socket.on("matchmaking:leave", leaveMatchmaking);
 };

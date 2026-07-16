@@ -1,115 +1,166 @@
-import { canMatch, QueuePlayer } from "../logics/matchmaking.logic.js";
+import { GameRegistry } from "@mini-games/core";
+import { canMatch } from "../logics/matchmaking.logic.js";
 import { redis } from "../redis.js";
 
-export const getMatchmakingKey = (gameId: string) => {
-    return `matchmaking:${gameId}:queue`;
-};
-
-export const getMatchmakingPlayerKey = ({
-    userId,
-    gameId,
-}: {
+interface PlayerInQ {
     userId: string;
+    elos: Record<string, number>;
+    joinedAt: number;
+}
+
+interface Pair {
+    player1Id: string;
+    player2Id: string;
     gameId: string;
-}) => {
-    return `matchmaking:${gameId}:player:${userId}`;
+    waitTime: number;
+}
+
+// each gameId has a separate queue sorted by elo
+const getQueueKey = (gameId: string) => {
+    return `matchmaking:queue:${gameId}`;
 };
 
-export const addToMatchmakingQueue = async ({
-    gameId,
+// matchmaking player metadata is stored separately in a set
+const getPlayerKey = (userId: string) => {
+    return `matchmaking:player:${userId}`;
+};
+
+export const addPlayerToMmQueue = async ({
+    gameIds,
     player,
 }: {
-    gameId: string;
-    player: Record<string, any>;
+    gameIds: string[];
+    player: PlayerInQ;
 }) => {
-    const mmKey = getMatchmakingKey(gameId);
-    const mmPlayerKey = getMatchmakingPlayerKey({
-        userId: player.userId,
-        gameId,
-    });
-    await redis
-        .multi()
-        .set(mmPlayerKey, JSON.stringify(player))
-        .zAdd(mmKey, {
-            score: player.elo,
+    const playerKey = getPlayerKey(player.userId);
+    const redisChain = redis.multi();
+    redisChain.set(playerKey, JSON.stringify(player));
+    for (let gameId of gameIds) {
+        const queueKey = getQueueKey(gameId);
+        redisChain.zAdd(queueKey, {
+            score: player.elos[gameId],
             value: player.userId,
-        })
-        .exec();
-};
-
-export const removeFromMatchmakingQueue = async ({
-    gameId,
-    userId,
-}: {
-    gameId: string;
-    userId: string;
-}) => {
-    const mmKey = getMatchmakingKey(gameId);
-    const mmPlayerKey = getMatchmakingPlayerKey({
-        userId,
-        gameId,
-    });
-    await redis.multi().zRem(mmKey, userId).del(mmPlayerKey).exec();
-};
-
-export const getPairsInMmQueue = async ({ gameId }: { gameId: string }) => {
-    const mmKey = getMatchmakingKey(gameId);
-    const playersId = await redis.zRange(mmKey, 0, -1);
-    const redisChain = redis.multi();
-    for (let id of playersId) {
-        redisChain.get(
-            getMatchmakingPlayerKey({ userId: id.toString(), gameId }),
-        );
-    }
-    const rawData = await redisChain.exec();
-    const playersInQ = rawData
-        .filter((value) => typeof value === "string")
-        .map((value) => JSON.parse(value) as QueuePlayer);
-
-    const found = {};
-    const pairs = [];
-    for (let i = 0; i < playersInQ.length; i++) {
-        for (let j = playersInQ.length - 1; j > i; j--) {
-            let playerA = playersInQ[i];
-            let playerB = playersInQ[j];
-            if (
-                canMatch(playerA, playerB) &&
-                !found[playerA.userId] &&
-                !found[playerB.userId]
-            ) {
-                found[playerA.userId] = playerB.userId;
-                found[playerB.userId] = playerA.userId;
-                pairs.push({ playerA, playerB });
-                break;
-            }
-        }
-    }
-    return pairs;
-};
-
-export const removePairsFromMmQueue = async ({
-    gameId,
-    pairs,
-}: {
-    gameId: string;
-    pairs: Record<string, QueuePlayer>[];
-}) => {
-    const mmKey = getMatchmakingKey(gameId);
-    const redisChain = redis.multi();
-    for (let pair of pairs) {
-        const { playerA, playerB } = pair;
-        const mmPlayerKeyA = getMatchmakingPlayerKey({
-            userId: playerA.userId,
-            gameId,
         });
-        const mmPlayerKeyB = getMatchmakingPlayerKey({
-            userId: playerB.userId,
-            gameId,
-        });
-        redis.del(mmPlayerKeyA);
-        redis.del(mmPlayerKeyB);
-        redis.zRem(mmKey, playerA.userId);
-        redis.zRem(mmKey, playerB.userId);
     }
     await redisChain.exec();
+};
+
+export const removePlayerFromMmQueue = async (userId: string) => {
+    const playerKey = getPlayerKey(userId);
+    const playerRaw = await redis.get(playerKey);
+    const player =
+        playerRaw && typeof playerRaw === "string"
+            ? (JSON.parse(playerRaw) as PlayerInQ)
+            : null;
+    if (!player) return;
+
+    const redisChain = redis.multi();
+    for (let gameId in player.elos) {
+        const queueKey = getQueueKey(gameId);
+        redisChain.zRem(queueKey, userId);
+    }
+    redisChain.del(playerKey);
+    await redisChain.exec();
+};
+
+const getAllGameQueuePlayerIds = async (): Promise<string[][]> => {
+  const gameIds = GameRegistry.getAllGameIds();
+  let redisChain = redis.multi();
+  for (let gameId of gameIds) {
+      const queueKey = getQueueKey(gameId);
+      redisChain.zRange(queueKey, 0, -1);
+  }
+  return (await redisChain.exec()) as unknown as string[][];
+}
+
+const getAllQueuePlayersInfo = async (queues: string[][]): Promise<Record<string, any>> => {
+  let playerIdSet = new Set<string>(queues.flat());
+  let redisChain = redis.multi();
+  redisChain = redis.multi();
+  for (let playerId of playerIdSet.values()) {
+      redisChain.get(getPlayerKey(playerId));
+  }
+  const rawData = await redisChain.exec();
+  const players: Record<string, any> = {};
+  for (let item of rawData) {
+      if (typeof item !== "string") continue;
+      let player = JSON.parse(item) as PlayerInQ;
+      players[player.userId] = player;
+  }
+  return players;
+};
+
+export const getPairsInMmQueue = async () => {
+    // get list of playerIds in queue for each game
+    const queues = await getAllGameQueuePlayerIds();
+    // get all players and their information in MM Queue currently
+    const players = await getAllQueuePlayersInfo(queues);
+    // get all possible matching pairs from diff games
+    const gameIds = GameRegistry.getAllGameIds();
+    const allPairs: Pair[] = [];
+    gameIds.forEach((gameId, index) => {
+        let queue = queues[index];
+        let matched: Record<string, boolean> = {};
+        console.log("GAME QUEUE", gameId, queue);
+
+        for (let id1 of queue) {
+            for (let id2 of queue) {
+                if (id1 === id2) continue;
+                let playerA = players[id1];
+                let playerB = players[id2];
+                playerA = {
+                    ...playerA,
+                    elo: playerA.elos[gameId],
+                    elos: undefined,
+                };
+                playerB = {
+                    ...playerB,
+                    elo: playerB.elos[gameId],
+                    elos: undefined,
+                };
+
+                if (
+                    canMatch(playerA, playerB) &&
+                    !matched[playerA.userId] &&
+                    !matched[playerB.userId]
+                ) {
+                    matched[playerA.userId] = true;
+                    matched[playerB.userId] = true;
+                    allPairs.push({
+                        player1Id: id1,
+                        player2Id: id2,
+                        gameId,
+                        waitTime:
+                            Date.now() -
+                            Math.min(playerA.joinedAt, playerB.joinedAt),
+                    });
+                    break;
+                }
+            }
+        }
+    });
+    // sort pairs by wait time (descending) and iteratively get the pairs from top of stack
+    allPairs.sort((a, b) => b.waitTime - a.waitTime);
+    console.log("ALL PAIRS", allPairs);
+    // filter out pairs that have players that were already matched before
+    let finalPairs: Pair[] = [];
+    let occ: Record<string, boolean> = {};
+    for (let pair of allPairs) {
+        if (occ[pair.player1Id] || occ[pair.player2Id]) {
+            continue;
+        }
+        occ[pair.player1Id] = true;
+        occ[pair.player2Id] = true;
+        finalPairs.push(pair);
+    }
+    console.log("FINAL PAIRS", finalPairs);
+    return finalPairs;
+};
+
+export const removePairsFromMmQueue = async (pairs: Pair[]) => {
+    for (let pair of pairs) {
+        const { player1Id, player2Id } = pair;
+        await removePlayerFromMmQueue(player1Id);
+        await removePlayerFromMmQueue(player2Id);
+    }
 };

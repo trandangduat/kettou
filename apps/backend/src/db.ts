@@ -144,6 +144,24 @@ const migrations = [
         ALTER TABLE games ADD COLUMN name TEXT NOT NULL DEFAULT '';
         `,
     },
+    {
+        version: 5,
+        sql: `
+        CREATE TABLE game_elos (
+          game_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          elo REAL NOT NULL,
+
+          PRIMARY KEY (game_id, user_id),
+          FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+
+          CHECK (elo >= 0)
+        );
+
+        ALTER TABLE users DROP COLUMN elo;
+        `,
+    },
 ];
 
 const migrate = db.transaction(() => {

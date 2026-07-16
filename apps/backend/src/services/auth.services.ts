@@ -8,8 +8,8 @@ export const getCurrentUser = (userId: string) => {
     const user = db
         .prepare<
             [string],
-            { id: string; username: string; elo: number }
-        >(`SELECT id, username, elo FROM users WHERE id = ?`)
+            { id: string; username: string }
+        >(`SELECT id, username FROM users WHERE id = ?`)
         .get(userId);
 
     if (!user) {

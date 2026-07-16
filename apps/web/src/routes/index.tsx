@@ -1,8 +1,8 @@
-import { fetchMe } from "#/api/auth";
 import { getAllGames } from "#/api/games";
 import { socket } from "#/socket";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import cn from "cnfast";
 import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -10,6 +10,8 @@ export const Route = createFileRoute("/")({ component: Home });
 function Home() {
     const [isInMm, setIsInMm] = useState<boolean>(false);
     const [mmTimer, setMmTimer] = useState<number>(0);
+    const [selectedGames, setSelectedGames] = useState<string[]>([]);
+
     const intervalId = useRef<ReturnType<typeof setInterval>>(null);
     const { data: games, isLoading: isLoadingGames } = useQuery({
         queryKey: ["list-games"],
@@ -17,44 +19,47 @@ function Home() {
     });
     const router = useRouter();
 
+    const handleSelectGame = (gameId: string) => {
+        setSelectedGames((prev) =>
+            prev.includes(gameId)
+                ? prev.filter((id) => id !== gameId)
+                : [...prev, gameId],
+        );
+    };
+
     const findGame = () => {
         intervalId.current = setInterval(() => {
             setMmTimer((prev) => prev + 1);
         }, 1000);
         setIsInMm(true);
-        socket.emit(
-            "matchmaking:join",
-            "dice-territory",
-            (ok: boolean) => {
-                if (!ok) cancelFindGame();
-            },
-        );
+        socket.emit("matchmaking:join", selectedGames, (ok: boolean) => {
+            if (!ok) cancelFindGame();
+        });
     };
 
     const cancelFindGame = () => {
-        socket.emit(
-            "matchmaking:leave",
-            "dice-territory",
-            (ok: boolean) => {
-                if (!ok) return;
-                setMmTimer(0);
-                if (intervalId.current) {
-                    clearInterval(intervalId.current);
-                }
-                setIsInMm(false);
-            },
-        );
+        socket.emit("matchmaking:leave", (ok: boolean) => {
+            if (!ok) return;
+            setMmTimer(0);
+            if (intervalId.current) {
+                clearInterval(intervalId.current);
+            }
+            setIsInMm(false);
+        });
     };
 
     useEffect(() => {
-        socket.on("matchmaking:found", async (matchId: string) => {
-            console.log("Matched Found");
-            setIsInMm(false);
-            await router.navigate({
-                to: "/$gameId/$matchId",
-                params: { gameId: "dice-territory", matchId },
-            });
-        });
+        socket.on(
+            "matchmaking:found",
+            async (matchId: string, gameId: string) => {
+                console.log("Matched Found");
+                setIsInMm(false);
+                await router.navigate({
+                    to: "/$gameId/$matchId",
+                    params: { gameId, matchId },
+                });
+            },
+        );
     }, []);
 
     return (
@@ -90,18 +95,35 @@ function Home() {
                 {isLoadingGames ? (
                     <p>Loading games...</p>
                 ) : (
-                    <ul className="list-disc">
-                        {games.map((game: any) => (
-                            <li key={game.id} className="hover:font-bold">
-                                <Link
-                                    to="/$gameId"
-                                    params={{ gameId: game.id }}
+                    <>
+                        <div className="inline-flex flex-col">
+                            {games.map((game: any) => (
+                                <div
+                                    key={game.id}
+                                    onClick={() => handleSelectGame(game.id)}
+                                    className={cn(
+                                        selectedGames.includes(game.id)
+                                            ? "bg-amber-300"
+                                            : "hover:bg-gray-200",
+                                    )}
                                 >
                                     {game.name}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                        <ul className="list-disc">
+                            {games.map((game: any) => (
+                                <li key={game.id} className="hover:font-bold">
+                                    <Link
+                                        to="/$gameId"
+                                        params={{ gameId: game.id }}
+                                    >
+                                        {game.name}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </>
                 )}
             </div>
         </div>
