@@ -10,6 +10,18 @@ export const getGameById = (gameId: string) => {
     return game;
 };
 
+export const getUserEloOfGame = (userId: string, gameId: string) => {
+    const rawResult = db.prepare(
+            `SELECT elo FROM game_elos
+            WHERE user_id = ?
+            AND game_id = ?`,
+        )
+        .get(userId, gameId) as { elo: number };
+
+    let result: number = rawResult?.elo ?? DEFAULT_ELO;
+    return result;
+};
+
 export const getUserEloOfGames = (userId: string, gameIds: string[]) => {
     const rawResult = db.prepare(
             `SELECT game_id, elo FROM game_elos

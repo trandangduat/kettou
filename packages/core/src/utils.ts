@@ -1,5 +1,5 @@
 import { v6 as uuidv6 } from "uuid";
-import { Match, MatchType } from "./types.js";
+import { Match, MatchType, Player } from "./types.js";
 import { GameRegistry } from "./index.js";
 
 export const debugMatch = (m: any) => {
@@ -24,28 +24,28 @@ export const updateReadyStatus = (match: Match<any>): Match<any> => {
     };
 };
 
-export const addUserToMatch = (match: Match<any>, user: any): Match<any> => {
-    const { username, id: userId, elo } = user;
+export const addPlayerToMatch = (match: Match<any>, player: Player): Match<any> => {
+    const { username, userId, elo } = player;
     const isPlayer = match.players.find((p) => p.userId === userId);
     if (isPlayer) {
         return match;
     }
+    let newPlayer: Player = {
+        username,
+        userId,
+        elo: elo ?? 1000,
+        status: "ONLINE",
+    };
+    console.log("player", match, player);
+    console.log("new player", newPlayer);
     let newMatch: Match<any> = {
         ...match,
-        players: [
-            ...match.players,
-            {
-                username,
-                userId,
-                elo,
-                status: "ONLINE",
-            },
-        ],
+        players: [...match.players, newPlayer],
     };
     return updateReadyStatus(newMatch);
 };
 
-export const removeUserFromMatch = (
+export const removePlayerFromMatch = (
     match: Match<any>,
     userId: string,
 ): Match<any> => {

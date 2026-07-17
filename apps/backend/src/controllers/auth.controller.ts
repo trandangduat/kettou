@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import {
-    getCurrentUser,
+    getUserById,
     loginUser,
     registerUser,
 } from "../services/auth.services.js";
@@ -8,7 +8,7 @@ import {
 export const getMe: RequestHandler = (req, res) => {
     try {
         const { id } = req.user;
-        const user = getCurrentUser(id);
+        const user = getUserById(id);
         return res.status(200).json(user);
     } catch (err) {
         return res.status(401).send(err.toString());

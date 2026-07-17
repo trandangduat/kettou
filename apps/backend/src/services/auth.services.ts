@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 import { JWT_SECRET, SALT_ROUNDS } from "../config.js";
 import { v6 as uuidv6 } from "uuid";
 
-export const getCurrentUser = (userId: string) => {
+export const getUserById = (userId: string) => {
     const user = db
         .prepare<
             [string],

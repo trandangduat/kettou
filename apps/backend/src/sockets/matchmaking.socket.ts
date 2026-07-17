@@ -11,22 +11,27 @@ import {
     createMatch,
     setMatchState,
 } from "../services/matches.services.js";
-import { getCurrentUser } from "../services/auth.services.js";
 import { getUserRoomKey } from "./utils.js";
 import { getUserEloOfGames } from "../services/games.services.js";
 import { MATCHMAKING_DEBOUNCE } from "../config.js";
+import { addPlayerToMatch } from "@mini-games/core";
+import { getUserById } from "../services/auth.services.js";
 
 const processMatchmakingQueue = async (io: Server) => {
     const pairs = await getPairsInMmQueue();
 
     for (let pair of pairs) {
         logger.info(pair, "MATCHED: ");
-        const { player1Id, player2Id, gameId } = pair;
+        const { player1, player2, gameId } = pair;
         let match = await createMatch({ gameId, matchType: "RANKED" });
+
+        match = addPlayerToMatch(match, player1);
+        match = addPlayerToMatch(match, player2);
+
         await setMatchState({ matchId: match.id, matchState: match });
 
-        io.to(getUserRoomKey(player1Id)).emit("matchmaking:found", match.id, gameId);
-        io.to(getUserRoomKey(player2Id)).emit("matchmaking:found", match.id, gameId);
+        io.to(getUserRoomKey(player1.userId)).emit("matchmaking:found", match.id, gameId);
+        io.to(getUserRoomKey(player2.userId)).emit("matchmaking:found", match.id, gameId);
     }
 
     await removePairsFromMmQueue(pairs);
@@ -54,8 +59,10 @@ export const setUpMatchmakingSocket = ({
 }: SocketHandlerContext) => {
     const joinMatchmaking = async (gameIds: string[], ack: any) => {
         const { userId } = socket.data;
+        const { username } = getUserById(userId);
         const player = {
             userId,
+            username,
             elos: getUserEloOfGames(userId, gameIds),
             joinedAt: Date.now(),
         };

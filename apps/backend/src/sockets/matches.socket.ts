@@ -1,9 +1,10 @@
 import {
-    removeUserFromMatch,
+    removePlayerFromMatch,
     Match,
     GameRegistry,
-    addUserToMatch,
+    addPlayerToMatch,
     sanitizeMatchStateForClient,
+    Player,
 } from "@mini-games/core";
 import {
     createMatch,
@@ -16,7 +17,8 @@ import {
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
 import { getLobbyRoomKey, getUserRoomKey } from "./utils.js";
-import { getCurrentUser } from "../services/auth.services.js";
+import { getUserById } from "../services/auth.services.js";
+import { getUserEloOfGame } from "../services/games.services.js";
 
 const NOT_A_PLAYER_MSG =
     "You must be a player of this match to perform such actions.";
@@ -55,9 +57,15 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         console.log("JOIN MATCH");
         try {
             const { userId } = socket.data;
-            let user = getCurrentUser(userId);
+            let user = getUserById(userId);
             let match = await getMatchState({ matchId });
-            match = addUserToMatch(match, user);
+            let player: Player = {
+                userId: user.id,
+                username: user.username,
+                elo: getUserEloOfGame(userId, match.gameId),
+                status: "ONLINE",
+            };
+            match = addPlayerToMatch(match, player);
 
             await saveAndBroadcastMatchState({ io, match });
             ack({ ok: true });
@@ -107,7 +115,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             if (!isPlayer) {
                 throw new Error(NOT_A_PLAYER_MSG);
             }
-            match = removeUserFromMatch(match, userId);
+            match = removePlayerFromMatch(match, userId);
             const { gameId, players } = match;
             // if no players remaining
             if (!players.length) {

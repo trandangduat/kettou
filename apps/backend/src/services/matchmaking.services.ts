@@ -1,16 +1,17 @@
-import { GameRegistry } from "@mini-games/core";
+import { GameRegistry, Player } from "@mini-games/core";
 import { canMatch } from "../logics/matchmaking.logic.js";
 import { redis } from "../redis.js";
 
 interface PlayerInQ {
+    username: string;
     userId: string;
     elos: Record<string, number>;
     joinedAt: number;
 }
 
 interface Pair {
-    player1Id: string;
-    player2Id: string;
+    player1: Player;
+    player2: Player;
     gameId: string;
     waitTime: number;
 }
@@ -127,8 +128,8 @@ export const getPairsInMmQueue = async () => {
                     matched[playerA.userId] = true;
                     matched[playerB.userId] = true;
                     allPairs.push({
-                        player1Id: id1,
-                        player2Id: id2,
+                        player1: playerA,
+                        player2: playerB,
                         gameId,
                         waitTime:
                             Date.now() -
@@ -146,11 +147,11 @@ export const getPairsInMmQueue = async () => {
     let finalPairs: Pair[] = [];
     let occ: Record<string, boolean> = {};
     for (let pair of allPairs) {
-        if (occ[pair.player1Id] || occ[pair.player2Id]) {
+        if (occ[pair.player1.userId] || occ[pair.player2.userId]) {
             continue;
         }
-        occ[pair.player1Id] = true;
-        occ[pair.player2Id] = true;
+        occ[pair.player1.userId] = true;
+        occ[pair.player2.userId] = true;
         finalPairs.push(pair);
     }
     console.log("FINAL PAIRS", finalPairs);
@@ -159,7 +160,8 @@ export const getPairsInMmQueue = async () => {
 
 export const removePairsFromMmQueue = async (pairs: Pair[]) => {
     for (let pair of pairs) {
-        const { player1Id, player2Id } = pair;
+        const player1Id = pair.player1.userId;
+        const player2Id = pair.player2.userId;
         await removePlayerFromMmQueue(player1Id);
         await removePlayerFromMmQueue(player2Id);
     }
