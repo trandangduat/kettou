@@ -149,7 +149,6 @@ export class DiceTerritoryEngine implements IGameEngine<
                 roundNumber: 0,
                 rounds: [],
                 turn: 0,
-                endState: null,
             },
         };
     }

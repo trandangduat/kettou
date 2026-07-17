@@ -9,6 +9,14 @@ export interface Player {
     elo: number;
 }
 
+export interface EndState<TEndReason extends string = string> {
+    winnerId: string | null;
+    reason: TEndReason;
+    scores?: Record<string, number>;
+}
+
+export type CommonEndReason = "FORFEIT" | "DISCONNECTED";
+
 export interface Match<TGameState> {
     id: string;
     gameId: string;
@@ -16,6 +24,7 @@ export interface Match<TGameState> {
     status: MatchStatus;
     players: Player[];
     gameState: TGameState;
+    endState?: EndState;
 }
 
 export interface ActionResult<TGameState> {

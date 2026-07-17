@@ -1,5 +1,5 @@
 import { MatchState } from "./index.js";
-import { Move } from "./types.js";
+import { DiceTerritoryEndState, Move } from "./types.js";
 
 /* return random integer from 0 to upperBound - 1
  */
@@ -34,15 +34,18 @@ export const moveOnToNextRound = (state: MatchState): MatchState => {
 };
 
 export const endMatch = (matchState: MatchState): MatchState => {
-    const { gameState } = matchState;
+    const { gameState, players } = matchState;
     const { rounds } = gameState;
 
     let playerPoints: Record<string, number> = {};
     let highestScore = 0;
 
+    for (let { userId } of players) {
+        playerPoints[userId] = 0;
+    }
+
     for (let { playerId: pid, move } of rounds) {
         if (!move) continue;
-        playerPoints[pid] ??= 0;
         playerPoints[pid] += move.len * move.len;
         highestScore = Math.max(highestScore, playerPoints[pid]);
     }
@@ -51,15 +54,15 @@ export const endMatch = (matchState: MatchState): MatchState => {
         ([_, score]) => score == highestScore,
     );
 
+    let endState: DiceTerritoryEndState = {
+        reason: "BOTH_IMMOVABLE",
+        winnerId: winners.length >= 2 ? null : winners[0][0],
+        scores: playerPoints,
+    };
+
     return {
         ...matchState,
         status: "ENDED",
-        gameState: {
-            ...gameState,
-            endState: {
-                winnerUserId: winners.length >= 2 ? null : winners[0][0],
-                playerPoints: playerPoints,
-            },
-        },
+        endState,
     };
 };

@@ -16,8 +16,8 @@ type MatchViewParams = {
 export function MatchView({ match, setMatch, user, engine }: MatchViewParams) {
     const [waitingDice, setWaitingDice] = useState<boolean>(false);
 
-    const { status, players, gameState } = match;
-    const { roundNumber, rounds, turn, endState } = gameState;
+    const { status, players, gameState, endState } = match;
+    const { roundNumber, rounds, turn } = gameState;
 
     let myTurn: boolean = false;
     let myDiceNumber: number = 0;
@@ -30,8 +30,8 @@ export function MatchView({ match, setMatch, user, engine }: MatchViewParams) {
         myDiceNumber = rounds[roundNumber - 1].diceNumber;
     }
     if (status === "ENDED") {
-        playerPoints = endState!.playerPoints;
-        isAWinner = user.id == endState!.winnerUserId;
+        playerPoints = endState!.scores!;
+        isAWinner = user.id == endState!.winnerId;
     }
 
     const rollDice = () => {

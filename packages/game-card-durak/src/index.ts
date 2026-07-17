@@ -14,10 +14,10 @@ import {
     Card,
     DurakAction,
     DurakState,
-    EndGameState,
     MatchState,
     DurakStateClient,
     MatchStateClient,
+    DurakEndState,
 } from "./types.js";
 import {
     createOrderedDeck,
@@ -135,11 +135,11 @@ const attack = (
         newTablePairs.push({ attackCard: card });
     }
 
-    let endState: EndGameState | null = null;
+    let endState: DurakEndState | undefined = undefined;
     if (newPlayerHands[userId].length === 0) {
         endState = {
-            reason: "EMPTY_HAND",
-            winnerUserId: userId,
+            winnerId: userId,
+            reason: "EMPTY_HAND"
         };
     }
 
@@ -150,8 +150,8 @@ const attack = (
             ...state.gameState,
             playerHands: newPlayerHands,
             tablePairs: newTablePairs,
-            endState,
         },
+        endState,
     };
 };
 
@@ -279,11 +279,11 @@ const defend = (
         }
     }
 
-    let endState: EndGameState | null = null;
+    let endState: DurakEndState | undefined = undefined;
     if (newPlayerHands[userId].length === 0) {
         endState = {
-            reason: "EMPTY_HAND",
-            winnerUserId: userId,
+            winnerId: userId,
+            reason: "EMPTY_HAND"
         };
     }
 
@@ -294,8 +294,8 @@ const defend = (
             ...state.gameState,
             playerHands: newPlayerHands,
             tablePairs: newTablePairs,
-            endState,
         },
+        endState,
     };
 };
 

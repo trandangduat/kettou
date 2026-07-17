@@ -23,7 +23,7 @@ export function MatchView({
     engine,
     handleAction,
 }: MatchViewParams) {
-    const { gameState, players, status } = match;
+    const { gameState, players, status, endState } = match;
     const {
         trumpCard,
         drawPileCount,
@@ -32,7 +32,6 @@ export function MatchView({
         playerHand,
         enemyHandCount,
         attackerId,
-        endState,
     } = gameState;
 
     const [chosenCards, setChosenCards] = useState<Card[]>([]);
@@ -152,12 +151,12 @@ export function MatchView({
                     )}
                 </div>
             </Board>
-            {endState && endState.winnerUserId === user.id && (
+            {endState && endState.winnerId === user.id && (
                 <div>
                     You <b className="text-emerald-600">won!</b>
                 </div>
             )}
-            {endState && endState.winnerUserId !== user.id && (
+            {endState && endState.winnerId !== user.id && (
                 <div>
                     You <b className="text-red-500">lost!</b>
                 </div>

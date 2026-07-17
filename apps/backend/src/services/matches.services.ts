@@ -84,6 +84,7 @@ export const getAllMatchesInLobby = async ({
     const matchesId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
     return matchesId.map((matchId) => matchId.toString());
 };
+
 export const saveMatch = ({
     match,
     startedAt,
@@ -117,9 +118,10 @@ export const saveEndedMatch = ({
     match: Match<any>;
     endedAt: number;
 }) => {
-    const { id, type, status, players, gameState } = match;
-    const { endState } = gameState;
-    const { winnerUserId, playerPoints } = endState;
+    const { id, type, status, players, gameId, endState } = match;
+    const { winnerId } = endState;
+
+    console.log("END STATEEE", endState);
 
     // update match status
     db.prepare(`UPDATE matches SET status = ?, ended_at = ? WHERE id = ?`).run(
@@ -135,20 +137,24 @@ export const saveEndedMatch = ({
     }
 
     if (type === "RANKED") {
-        const updatePlayerElo = db.prepare(`
-        UPDATE users SET elo = ? WHERE id = ?`);
+      console.log("yes in rank")
+        const updatePlayerElo = db.prepare(`INSERT INTO game_elos (user_id, game_id, elo)
+                VALUES (?, ?, ?)
+                ON CONFLICT(game_id, user_id)
+                DO UPDATE SET elo = excluded.elo`);
 
         const updateManyPlayersElo = db.transaction(() => {
             for (let i = 0; i < players.length; i++) {
-                let isDraw = !winnerUserId;
-                let isWinner = players[i].userId === winnerUserId;
+                let isDraw = !winnerId;
+                let isWinner = players[i].userId === winnerId;
                 let result = isDraw ? 0.5 : isWinner ? 1 : 0;
                 let newElo = getNewElo({
                     yourRating: players[i].elo,
                     enemyRating: players[1 - i].elo,
                     result: result,
                 });
-                updatePlayerElo.run(newElo, players[i].userId);
+                console.log("&&&&", players[i], newElo, result)
+                updatePlayerElo.run(players[i].userId, gameId, newElo);
                 newPlayerElos[players[i].userId] = newElo;
             }
         });
@@ -159,16 +165,14 @@ export const saveEndedMatch = ({
     const updatePlayer = db.prepare(`
       UPDATE match_players SET result = ?, elo_after = ? WHERE match_id = ? AND user_id = ?`);
 
-    const updateManyPlayers = db.transaction(
-        (playerPoints: Record<string, number>) => {
-            for (let playerId in playerPoints) {
-                let isDraw = !winnerUserId;
-                let isWinner = playerId === winnerUserId;
-                let result = isDraw ? "DRAW" : isWinner ? "WIN" : "LOSS";
-                let newElo = newPlayerElos[playerId];
-                updatePlayer.run(result, newElo, id, playerId);
-            }
-        },
-    );
-    updateManyPlayers(playerPoints);
+    const updateManyPlayers = db.transaction(() => {
+        for (let { userId } of players) {
+            let isDraw = !winnerId;
+            let isWinner = userId === winnerId;
+            let result = isDraw ? "DRAW" : isWinner ? "WIN" : "LOSS";
+            let newElo = newPlayerElos[userId];
+            updatePlayer.run(result, newElo, id, userId);
+        }
+    });
+    updateManyPlayers();
 };

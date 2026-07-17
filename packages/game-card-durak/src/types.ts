@@ -1,4 +1,4 @@
-import { Match } from "@mini-games/core";
+import { CommonEndReason, EndState, Match } from "@mini-games/core";
 
 export const CARD_RANKS = [
     "6",
@@ -26,13 +26,6 @@ export interface TablePair {
     defendCard?: Card;
 }
 
-export type EndReason = "EMPTY_HAND" | "FORFEIT";
-
-export interface EndGameState {
-    reason: EndReason;
-    winnerUserId: string;
-}
-
 export interface DurakState {
     trumpCard?: Card;
     drawPile: Card[];
@@ -40,7 +33,6 @@ export interface DurakState {
     attackerId?: string;
     playerHands: Record<string, Card[]>;
     tablePairs: TablePair[];
-    endState?: EndGameState;
 }
 
 export interface DurakStateClient {
@@ -55,11 +47,12 @@ export interface DurakStateClient {
     playerHand: Card[];
     enemyHandCount: number;
     tablePairs: TablePair[];
-    endState?: EndGameState;
 }
 
 export type MatchState = Match<DurakState>;
 export type MatchStateClient = Match<DurakStateClient>;
+export type DurakEndReason = CommonEndReason | "EMPTY_HAND";
+export type DurakEndState = EndState<DurakEndReason>;
 export type DurakAction =
     | { type: "START_MATCH"; userId: string }
     | { type: "ATTACK"; userId: string; cards: Card[] }
