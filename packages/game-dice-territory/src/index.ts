@@ -3,6 +3,7 @@ import {
     ActionResult,
     GAME_NOT_STARTED_MSG,
     IGameEngine,
+    INVALID_ACTION_MSG,
     Match,
     MatchType,
     newMatch,
@@ -15,6 +16,7 @@ import {
     endMatch,
     getRandomNumber,
     moveOnToNextRound,
+    validateMove,
 } from "./utils.js";
 
 export const gameDefinition = {
@@ -101,6 +103,10 @@ const submitMove = (
     }
     if (!isPlayerTurn) {
         throw new Error(NOT_YOUR_TURN_MSG);
+    }
+
+    if (!validateMove(state, userId, move)) {
+        throw new Error(INVALID_ACTION_MSG);
     }
 
     // need move validation here

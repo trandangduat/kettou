@@ -1,10 +1,10 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
 import {
-    addMove,
     createPrefixSumMatrix,
+    DiceTerritoryEngine,
     isValidSquareMove,
-    moveOnToNextRound,
+    type DiceTerritoryAction,
     type MatchState,
     type Move,
 } from "@mini-games/game-dice-territory";
@@ -14,6 +14,7 @@ interface GameBoardProps {
     match: MatchState;
     myTurn: boolean;
     myDiceNumber: number;
+    engine: DiceTerritoryEngine;
     setMatch: Dispatch<SetStateAction<MatchState>>;
 }
 
@@ -22,6 +23,7 @@ export function GameBoard({
     match,
     myTurn,
     myDiceNumber,
+    engine,
     setMatch,
 }: GameBoardProps) {
     const { status, gameState } = match;
@@ -141,18 +143,27 @@ export function GameBoard({
         if (isAValidMove[r][c]) {
             //optimistic UI update
             const move: Move = { r, c, len: myDiceNumber };
-            setMatch((prevMatchState) => {
-                return moveOnToNextRound(addMove(prevMatchState, move));
+            const moveAction: DiceTerritoryAction = {
+                type: "MOVE",
+                userId: user.id,
+                move,
+            };
+            setMatch((prev) => {
+                const { newState, isValid, error } = engine.processAction(
+                    prev,
+                    moveAction,
+                );
+                if (isValid) {
+                    return newState;
+                }
+                console.error(error);
+                return prev;
             });
             socket.emit(
                 "match:action",
                 {
                     matchId: match.id,
-                    action: {
-                        type: "MOVE",
-                        userId: user.id,
-                        move,
-                    },
+                    action: moveAction,
                 },
                 ({ ok, error }: { ok: boolean; error?: string }) => {
                     if (!ok) {

@@ -94,6 +94,7 @@ export function MatchView({ match, setMatch, user, engine }: MatchViewParams) {
                     match={match}
                     myDiceNumber={myDiceNumber}
                     myTurn={myTurn}
+                    engine={engine}
                     setMatch={setMatch}
                 />
                 <div>You</div>
