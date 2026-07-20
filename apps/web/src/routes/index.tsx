@@ -36,13 +36,17 @@ function Home() {
             setMmTimer((prev) => prev + 1);
         }, 1000);
         setIsInMm(true);
-        socket.emit("matchmaking:join", selectedGames, (ok: boolean) => {
-            if (!ok) cancelFindGame();
-        });
+        socket.emit(
+            "matchmaking:join",
+            selectedGames,
+            ({ ok }: { ok: boolean }) => {
+                if (!ok) cancelFindGame();
+            },
+        );
     };
 
     const cancelFindGame = () => {
-        socket.emit("matchmaking:leave", (ok: boolean) => {
+        socket.emit("matchmaking:leave", ({ ok }: { ok: boolean }) => {
             if (!ok) return;
             setMmTimer(0);
             if (intervalId.current) {

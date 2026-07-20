@@ -11,7 +11,7 @@ import {
     createMatch,
     setMatchState,
 } from "../services/matches.services.js";
-import { getUserRoomKey } from "./utils.js";
+import { getUserRoomKey, handleEvent } from "./utils.js";
 import { getUserEloOfGames } from "../services/games.services.js";
 import { MATCHMAKING_DEBOUNCE } from "../config.js";
 import { addPlayerToMatch } from "@mini-games/core";
@@ -57,7 +57,7 @@ export const setUpMatchmakingSocket = ({
     io,
     socket,
 }: SocketHandlerContext) => {
-    const joinMatchmaking = async (gameIds: string[], ack: any) => {
+    const joinMatchmaking = async (gameIds: string[]) => {
         const { userId } = socket.data;
         const { username } = getUserById(userId);
         const player = {
@@ -67,15 +67,13 @@ export const setUpMatchmakingSocket = ({
             joinedAt: Date.now(),
         };
         await addPlayerToMmQueue({ gameIds, player });
-        ack(true);
     };
 
-    const leaveMatchmaking = async (ack: any) => {
+    const leaveMatchmaking = async () => {
         const { userId } = socket.data;
         await removePlayerFromMmQueue(userId);
-        ack(true);
     };
 
-    socket.on("matchmaking:join", joinMatchmaking);
-    socket.on("matchmaking:leave", leaveMatchmaking);
+    socket.on("matchmaking:join", handleEvent(joinMatchmaking));
+    socket.on("matchmaking:leave", handleEvent(leaveMatchmaking));
 };

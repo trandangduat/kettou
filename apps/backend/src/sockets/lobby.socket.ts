@@ -1,6 +1,6 @@
 import { getAllMatchesInLobby } from "../services/matches.services.js";
 import type { SocketHandlerContext } from "./types.js";
-import { getLobbyRoomKey } from "./utils.js";
+import { getLobbyRoomKey, handleEvent } from "./utils.js";
 
 export const setupLobbySocket = ({ io, socket }: SocketHandlerContext) => {
     const joinLobby = async (gameId: string) => {
@@ -12,5 +12,5 @@ export const setupLobbySocket = ({ io, socket }: SocketHandlerContext) => {
         io.to(lobbyRoom).emit("lobby:matches-updated", matchIds);
     };
 
-    socket.on("lobby:join", joinLobby);
+    socket.on("lobby:join", handleEvent(joinLobby));
 };

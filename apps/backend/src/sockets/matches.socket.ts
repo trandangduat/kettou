@@ -25,7 +25,7 @@ import {
 } from "../services/matches.services.js";
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
-import { getLobbyRoomKey, getUserRoomKey } from "./utils.js";
+import { getLobbyRoomKey, getUserRoomKey, handleEvent } from "./utils.js";
 import { getUserById } from "../services/auth.services.js";
 import { getUserEloOfGame } from "../services/games.services.js";
 import { DISCONNECT_TIMEOUT } from "../config.js";
@@ -34,27 +34,6 @@ const NOT_A_PLAYER_MSG =
     "You must be a player of this match to perform such actions.";
 
 const disconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
-
-function handleEvent(handlerFunc: any) {
-    return async (...args: any) => {
-        const ack = args.pop();
-        if (typeof ack === "function") {
-            try {
-                const res = await handlerFunc(...args);
-                ack({ ok: true, ...(res || {}) });
-            } catch (err) {
-                console.error(err);
-                ack({ ok: false, error: String(err) });
-            }
-        } else {
-            try {
-                await handlerFunc(...args);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-    };
-}
 
 export const saveAndBroadcastMatchState = async ({
     io,
@@ -74,117 +53,90 @@ export const saveAndBroadcastMatchState = async ({
 };
 
 export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
-    const createNewMatch = async ({ gameId, matchType }, ack: any) => {
+    const createNewMatch = async ({ gameId, matchType }) => {
         console.log("CREATE NEW MATCH");
-        try {
-            const match = await createMatch({ gameId, matchType });
-            io.to(getLobbyRoomKey(gameId)).emit("match:created", match.id);
-            ack({ ok: true, matchId: match.id });
-        } catch (err) {
-            console.error(err);
-            ack({ ok: false, error: String(err) });
-        }
+        const match = await createMatch({ gameId, matchType });
+        io.to(getLobbyRoomKey(gameId)).emit("match:created", match.id);
+        return { matchId: match.id };
     };
 
-    const joinMatch = async (matchId: string, ack: any) => {
+    const joinMatch = async (matchId: string) => {
         console.log("JOIN MATCH");
-        try {
-            const { userId } = socket.data;
-            let user = getUserById(userId);
-            let match = await getMatchState({ matchId });
-            let { gameId, players } = match;
-            let player = players.find((p) => p.userId === userId);
+        const { userId } = socket.data;
+        let user = getUserById(userId);
+        let match = await getMatchState({ matchId });
+        let { gameId, players } = match;
+        let player = players.find((p) => p.userId === userId);
 
-            if (player) {
-                if (player.status === "OFFLINE") {
-                    match = updatePlayerStatus(match, userId, "ONLINE");
-                    clearTimeout(disconnectTimeouts.get(userId));
-                    disconnectTimeouts.delete(userId);
-                }
-            } else {
-                let newPlayer: Player = {
-                    userId: user.id,
-                    username: user.username,
-                    elo: getUserEloOfGame(userId, gameId),
-                    status: "ONLINE",
-                };
-                match = addPlayerToMatch(match, newPlayer);
+        if (player) {
+            if (player.status === "OFFLINE") {
+                match = updatePlayerStatus(match, userId, "ONLINE");
+                clearTimeout(disconnectTimeouts.get(userId));
+                disconnectTimeouts.delete(userId);
             }
-
-            await saveUserCurrentMatch(userId, gameId, matchId);
-            await addMatchPlayerSocket(matchId, userId, socket.id);
-            await saveAndBroadcastMatchState({ io, match });
-            ack({ ok: true });
-        } catch (err) {
-            console.error(err);
-            ack({ ok: false, error: String(err) });
+        } else {
+            let newPlayer: Player = {
+                userId: user.id,
+                username: user.username,
+                elo: getUserEloOfGame(userId, gameId),
+                status: "ONLINE",
+            };
+            match = addPlayerToMatch(match, newPlayer);
         }
+
+        await saveUserCurrentMatch(userId, gameId, matchId);
+        await addMatchPlayerSocket(matchId, userId, socket.id);
+        await saveAndBroadcastMatchState({ io, match });
     };
 
-    const startMatch = async (matchId: string, ack: any) => {
+    const startMatch = async (matchId: string) => {
         console.log("START MATCH: ", matchId);
-        try {
-            const userId = socket.data.userId;
-            let match = await getMatchState({ matchId });
-            if (!match) {
-                throw new Error("Match not found");
-            }
-            let { players, status, gameId } = match;
-            let isPlayer = players.some((p) => p.userId === userId);
-            let isHost = players[0].userId === userId;
-            let isReady = status === "READY";
-            if (!isPlayer) {
-                throw new Error(NOT_A_PLAYER_MSG);
-            }
-            if (!isHost) {
-                throw new Error(NOT_HOST_MSG);
-            }
-            if (!isReady) {
-                throw new Error("Match is not ready yet.");
-            }
-            const engine = GameRegistry.getEngine(match.gameId);
-            match = engine.getInitialMatchState(match);
-            match.status = "PLAYING";
-
-            saveMatchToDb({ match, startedAt: Date.now() });
-            // for (let { userId } of players) {
-            //     await saveUserCurrentMatch(userId, gameId, matchId);
-            // }
-            await saveAndBroadcastMatchState({ io, match });
-
-            ack({ ok: true });
-        } catch (err) {
-            console.error(err);
-            ack({ ok: false, error: String(err) });
+        const userId = socket.data.userId;
+        let match = await getMatchState({ matchId });
+        if (!match) {
+            throw new Error("Match not found");
         }
+        let { players, status, gameId } = match;
+        let isPlayer = players.some((p) => p.userId === userId);
+        let isHost = players[0].userId === userId;
+        let isReady = status === "READY";
+        if (!isPlayer) {
+            throw new Error(NOT_A_PLAYER_MSG);
+        }
+        if (!isHost) {
+            throw new Error(NOT_HOST_MSG);
+        }
+        if (!isReady) {
+            throw new Error("Match is not ready yet.");
+        }
+        const engine = GameRegistry.getEngine(match.gameId);
+        match = engine.getInitialMatchState(match);
+        match.status = "PLAYING";
+
+        saveMatchToDb({ match, startedAt: Date.now() });
+        await saveAndBroadcastMatchState({ io, match });
     };
 
-    const processAction = async ({ matchId, action }, ack: any) => {
+    const processAction = async ({ matchId, action }) => {
         console.log("PROCESS ACTION: ", action.type);
-        try {
-            action.userId = socket.data.userId;
+        action.userId = socket.data.userId;
 
-            let match = await getMatchState({ matchId });
-            if (!match) {
-                throw new Error("Match not found");
-            }
-
-            const engine = GameRegistry.getEngine(match.gameId);
-            const res = engine.processAction(match, action);
-            if (!res.isValid) {
-                throw res.error;
-            }
-
-            match = res.newState;
-            if (match.status === "ENDED") {
-                saveEndedMatchToDb({ match, endedAt: Date.now() });
-            }
-            await saveAndBroadcastMatchState({ io, match });
-            ack({ ok: true });
-        } catch (err) {
-            console.error(err);
-            ack({ ok: false, error: String(err) });
+        let match = await getMatchState({ matchId });
+        if (!match) {
+            throw new Error("Match not found");
         }
+
+        const engine = GameRegistry.getEngine(match.gameId);
+        const res = engine.processAction(match, action);
+        if (!res.isValid) {
+            throw res.error;
+        }
+
+        match = res.newState;
+        if (match.status === "ENDED") {
+            saveEndedMatchToDb({ match, endedAt: Date.now() });
+        }
+        await saveAndBroadcastMatchState({ io, match });
     };
 
     const leaveMatch = async (matchId: string) => {
@@ -247,10 +199,10 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         }
     };
 
-    socket.on("match:create", createNewMatch);
-    socket.on("match:join", joinMatch);
-    socket.on("match:start", startMatch);
-    socket.on("match:action", processAction);
+    socket.on("match:create", handleEvent(createNewMatch));
+    socket.on("match:join", handleEvent(joinMatch));
+    socket.on("match:start", handleEvent(startMatch));
+    socket.on("match:action", handleEvent(processAction));
     socket.on("match:leave", handleEvent(leaveMatch));
     socket.on("disconnect", handleEvent(playerDisconnect));
 };
