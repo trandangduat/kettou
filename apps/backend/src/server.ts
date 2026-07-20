@@ -7,6 +7,8 @@ import { setUpGameEngines } from "./games.js";
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
+    pingInterval: 5000,
+    pingTimeout: 3000,
     cors: {
         origin: [WEB_ORIGIN],
         credentials: true

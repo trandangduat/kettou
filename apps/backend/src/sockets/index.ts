@@ -9,6 +9,7 @@ import { jwtVerify } from "jose";
 import { JWT_SECRET } from "../config.js";
 import * as cookie from "cookie";
 import { getUserRoomKey } from "./utils.js";
+import { getUserCurrentMatch } from "../services/matches.services.js";
 
 export const setUpSocket = (io: Server) => {
     startMatchMakingWorker(io);
@@ -46,12 +47,28 @@ export const setUpSocket = (io: Server) => {
             console.error(err);
             next(err);
         }
-    })
+    });
+
+    io.use(async (socket, next) => {
+        try {
+            const { userId } = socket.data;
+            const currentMatch = await getUserCurrentMatch(userId);
+            console.log("%%%%%%%%% backend currentMatch", currentMatch);
+            if (!currentMatch) return next();
+
+            const { gameId, matchId } = currentMatch;
+            socket.emit("current-match-updated", gameId, matchId);
+
+            next();
+        } catch (err) {
+            console.error(err);
+            next(err);
+        }
+    });
 
     io.on("connection", (socket) => {
         console.log("socket connected: ", socket.id);
         console.log("socket user: ", socket.data.userId);
-        console.log("socket user room: ", socket.rooms);
 
         setupLobbySocket({ io, socket });
         setupMatchesSocket({ io, socket });

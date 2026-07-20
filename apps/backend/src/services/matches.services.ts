@@ -11,6 +11,14 @@ export const getMatchKey = (id: string) => {
     return `match:${id}`;
 };
 
+export const getUserCurrentMatchKey = (userId: string) => {
+    return `user:${userId}:current-match`;
+};
+
+export const getMatchPlayerSocketsKey = (matchId: string, playerId: string) => {
+    return `sockets-list:match:${matchId}:player:${playerId}`;
+};
+
 export const getMatchState = async ({
     matchId,
 }: {
@@ -85,7 +93,7 @@ export const getAllMatchesInLobby = async ({
     return matchesId.map((matchId) => matchId.toString());
 };
 
-export const saveMatch = ({
+export const saveMatchToDb = ({
     match,
     startedAt,
 }: {
@@ -111,7 +119,7 @@ export const saveMatch = ({
     insertManyPlayers(players);
 };
 
-export const saveEndedMatch = ({
+export const saveEndedMatchToDb = ({
     match,
     endedAt,
 }: {
@@ -137,8 +145,8 @@ export const saveEndedMatch = ({
     }
 
     if (type === "RANKED") {
-      console.log("yes in rank")
-        const updatePlayerElo = db.prepare(`INSERT INTO game_elos (user_id, game_id, elo)
+        const updatePlayerElo =
+            db.prepare(`INSERT INTO game_elos (user_id, game_id, elo)
                 VALUES (?, ?, ?)
                 ON CONFLICT(game_id, user_id)
                 DO UPDATE SET elo = excluded.elo`);
@@ -153,7 +161,6 @@ export const saveEndedMatch = ({
                     enemyRating: players[1 - i].elo,
                     result: result,
                 });
-                console.log("&&&&", players[i], newElo, result)
                 updatePlayerElo.run(players[i].userId, gameId, newElo);
                 newPlayerElos[players[i].userId] = newElo;
             }
@@ -175,4 +182,55 @@ export const saveEndedMatch = ({
         }
     });
     updateManyPlayers();
+};
+
+export const saveUserCurrentMatch = async (
+    userId: string,
+    gameId: string,
+    matchId: string,
+) => {
+    const key = getUserCurrentMatchKey(userId);
+    await redis.set(key, JSON.stringify({ gameId, matchId }));
+};
+
+export const getUserCurrentMatch = async (
+    userId: string,
+): Promise<{ gameId: string; matchId: string } | null> => {
+    const key = getUserCurrentMatchKey(userId);
+    const result = await redis.get(key);
+    return result ? JSON.parse(result) : null;
+};
+
+export const clearUserCurrentMatch = async (userId: string) => {
+    const key = getUserCurrentMatchKey(userId);
+    await redis.del(key);
+};
+
+export const addMatchPlayerSocket = async (
+    matchId: string,
+    userId: string,
+    socketId: string,
+) => {
+    const key = getMatchPlayerSocketsKey(matchId, userId);
+    await redis.zAdd(key, {
+        score: Date.now(),
+        value: socketId,
+    });
+};
+
+export const removeMatchPlayerSocket = async (
+    matchId: string,
+    userId: string,
+    socketId: string,
+) => {
+    const key = getMatchPlayerSocketsKey(matchId, userId);
+    await redis.zRem(key, socketId);
+};
+
+export const getMatchPlayerSockets = async (
+    matchId: string,
+    userId: string,
+) => {
+    const key = getMatchPlayerSocketsKey(matchId, userId);
+    return await redis.zRange(key, 0, -1);
 };

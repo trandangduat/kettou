@@ -1,5 +1,5 @@
 import { v6 as uuidv6 } from "uuid";
-import { Match, MatchType, Player } from "./types.js";
+import { EndState, Match, MatchType, Player, PlayerStatus } from "./types.js";
 import { GameRegistry } from "./index.js";
 
 export const debugMatch = (m: any) => {
@@ -24,7 +24,10 @@ export const updateReadyStatus = (match: Match<any>): Match<any> => {
     };
 };
 
-export const addPlayerToMatch = (match: Match<any>, player: Player): Match<any> => {
+export const addPlayerToMatch = (
+    match: Match<any>,
+    player: Player,
+): Match<any> => {
     const { username, userId, elo } = player;
     const isPlayer = match.players.find((p) => p.userId === userId);
     if (isPlayer) {
@@ -36,8 +39,6 @@ export const addPlayerToMatch = (match: Match<any>, player: Player): Match<any> 
         elo: elo ?? 1000,
         status: "ONLINE",
     };
-    console.log("player", match, player);
-    console.log("new player", newPlayer);
     let newMatch: Match<any> = {
         ...match,
         players: [...match.players, newPlayer],
@@ -71,3 +72,32 @@ export const sanitizeMatchStateForClient = (
         players: sanitizedPlayers,
     };
 };
+
+export const updatePlayerStatus = (
+    match: Match<any>,
+    userId: string,
+    status: PlayerStatus,
+): Match<any> => {
+    const updatedPlayers = match.players.map((p) =>
+        p.userId === userId ? { ...p, status } : p,
+    );
+    return { ...match, players: updatedPlayers };
+};
+
+export const endGameByDisconnect = (
+    match: Match<any>,
+    whoDisconnected: string
+): Match<any> => {
+    const { players } = match;
+
+    let endState: EndState = {
+      winnerId: players.find(p => p.userId != whoDisconnected)?.userId,
+      reason: "PLAYER_DISCONNECTED",
+    }
+
+    return {
+        ...match,
+        status: "ENDED",
+        endState,
+    }
+}

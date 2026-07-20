@@ -15,7 +15,7 @@ export interface EndState<TEndReason extends string = string> {
     scores?: Record<string, number>;
 }
 
-export type CommonEndReason = "FORFEIT" | "DISCONNECTED";
+export type CommonEndReason = "FORFEIT" | "PLAYER_DISCONNECTED";
 
 export interface Match<TGameState> {
     id: string;
@@ -35,6 +35,7 @@ export interface ActionResult<TGameState> {
 
 export interface IGameEngine<TGameState, TAction, TGameStateClient> {
     createNewMatchState(matchType: MatchType): Match<TGameState>;
+    getInitialMatchState(state: Match<TGameState>): Match<TGameState>;
     processAction(
         state: Match<TGameState>,
         action: TAction,

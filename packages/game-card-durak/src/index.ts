@@ -37,52 +37,6 @@ export const INVALID_ATTACK_MSG =
 export const INVALID_DEFEND_MSG =
     "Invalid defend. Defend again with different cards.";
 
-const startMatch = (state: MatchState, userId: string): MatchState => {
-    const { players, status } = state;
-
-    let isPlayer = players.some((p) => p.userId === userId);
-    let isHost = players[0].userId === userId;
-    let isReady = status === "READY";
-    if (!isPlayer) {
-        throw new Error(NOT_A_PLAYER_MSG);
-    }
-    if (!isHost) {
-        throw new Error(NOT_HOST_MSG);
-    }
-    if (!isReady) {
-        throw new Error("Match is not ready yet.");
-    }
-
-    let deck = shuffleDeck(createOrderedDeck());
-    let playerHands: Record<string, Card[]> = {};
-    let drawPile: Card[] = [];
-    let trumpCard: Card;
-    let attackerId = players[(Math.random() * players.length) | 0].userId;
-
-    for (let p of players) {
-        const { userId } = p;
-        playerHands[userId] = [];
-        for (let i = 0; i < DURAK_DRAW_CARD_LIMIT; i++) {
-            let lastCard = deck.pop();
-            playerHands[userId].push(lastCard);
-        }
-    }
-    trumpCard = deck[0];
-    drawPile = deck;
-
-    return {
-        ...state,
-        status: "PLAYING",
-        gameState: {
-            ...state.gameState,
-            trumpCard,
-            drawPile,
-            playerHands,
-            attackerId,
-        },
-    };
-};
-
 const attack = (
     state: MatchState,
     userId: string,
@@ -139,7 +93,7 @@ const attack = (
     if (newPlayerHands[userId].length === 0) {
         endState = {
             winnerId: userId,
-            reason: "EMPTY_HAND"
+            reason: "EMPTY_HAND",
         };
     }
 
@@ -283,7 +237,7 @@ const defend = (
     if (newPlayerHands[userId].length === 0) {
         endState = {
             winnerId: userId,
-            reason: "EMPTY_HAND"
+            reason: "EMPTY_HAND",
         };
     }
 
@@ -374,6 +328,37 @@ export class DurakEngine implements IGameEngine<
         };
     }
 
+    getInitialMatchState(state: MatchState): MatchState {
+        const { players } = state;
+        let deck = shuffleDeck(createOrderedDeck());
+        let playerHands: Record<string, Card[]> = {};
+        let drawPile: Card[] = [];
+        let trumpCard: Card;
+        let attackerId = players[(Math.random() * players.length) | 0].userId;
+
+        for (let p of players) {
+            const { userId } = p;
+            playerHands[userId] = [];
+            for (let i = 0; i < DURAK_DRAW_CARD_LIMIT; i++) {
+                let lastCard = deck.pop();
+                playerHands[userId].push(lastCard);
+            }
+        }
+        trumpCard = deck[0];
+        drawPile = deck;
+
+        return {
+            ...state,
+            gameState: {
+                ...state.gameState,
+                trumpCard,
+                drawPile,
+                playerHands,
+                attackerId,
+            },
+        };
+    }
+
     processAction(
         state: MatchState,
         action: DurakAction,
@@ -381,11 +366,6 @@ export class DurakEngine implements IGameEngine<
         try {
             let newState: MatchState = state;
             switch (action.type) {
-                case "START_MATCH": {
-                    const { userId } = action;
-                    newState = startMatch(state, userId);
-                    break;
-                }
                 case "ATTACK": {
                     const { userId, cards } = action;
                     newState = attack(state, userId, cards);

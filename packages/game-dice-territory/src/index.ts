@@ -8,7 +8,6 @@ import {
     MatchType,
     newMatch,
     NOT_A_PLAYER_MSG,
-    NOT_HOST_MSG,
     NOT_YOUR_TURN_MSG,
 } from "@mini-games/core";
 import {
@@ -22,34 +21,6 @@ import {
 export const gameDefinition = {
     id: "dice-territory",
     createEngine: () => new DiceTerritoryEngine(),
-};
-
-const startMatch = (state: MatchState, userId: string): MatchState => {
-    const { players, status, gameState } = state;
-
-    let isPlayer = players.some((p) => p.userId === userId);
-    let isHost = players[0].userId === userId;
-    let isReady = status === "READY";
-    if (!isPlayer) {
-        throw new Error(NOT_A_PLAYER_MSG);
-    }
-    if (!isHost) {
-        throw new Error(NOT_HOST_MSG);
-    }
-    if (!isReady) {
-        throw new Error("Match is not ready yet.");
-    }
-
-    let firstTurn = getRandomNumber(players.length);
-    return {
-        ...state,
-        status: "PLAYING",
-        gameState: {
-            ...gameState,
-            roundNumber: 1,
-            turn: firstTurn,
-        },
-    };
 };
 
 const rollDice = (state: MatchState, userId: string): MatchState => {
@@ -109,8 +80,6 @@ const submitMove = (
         throw new Error(INVALID_ACTION_MSG);
     }
 
-    // need move validation here
-
     let newMatchState = moveOnToNextRound(addMove(state, move));
     return newMatchState;
 };
@@ -159,6 +128,19 @@ export class DiceTerritoryEngine implements IGameEngine<
         };
     }
 
+    getInitialMatchState(state: MatchState): MatchState {
+        const { players, gameState } = state;
+        let firstTurn = getRandomNumber(players.length);
+        return {
+            ...state,
+            gameState: {
+                ...gameState,
+                roundNumber: 1,
+                turn: firstTurn,
+            },
+        };
+    };
+
     processAction(
         state: MatchState,
         action: DiceTerritoryAction,
@@ -166,11 +148,6 @@ export class DiceTerritoryEngine implements IGameEngine<
         try {
             let newState: MatchState = state;
             switch (action.type) {
-                case "START_MATCH": {
-                    const { userId } = action;
-                    newState = startMatch(state, userId);
-                    break;
-                }
                 case "ROLL_DICE": {
                     const { userId } = action;
                     newState = rollDice(state, userId);

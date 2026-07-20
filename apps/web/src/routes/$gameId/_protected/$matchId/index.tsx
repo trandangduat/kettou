@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GameRegistry, type Match } from "@mini-games/core";
 import { GameUI } from "#/games";
+import cn from "cnfast";
 
 export const Route = createFileRoute("/$gameId/_protected/$matchId/")({
     component: RouteComponent,
@@ -13,7 +14,6 @@ function RouteComponent() {
     const { user } = Route.useRouteContext();
     const engine = GameRegistry.getEngine(gameId);
 
-    const [waitingStart, setWaitingStart] = useState<boolean>(false);
     const [match, setMatch] = useState<Match<any>>(
         engine.createNewMatchState("CUSTOM"),
     );
@@ -21,19 +21,29 @@ function RouteComponent() {
     const { status, players } = match;
     const MatchView = GameUI[gameId];
 
+    let matchStatusColor: string = "";
+    switch (status) {
+        case "WAITING":
+            matchStatusColor = "text-yellow-500";
+            break;
+        case "READY":
+            matchStatusColor = "text-blue-500";
+            break;
+        case "PLAYING":
+            matchStatusColor = "text-green-500";
+            break;
+        case "ENDED":
+            matchStatusColor = "text-red-500";
+            break;
+        default:
+            break;
+    }
+
     const startMatch = () => {
-        setWaitingStart(true);
         socket.emit(
-            "match:action",
-            {
-                matchId,
-                action: {
-                    type: "START_MATCH",
-                    userId: user.id,
-                },
-            },
+            "match:start",
+            matchId,
             ({ ok, error }: { ok: boolean; error?: string }) => {
-                setWaitingStart(false);
                 if (!ok) {
                     console.error(error);
                 }
@@ -54,13 +64,19 @@ function RouteComponent() {
     };
 
     useEffect(() => {
-        socket.emit(
-            "match:join",
-            matchId,
-            ({ ok, error }: { ok: boolean; error?: string }) => {
-                if (!ok) console.error(error);
-            },
-        );
+        const join = () => {
+          socket.emit(
+              "match:join",
+              matchId,
+              ({ ok, error }: { ok: boolean; error?: string }) => {
+                  if (!ok) console.error(error);
+              },
+          );
+        }
+
+        socket.on("connect", () => join());
+        if (socket.connected) join();
+
         socket.on("match:updated", (updatedMatch) => {
             setMatch(updatedMatch);
         });
@@ -84,7 +100,22 @@ function RouteComponent() {
                 return (
                     <div key={i}>
                         Player {i + 1}:{" "}
-                        {i + 1 > players.length ? "-" : players[i].username}
+                        {i >= players.length ? (
+                            <b className="text-gray-500">-</b>
+                        ) : (
+                            <>
+                                {players[i].username}
+                                <b
+                                    className={cn(
+                                        players[i].status === "ONLINE"
+                                            ? "text-green-500"
+                                            : "text-red-500",
+                                    )}
+                                >
+                                    ({players[i].status})
+                                </b>
+                            </>
+                        )}
                     </div>
                 );
             })}
@@ -92,6 +123,9 @@ function RouteComponent() {
                 <button
                     onClick={startMatch}
                     className="p-2 border"
+                    disabled={
+                        status !== "READY" || user.id !== players[0].userId
+                    }
                     style={{
                         backgroundColor:
                             status === "READY" && user.id === players[0].userId
@@ -101,17 +135,10 @@ function RouteComponent() {
                 >
                     Start Game
                 </button>
-                {waitingStart && "Waiting game to start..."}
             </div>
             <p>
-                isPlaying:
-                <b
-                    style={{
-                        color: status === "PLAYING" ? "green" : "red",
-                    }}
-                >
-                    {status === "PLAYING" ? "true" : "false"}
-                </b>
+                Match Status:
+                <b className={matchStatusColor}>{match.status}</b>
             </p>
             <MatchView
                 match={match}
