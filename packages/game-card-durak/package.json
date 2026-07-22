@@ -5,5 +5,11 @@
     "type": "module",
     "dependencies": {
         "@mini-games/core": "workspace:*"
+    },
+    "scripts": {
+      "test": "vitest"
+    },
+    "devDependencies": {
+        "vitest": "^4.1.5"
     }
 }

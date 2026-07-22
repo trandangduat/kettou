@@ -7,7 +7,6 @@ import {
     MatchType,
     newMatch,
     NOT_A_PLAYER_MSG,
-    NOT_HOST_MSG,
     NOT_YOUR_TURN_MSG,
 } from "@mini-games/core";
 import {
@@ -20,9 +19,11 @@ import {
     DurakEndState,
 } from "./types.js";
 import {
+    createDefensibleGraph,
     createOrderedDeck,
     defensible,
     isSameCard,
+    kuhnAlgorithm,
     shuffleDeck,
 } from "./utils.js";
 
@@ -184,6 +185,7 @@ const defend = (
     userId: string,
     cards: Card[],
 ): MatchState => {
+    // TODO: need to handle the case when the number of cards left are less than the number of attacked cards
     const { players, status, gameState } = state;
     const { trumpCard, attackerId, playerHands, tablePairs } = gameState;
 
@@ -200,38 +202,48 @@ const defend = (
         throw new Error(NOT_YOUR_TURN_MSG);
     }
 
-    let countDefended = 0;
-    for (let pair of tablePairs) {
-        if (
-            !pair.defendCard &&
-            defensible({
-                attackCard: pair.attackCard,
-                defendCard: cards[countDefended],
-                trumpSuit: trumpCard.suit,
-            })
-        ) {
-            countDefended++;
-        }
+    let cardsNeedDefend = tablePairs
+        .filter((pair) => !pair.defendCard)
+        .map((pair) => pair.attackCard);
+
+    if (cardsNeedDefend.length < cards.length) {
+        throw new Error(INVALID_DEFEND_MSG);
     }
 
-    if (countDefended !== cards.length) {
+    const graphs = createDefensibleGraph(
+        cardsNeedDefend,
+        cards,
+        trumpCard.suit,
+    );
+    const matchedPairs = kuhnAlgorithm(graphs);
+
+    console.log("GRAPHS", graphs);
+    console.log("MATCHED PAIRS", matchedPairs);
+
+    if (
+        matchedPairs.size !==
+        Math.min(cardsNeedDefend.length, playerHands[userId].length)
+    ) {
         throw new Error(INVALID_DEFEND_MSG);
+    }
+
+    let newTablePairs = [...tablePairs];
+    let j = 0;
+    for (let i = 0; i < newTablePairs.length; i++) {
+        let { attackCard, defendCard } = newTablePairs[i];
+        if (!defendCard) {
+            newTablePairs[i] = {
+                ...newTablePairs[i],
+                defendCard: matchedPairs.get(attackCard),
+            };
+            j++;
+        }
     }
 
     let newPlayerHands = { ...playerHands };
     newPlayerHands[userId] = newPlayerHands[userId].filter(
         (card) => !cards.some((c) => isSameCard(card, c)),
     );
-
-    let newTablePairs = [...tablePairs];
-    let j = 0;
-    for (let i = 0; i < newTablePairs.length; i++) {
-        let { defendCard } = newTablePairs[i];
-        if (!defendCard) {
-            newTablePairs[i] = { ...newTablePairs[i], defendCard: cards[j] };
-            j++;
-        }
-    }
 
     let endState: DurakEndState | undefined = undefined;
     if (newPlayerHands[userId].length === 0) {

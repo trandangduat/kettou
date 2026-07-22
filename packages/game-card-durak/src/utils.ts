@@ -53,3 +53,52 @@ export const defensible = ({
         compareRank(defendCard, attackCard)
     );
 };
+
+/*
+  this will return a directed graph,
+  edge A -> B means card A can defend card B
+*/
+export const createDefensibleGraph = (
+    attackCards: Card[],
+    defendCards: Card[],
+    trumpSuit: CardSuit,
+): Map<Card, Card[]> => {
+    const graph: Map<Card, Card[]> = new Map();
+    for (let defendCard of defendCards) {
+        graph.set(defendCard, []);
+        for (let attackCard of attackCards) {
+            if (defensible({ attackCard, defendCard, trumpSuit })) {
+                graph.get(defendCard).push(attackCard);
+            }
+        }
+    }
+    return graph;
+};
+
+/*
+  this will return a map of matched cards using the Kuhn algorithm,
+  where key is the attack card and value is the defend card
+*/
+export const kuhnAlgorithm = (graphs: Map<Card, Card[]>): Map<Card, Card> => {
+    let matched: Map<Card, Card> = new Map();
+
+    const dfs = (node: Card, visited: Set<Card>): boolean => {
+        if (visited.has(node)) {
+            return false;
+        }
+        visited.add(node);
+        for (let v of graphs.get(node)) {
+            if (!matched.get(v) || dfs(matched.get(v), visited)) {
+                matched.set(v, node);
+                return true;
+            }
+        }
+        return false;
+    };
+
+    for (let card of graphs.keys()) {
+        let visited: Set<Card> = new Set();
+        dfs(card, visited);
+    }
+    return matched;
+};
