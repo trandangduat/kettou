@@ -1,9 +1,11 @@
 import { getAllGames } from "#/api/games";
+import { Button } from "#/components/ui/button";
 import { socket } from "#/socket";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import cn from "cnfast";
 import { useEffect, useRef, useState } from "react";
+import GamesCarousal from "./-components/games-carousal";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -22,14 +24,6 @@ function Home() {
         queryFn: getAllGames,
     });
     const router = useRouter();
-
-    const handleSelectGame = (gameId: string) => {
-        setSelectedGames((prev) =>
-            prev.includes(gameId)
-                ? prev.filter((id) => id !== gameId)
-                : [...prev, gameId],
-        );
-    };
 
     const findGame = () => {
         intervalId.current = setInterval(() => {
@@ -85,68 +79,19 @@ function Home() {
 
     return (
         <div className="p-8">
-            <h1 className="text-4xl">
-                Welcome to <b>Kettou</b>
-            </h1>
-            <div className="flex flex-col">
-                <div className="flex gap-2 items-center">
-                    {isInMm ? (
-                        <button
-                            onClick={cancelFindGame}
-                            className="flex hover:font-bold"
-                        >
-                            Cancel
-                        </button>
-                    ) : (
-                        <button
-                            onClick={findGame}
-                            className="flex hover:bg-amber-200 p-2 border font-bold"
-                        >
-                            Find game
-                        </button>
-                    )}
-                    <p
-                        className="text-2xl"
-                        style={{ visibility: isInMm ? "visible" : "hidden" }}
-                    >
-                        {mmTimer}
-                    </p>
-                </div>
-                <p>List of games:</p>
-                {isLoadingGames ? (
-                    <p>Loading games...</p>
-                ) : (
-                    <>
-                        <div className="inline-flex flex-col">
-                            {games.map((game: any) => (
-                                <div
-                                    key={game.id}
-                                    onClick={() => handleSelectGame(game.id)}
-                                    className={cn(
-                                        selectedGames.includes(game.id)
-                                            ? "bg-amber-300"
-                                            : "hover:bg-gray-200",
-                                    )}
-                                >
-                                    {game.name}
-                                </div>
-                            ))}
-                        </div>
-                        <ul className="list-disc">
-                            {games.map((game: any) => (
-                                <li key={game.id} className="hover:font-bold">
-                                    <Link
-                                        to="/$gameId"
-                                        params={{ gameId: game.id }}
-                                    >
-                                        {game.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </>
-                )}
-            </div>
+            <GamesCarousal
+                games={games}
+                selectedGames={selectedGames}
+                setSelectedGames={setSelectedGames}
+                isLoadingGames={isLoadingGames}
+            />
+            {isInMm ? (
+                <Button onClick={cancelFindGame} variant="outline">
+                    {mmTimer} x
+                </Button>
+            ) : (
+                <Button onClick={findGame}>Find game</Button>
+            )}
             {currentMatch && (
                 <div className="bg-yellow-200">
                     You are currently in a match:{" "}

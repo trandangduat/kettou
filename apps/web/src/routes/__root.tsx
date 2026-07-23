@@ -18,7 +18,9 @@ function RootComponent() {
     return (
         <>
             <NavBar />
-            <Outlet />
+            <div className="mt-18 max-w-7xl w-full mx-auto">
+                <Outlet />
+            </div>
             <TanStackDevtools
                 config={{
                     position: "bottom-right",
