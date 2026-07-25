@@ -6,7 +6,13 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import cn from "cnfast";
 import { useEffect, useRef, useState } from "react";
 import GamesCarousal from "./-components/games-carousal";
-
+import {
+    ArrowRightEndOnRectangleIcon,
+    ArrowRightIcon,
+    MagnifyingGlassIcon,
+    XMarkIcon,
+} from "@heroicons/react/24/solid";
+import { Divider } from "#/components/ui/divider";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
@@ -25,7 +31,7 @@ function Home() {
     });
     const router = useRouter();
 
-    const findGame = () => {
+    const findMatch = () => {
         intervalId.current = setInterval(() => {
             setMmTimer((prev) => prev + 1);
         }, 1000);
@@ -34,20 +40,25 @@ function Home() {
             "matchmaking:join",
             selectedGames,
             ({ ok }: { ok: boolean }) => {
-                if (!ok) cancelFindGame();
+                if (!ok) cancelFindMatch();
             },
         );
     };
 
-    const cancelFindGame = () => {
-        socket.emit("matchmaking:leave", ({ ok }: { ok: boolean }) => {
-            if (!ok) return;
-            setMmTimer(0);
-            if (intervalId.current) {
-                clearInterval(intervalId.current);
-            }
-            setIsInMm(false);
-        });
+    const cancelFindMatch = () => {
+        setMmTimer(0);
+        setIsInMm(false);
+        socket.emit(
+            "matchmaking:leave",
+            ({ ok, error }: { ok: boolean; error: string }) => {
+                if (!ok) {
+                    console.error(error);
+                }
+                if (intervalId.current) {
+                    clearInterval(intervalId.current);
+                }
+            },
+        );
     };
 
     useEffect(() => {
@@ -78,20 +89,42 @@ function Home() {
     }, []);
 
     return (
-        <div className="p-8">
+        <div className="py-8 flex flex-col gap-8">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-4 items-center justify-center">
+                  <Button
+                      className={cn`text-lg lowercase p-6 rounded-full w-50`}
+                      variant={"secondary"}
+                  >
+                      <MagnifyingGlassIcon className="size-6" /> Browse Rooms
+                  </Button>
+                  <Button
+                      className={cn`text-lg lowercase p-6 rounded-full w-50`}
+                      variant={"secondary"}
+                  >
+                      <ArrowRightEndOnRectangleIcon className="size-6" /> Join
+                      Room
+                  </Button>
+              </div>
+                <div className="">
+                    {isInMm ? (
+                        <CancelFindMatchButton
+                            mmTimer={mmTimer}
+                            cancelFindMatch={cancelFindMatch}
+                        />
+                    ) : (
+                        <FindMatchButton findMatch={findMatch} />
+                    )}
+                </div>
+            </div>
+            <Divider />
             <GamesCarousal
                 games={games}
                 selectedGames={selectedGames}
                 setSelectedGames={setSelectedGames}
                 isLoadingGames={isLoadingGames}
+                isInMm={isInMm}
             />
-            {isInMm ? (
-                <Button onClick={cancelFindGame} variant="outline">
-                    {mmTimer} x
-                </Button>
-            ) : (
-                <Button onClick={findGame}>Find game</Button>
-            )}
             {currentMatch && (
                 <div className="bg-yellow-200">
                     You are currently in a match:{" "}
@@ -108,5 +141,37 @@ function Home() {
                 </div>
             )}
         </div>
+    );
+}
+
+function FindMatchButton({ findMatch }: { findMatch: () => void }) {
+    return (
+        <Button onClick={findMatch} className="font-bold lowercase p-6 w-56">
+            <div className="w-full flex items-center justify-between">
+                <p className="text-2xl">Find match</p>
+                <ArrowRightIcon className="size-6" />
+            </div>
+        </Button>
+    );
+}
+
+function CancelFindMatchButton({
+    mmTimer,
+    cancelFindMatch,
+}: {
+    mmTimer: number;
+    cancelFindMatch: () => void;
+}) {
+    return (
+        <Button
+            onClick={cancelFindMatch}
+            variant="secondary"
+            className="font-bold lowercase p-6 w-56"
+        >
+            <div className="w-full flex items-center justify-between">
+                <p className="text-3xl">{mmTimer}</p>
+                <XMarkIcon className="size-6" />
+            </div>
+        </Button>
     );
 }
