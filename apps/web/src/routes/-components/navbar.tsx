@@ -3,7 +3,29 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 
 function Logo() {
-    return <div> KETTOU </div>
+    return <div className="font-bold">kettou.</div>;
+}
+
+let links = [
+    { name: "Browse", href: "/browse" },
+    { name: "Leaderboard", href: "/leaderboard" },
+    { name: "Help", href: "#" },
+];
+
+function NavLinks() {
+    return (
+        <div className="flex gap-6">
+            {links.map((link) => (
+                <Link
+                    className="lowercase font-semibold text-muted-foreground hover:text-foreground transition"
+                    key={link.name}
+                    to={link.href}
+                >
+                    {link.name}
+                </Link>
+            ))}
+        </div>
+    );
 }
 
 export function NavBar({}) {
@@ -22,11 +44,15 @@ export function NavBar({}) {
     };
     return (
         <div className="fixed flex justify-center w-full top-0 left-0 z-50">
-            <div className="flex justify-between w-full max-w-7xl bg-sidebar p-4 mt-6 rounded-xl">
+            <div className="flex items-center justify-between w-full max-w-7xl bg-sidebar p-4 mt-6 rounded-xl">
                 <Logo />
+                <NavLinks />
                 {user ? (
                     <div className="flex gap-4">
-                        <p className="text-primary font-bold"> {user.username} </p>
+                        <p className="text-primary font-bold">
+                            {" "}
+                            {user.username}{" "}
+                        </p>
                         <button onClick={logout}>Logout</button>
                     </div>
                 ) : (
