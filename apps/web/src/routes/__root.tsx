@@ -18,7 +18,7 @@ function RootComponent() {
     return (
         <>
             <NavBar />
-            <div className="mt-18 max-w-7xl w-full mx-auto">
+            <div className="mt-26 max-w-7xl w-full mx-auto">
                 <Outlet />
             </div>
             <TanStackDevtools

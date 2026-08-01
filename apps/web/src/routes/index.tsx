@@ -12,7 +12,6 @@ import {
     MagnifyingGlassIcon,
     XMarkIcon,
 } from "@heroicons/react/24/solid";
-import { Divider } from "#/components/ui/divider";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
@@ -117,7 +116,6 @@ function Home() {
                     )}
                 </div>
             </div>
-            <Divider />
             <GamesCarousal
                 games={games}
                 selectedGames={selectedGames}

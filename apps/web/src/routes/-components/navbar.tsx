@@ -3,7 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 
 function Logo() {
-    return <div className="font-bold">kettou.</div>;
+    return (
+        <div className="font-bold">
+            <Link to="/">kettou.</Link>
+        </div>
+    );
 }
 
 let links = [
