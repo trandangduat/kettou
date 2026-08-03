@@ -22,6 +22,7 @@ import {
     saveMatchToDb,
     saveUserCurrentMatch,
     setMatchState,
+    summarizeMatchState,
 } from "../services/matches.services.js";
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
@@ -56,7 +57,11 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
     const createNewMatch = async ({ gameId, matchType }) => {
         console.log("CREATE NEW MATCH");
         const match = await createMatch({ gameId, matchType });
-        io.to(getLobbyRoomKey(gameId)).emit("match:created", match.id);
+        const lobbyKey = getLobbyRoomKey(gameId);
+        io.to(lobbyKey).emit(
+            "lobby:new-match-created",
+            summarizeMatchState(match),
+        );
         return { matchId: match.id };
     };
 
@@ -66,6 +71,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         let user = getUserById(userId);
         let match = await getMatchState({ matchId });
         let { gameId, players } = match;
+        let lobbyKey = getLobbyRoomKey(gameId);
         let player = players.find((p) => p.userId === userId);
 
         if (player) {
@@ -82,6 +88,10 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
                 status: "ONLINE",
             };
             match = addPlayerToMatch(match, newPlayer);
+            io.to(lobbyKey).emit(
+                "lobby:match-updated",
+                summarizeMatchState(match),
+            );
         }
 
         await saveUserCurrentMatch(userId, gameId, matchId);
@@ -154,11 +164,17 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         match = removePlayerFromMatch(match, userId);
         const { gameId, players } = match;
 
+        const lobbyKey = getLobbyRoomKey(gameId);
+
         if (players.length > 0) {
+            io.to(lobbyKey).emit(
+                "lobby:match-updated",
+                summarizeMatchState(match),
+            );
             await saveAndBroadcastMatchState({ io, match });
         } else {
+            io.to(lobbyKey).emit("lobby:match-deleted", matchId);
             await deleteMatch({ matchId, gameId });
-            io.to(getLobbyRoomKey(gameId)).emit("match:deleted", matchId);
         }
     };
 

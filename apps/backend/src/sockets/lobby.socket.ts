@@ -8,9 +8,17 @@ export const setupLobbySocket = ({ io, socket }: SocketHandlerContext) => {
 
         let lobbyRoom = getLobbyRoomKey(gameId);
         socket.join(lobbyRoom);
-        const matchIds = await getAllMatchesInLobby({ gameId });
-        io.to(lobbyRoom).emit("lobby:matches-updated", matchIds);
+        const matchSummaries = await getAllMatchesInLobby(gameId);
+        io.to(lobbyRoom).emit("lobby:matches-updated", matchSummaries);
+    };
+
+    const leaveLobby = async (gameId: string) => {
+        console.log("LEAVE LOBBY", gameId, socket.id);
+
+        let lobbyRoom = getLobbyRoomKey(gameId);
+        socket.leave(lobbyRoom);
     };
 
     socket.on("lobby:join", handleEvent(joinLobby));
+    socket.on("lobby:leave", handleEvent(leaveLobby));
 };

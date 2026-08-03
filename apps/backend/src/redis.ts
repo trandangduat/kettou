@@ -30,6 +30,7 @@ export interface RedisMulti {
         stop: number,
         options?: RedisZRangeOptions,
     ): RedisMulti;
+    mGet(keys: string[]): RedisMulti;
     exec(): Promise<unknown[]>;
 }
 
@@ -48,6 +49,7 @@ export interface RedisClient {
         stop: number,
         options?: RedisZRangeOptions,
     ): Promise<string[]>;
+    mGet(keys: string[]): Promise<(string | null)[]>;
     multi(): RedisMulti;
 }
 

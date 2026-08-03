@@ -7,6 +7,7 @@ export interface Player {
     username: string;
     status: PlayerStatus;
     elo: number;
+    avatarUrl?: string;
 }
 
 export interface EndState<TEndReason extends string = string> {
@@ -25,6 +26,7 @@ export interface Match<TGameState> {
     players: Player[];
     gameState: TGameState;
     endState?: EndState;
+    createdAt: number;
 }
 
 export interface ActionResult<TGameState> {

@@ -7,6 +7,11 @@ export const getLobbyKey = (id: string) => {
     return `game:${id}:lobby`;
 };
 
+export const getMatchSummaryKey = (matchId: string) => {
+    return `match:${matchId}:summary`;
+};
+
+// save summary of match state for game lobby UI
 export const getMatchKey = (id: string) => {
     return `match:${id}`;
 };
@@ -17,6 +22,16 @@ export const getUserCurrentMatchKey = (userId: string) => {
 
 export const getMatchPlayerSocketsKey = (matchId: string, playerId: string) => {
     return `sockets-list:match:${matchId}:player:${playerId}`;
+};
+
+export const summarizeMatchState = (match: Match<any>) => {
+    return {
+        id: match.id,
+        gameId: match.gameId,
+        players: match.players,
+        status: match.status,
+        createdAt: match.createdAt
+    };
 };
 
 export const getMatchState = async ({
@@ -38,7 +53,15 @@ export const setMatchState = async ({
     matchId: string;
     matchState: Match<any>;
 }) => {
-    await redis.set(getMatchKey(matchId), JSON.stringify(matchState));
+    const matchKey = getMatchKey(matchId);
+    const matchSummaryKey = getMatchSummaryKey(matchId);
+    await redis.set(matchKey, JSON.stringify(matchState));
+    if (matchState.status != 'PLAYING') {
+        await redis.set(
+            matchSummaryKey,
+            JSON.stringify(summarizeMatchState(matchState))
+        );
+    }
 };
 
 export const deleteMatch = async ({
@@ -49,10 +72,12 @@ export const deleteMatch = async ({
     gameId: string;
 }) => {
     const matchKey = getMatchKey(matchId);
+    const matchSummaryKey = getMatchSummaryKey(matchId);
     const lobbyKey = getLobbyKey(gameId);
     const redisChain = redis.multi();
     redisChain.zRem(lobbyKey, matchId);
     redisChain.del(matchKey);
+    redisChain.del(matchSummaryKey);
     await redisChain.exec();
 };
 
@@ -68,29 +93,31 @@ export const createMatch = async ({
 
     const matchKey = getMatchKey(match.id);
     const lobbyKey = getLobbyKey(gameId);
-    const createdAt = Date.now();
+
     const redisChain = redis.multi();
     redisChain.set(matchKey, JSON.stringify(match));
     if (matchType === "CUSTOM") {
+        const matchSummaryKey = getMatchSummaryKey(match.id);
+        redisChain.set(matchSummaryKey, JSON.stringify(summarizeMatchState(match)));
         redisChain.zAdd(lobbyKey, [
             {
-                score: createdAt,
+                score: match.createdAt,
                 value: match.id,
             },
         ]);
     }
+
     await redisChain.exec();
     return match;
 };
 
-export const getAllMatchesInLobby = async ({
-    gameId,
-}: {
-    gameId: string;
-}): Promise<string[]> => {
+export const getAllMatchesInLobby = async (gameId: string) => {
     const lobbyKey = getLobbyKey(gameId);
     const matchesId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
-    return matchesId.map((matchId) => matchId.toString());
+    const matchSummaryKeys = matchesId.map(id => getMatchSummaryKey(id));
+    const result = await redis.mGet(matchSummaryKeys);
+    const matchSummaries = result.map(str => JSON.parse(str));
+    return matchSummaries;
 };
 
 export const saveMatchToDb = ({

@@ -14,6 +14,7 @@ export const newMatch = (gameId: string, matchType: MatchType): Match<any> => {
         status: "WAITING",
         players: [],
         gameState: null,
+        createdAt: Date.now()
     };
 };
 

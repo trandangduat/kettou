@@ -1,4 +1,11 @@
-export const getAllGames = async () => {
+export type Game = {
+    id: string;
+    name: string;
+    description: string;
+    rules: string;
+};
+
+export const getAllGames = async (): Promise<Game[] | null> => {
     try {
         const res = await fetch(`/api/games`);
         const games = await res.json();
@@ -9,7 +16,7 @@ export const getAllGames = async () => {
     }
 };
 
-export const getGameById = async (gameId: string) => {
+export const getGameById = async (gameId: string): Promise<Game | null> => {
     try {
         const res = await fetch(`/api/games/${gameId}`);
         const game = await res.json();
