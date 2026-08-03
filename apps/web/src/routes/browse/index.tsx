@@ -23,6 +23,7 @@ import { socket } from "#/socket";
 import type { MatchStatus, Player } from "@mini-games/core";
 import { timeAgo } from "../../../utils";
 import { Card, CardContent, CardFooter, CardHeader } from "#/components/ui/card";
+import toast from "react-hot-toast";
 
 type Match = {
     id: string;
@@ -57,8 +58,9 @@ function RouteComponent() {
         socket.emit(
             "match:create",
             { gameId, matchType: "CUSTOM" },
-            ({ ok, matchId }: { ok: boolean; matchId: string }) => {
+            ({ ok, error, matchId }: { ok: boolean; error: string, matchId: string }) => {
                 if (ok) {
+                    toast.success("Created match successfully!");
                     router.navigate({
                         to: "/$gameId/$matchId",
                         params: {
@@ -66,6 +68,8 @@ function RouteComponent() {
                             matchId
                         }
                     })
+                } else {
+                    toast.error(error);
                 }
             },
         );
@@ -97,8 +101,6 @@ function RouteComponent() {
         });
 
         socket.on("lobby:matches-updated", (matchSummaries: any) => {
-            console.log("MATCH SUMMARIES");
-            matchSummaries.map((m) => console.log(m));
             setMatches(matchSummaries);
         });
 
