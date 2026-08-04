@@ -20,7 +20,6 @@ import {
     HashtagIcon,
     Squares2X2Icon,
     PlayIcon,
-    ChevronLeftIcon,
 } from "@heroicons/react/24/solid";
 import React from "react";
 import { ArrowLeftCircleIcon, FlagIcon } from "@heroicons/react/24/outline";
@@ -224,11 +223,6 @@ function Sidebar({
     const canGoBack = useCanGoBack();
 
     const handleLeaveMatch = () => {
-        if (canGoBack) {
-            router.history.back();
-        } else {
-            router.navigate({ to: "/" });
-        }
         socket.emit(
             "match:leave",
             match.id,
@@ -238,6 +232,13 @@ function Sidebar({
                 }
             },
         );
+        setTimeout(() => {
+            if (canGoBack) {
+                router.history.back();
+            } else {
+                router.navigate({ to: "/" });
+            }
+        }, 500);
     };
 
     return (

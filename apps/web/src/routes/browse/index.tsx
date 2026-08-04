@@ -53,6 +53,7 @@ function RouteComponent() {
 
     const handleCreateMatch = async (gameId: string | undefined) => {
         if (!gameId) return;
+        socket.off("lobby:new-match-created");
         socket.emit(
             "match:create",
             { gameId, matchType: "CUSTOM" },
