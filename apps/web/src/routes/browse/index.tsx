@@ -92,7 +92,7 @@ function RouteComponent() {
         });
 
         socket.on("lobby:match-deleted", (matchId: string) => {
-            setMatches((prev) => prev.filter((m) => m.id === matchId));
+            setMatches((prev) => prev.filter((m) => m.id !== matchId));
         });
 
         socket.on("lobby:match-updated", (match: Match) => {
