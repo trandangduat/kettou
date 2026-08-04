@@ -1,10 +1,7 @@
 import { getAllGames, type Game } from "#/api/games";
 import { Button } from "#/components/ui/button";
 import { Divider } from "#/components/ui/divider";
-import {
-    ArrowRightIcon,
-    ClockIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import cn from "cnfast";
@@ -13,23 +10,24 @@ export const Route = createFileRoute("/browse/")({
     component: RouteComponent,
 });
 
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
 import { socket } from "#/socket";
 import type { MatchStatus, Player } from "@mini-games/core";
 import { timeAgo } from "../../../utils";
-import { Card, CardContent, CardFooter, CardHeader } from "#/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+} from "#/components/ui/card";
 import toast from "react-hot-toast";
 
 type Match = {
     id: string;
     gameId: string;
     players: Player[];
-    status: MatchStatus,
+    status: MatchStatus;
     createdAt: number;
 };
 
@@ -58,16 +56,24 @@ function RouteComponent() {
         socket.emit(
             "match:create",
             { gameId, matchType: "CUSTOM" },
-            ({ ok, error, matchId }: { ok: boolean; error: string, matchId: string }) => {
+            ({
+                ok,
+                error,
+                matchId,
+            }: {
+                ok: boolean;
+                error: string;
+                matchId: string;
+            }) => {
                 if (ok) {
                     toast.success("Created match successfully!");
                     router.navigate({
                         to: "/$gameId/$matchId",
                         params: {
                             gameId,
-                            matchId
-                        }
-                    })
+                            matchId,
+                        },
+                    });
                 } else {
                     toast.error(error);
                 }
@@ -152,7 +158,7 @@ function RouteComponent() {
                 <Divider text="⎛⎝ ≽ > ⩊ < ≼ ⎠⎞" />
                 <div className="grid grid-cols-4 gap-8">
                     {matches.map((match) => (
-                        <RoomItem match={match} />
+                        <RoomItem match={match} key={match.id} />
                     ))}
                 </div>
             </div>
@@ -193,11 +199,11 @@ function PlayerSlot({ player }: { player?: Player }) {
     return (
         <div className="flex flex-col items-center gap-1">
             <Avatar className="w-14 h-14">
-                {player ?
+                {player ? (
                     <AvatarImage src="https://github.com/shadcn.png" />
-                    :
+                ) : (
                     <AvatarFallback>?</AvatarFallback>
-                }
+                )}
             </Avatar>
             {player ? player.username : "empty"}
         </div>
@@ -213,7 +219,12 @@ function RoomItem({ match }: { match: Match }) {
             </CardHeader>
             <CardContent>
                 <div className="flex flex-row gap-4 justify-center text-xs">
-                    {Array.from({ length: 2 }).map((_, i) => <PlayerSlot player={players?.[i]} />)}
+                    {Array.from({ length: 2 }).map((_, i) => (
+                        <PlayerSlot
+                            key={players?.[i] ? players[i].userId : `empty-slot-${i}`}
+                            player={players?.[i]}
+                        />
+                    ))}
                 </div>
             </CardContent>
             <CardFooter className="flex flex-row justify-between border-t">

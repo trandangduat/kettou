@@ -1,5 +1,5 @@
 import { socket } from "#/socket";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GameRegistry, type Match, type Player } from "@mini-games/core";
 import { GameUI } from "#/games";
@@ -20,9 +20,10 @@ import {
     HashtagIcon,
     Squares2X2Icon,
     PlayIcon,
+    ChevronLeftIcon,
 } from "@heroicons/react/24/solid";
 import React from "react";
-import { FlagIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftCircleIcon, FlagIcon } from "@heroicons/react/24/outline";
 import { Input } from "#/components/ui/input";
 import { Field } from "#/components/ui/field";
 import cn from "cnfast";
@@ -98,15 +99,8 @@ function RouteComponent() {
         });
 
         return () => {
-            socket.emit(
-                "match:leave",
-                matchId,
-                ({ ok, error }: { ok: boolean; error?: string }) => {
-                    if (!ok) {
-                        toast.error(error!);
-                    }
-                },
-            );
+            socket.off("match:updated");
+            socket.off("connect");
         };
     }, []);
 
@@ -226,8 +220,36 @@ function Sidebar({
     className?: string;
     match: Match<any>;
 }) {
+    const router = useRouter();
+    const canGoBack = useCanGoBack();
+
+    const handleLeaveMatch = () => {
+        if (canGoBack) {
+            router.history.back();
+        } else {
+            router.navigate({ to: "/" });
+        }
+        socket.emit(
+            "match:leave",
+            match.id,
+            ({ ok, error }: { ok: boolean; error?: string }) => {
+                if (!ok) {
+                    toast.error(error!);
+                }
+            },
+        );
+    };
+
     return (
         <div className={cn("flex flex-col gap-8", className)}>
+            <Button
+                variant="destructive"
+                className="flex flex-row gap-2 font-bold lowercase text-lg py-6"
+                onClick={handleLeaveMatch}
+            >
+                <ArrowLeftCircleIcon className="size-6" />
+                Leave match
+            </Button>
             <SidebarCard title="match information">
                 <CardContent className="flex flex-col gap-2">
                     <InfoItem

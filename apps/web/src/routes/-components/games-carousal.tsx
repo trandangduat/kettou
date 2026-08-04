@@ -36,6 +36,7 @@ function GamesCarousal({
         <div className={cn("grid grid-cols-5 gap-6", isInMm ? "pointer-events-none" : "")}>
             {games.map((game: any) => (
                 <GameCard
+                    key={game.id}
                     game={game}
                     onClick={handleSelectGame}
                     isSelected={selectedGames.includes(game.id)}

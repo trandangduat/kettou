@@ -66,7 +66,7 @@ function RouteComponent() {
                 <p>Loading game information...</p>
             ) : (
                 <>
-                    <h1 className="text-xl">{game.name}</h1>
+                    <h1 className="text-xl">{game?.name}</h1>
                     <ul>
                         {matchIds.map((id: string) => (
                             <li key={id}>
