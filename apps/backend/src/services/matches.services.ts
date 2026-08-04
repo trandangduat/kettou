@@ -1,7 +1,15 @@
 import db from "../db.js";
 import { getNewElo } from "../logics/elo.logic.js";
 import { redis } from "../redis.js";
-import { GameRegistry, Match, MatchType, Player } from "@mini-games/core";
+import { GameRegistry, Match, MatchStatus, MatchType, Player } from "@mini-games/core";
+
+type MatchSummary = {
+    id: string;
+    gameId: string;
+    players: Player[];
+    status: MatchStatus;
+    createdAt: number;
+};
 
 export const getLobbyKey = (id: string) => {
     return `game:${id}:lobby`;
@@ -24,7 +32,7 @@ export const getMatchPlayerSocketsKey = (matchId: string, playerId: string) => {
     return `sockets-list:match:${matchId}:player:${playerId}`;
 };
 
-export const summarizeMatchState = (match: Match<any>) => {
+export const summarizeMatchState = (match: Match<any>): MatchSummary => {
     return {
         id: match.id,
         gameId: match.gameId,
@@ -111,10 +119,13 @@ export const createMatch = async ({
     return match;
 };
 
-export const getAllMatchesInLobby = async (gameId: string) => {
+export const getAllMatchesInLobby = async (gameId: string): Promise<MatchSummary[]> => {
     const lobbyKey = getLobbyKey(gameId);
     const matchesId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
     const matchSummaryKeys = matchesId.map(id => getMatchSummaryKey(id));
+    if (matchSummaryKeys.length === 0) {
+        return [];
+    }
     const result = await redis.mGet(matchSummaryKeys);
     const matchSummaries = result.map(str => JSON.parse(str));
     return matchSummaries;
