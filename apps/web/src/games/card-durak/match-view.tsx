@@ -278,7 +278,7 @@ function Board({
     return (
         <div
             className={cn(
-                "aspect-square h-2xl w-2xl bg-green-800 p-4",
+                "aspect-square h-120 bg-green-800 p-4",
                 className,
             )}
         >

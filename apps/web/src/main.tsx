@@ -39,7 +39,7 @@ if (!rootElement.innerHTML) {
                 position="top-center"
                 toastOptions={{
                     className:
-                        "!bg-accent !border !text-foreground !p-4 !px-5 !rounded-xl lowercase",
+                        "!bg-card !border !text-card-foreground !p-4 !px-5 !rounded-xl lowercase",
                     success: {
                         iconTheme: {
                             primary: "oklch(59.6% 0.145 163.225)",

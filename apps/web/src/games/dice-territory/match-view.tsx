@@ -57,7 +57,7 @@ export function MatchView({ match, setMatch, user, engine }: MatchViewParams) {
     };
 
     return (
-        <>
+        <div>
             {status === "PLAYING" && (
                 <div>
                     {myTurn ? (
@@ -87,8 +87,7 @@ export function MatchView({ match, setMatch, user, engine }: MatchViewParams) {
                     )}
                 </div>
             )}
-            <div className="flex flex-col m-auto bg-gray-200">
-                <div>Enemy</div>
+            <div className="flex flex-col m-auto">
                 <GameBoard
                     user={user}
                     match={match}
@@ -97,7 +96,6 @@ export function MatchView({ match, setMatch, user, engine }: MatchViewParams) {
                     engine={engine}
                     setMatch={setMatch}
                 />
-                <div>You</div>
             </div>
             {status === "ENDED" && (
                 <>
@@ -105,6 +103,6 @@ export function MatchView({ match, setMatch, user, engine }: MatchViewParams) {
                     <p>Points: {playerPoints?.[user.id]}</p>
                 </>
             )}
-        </>
+        </div>
     );
 }

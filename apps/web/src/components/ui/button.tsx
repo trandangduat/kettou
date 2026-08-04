@@ -3,13 +3,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 import cn from "cnfast"
 
 const buttonVariants = cva(
-  "group/button inline-flex text-shadow-2xs shadow-md shrink-0 items-center justify-center rounded-2xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer",
   {
     variants: {
       variant: {
-        default: "text-primary-foreground border-t-amber-200 border-l-amber-400 border-r-amber-400 border-b-amber-600 bg-linear-to-b from-primary to-amber-500 hover:from-amber-300",
+        default: "text-primary-foreground text-shadow-2xs border-t-amber-200 border-l-amber-400 border-r-amber-400 border-b-amber-600 bg-linear-to-b from-primary to-amber-500 hover:from-amber-300 shadow-md shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]",
         outline: "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-transparent dark:hover:bg-input/30",
-        secondary: "text-secondary-foreground border-t-zinc-700 border-l-zinc-800 border-r-zinc-800 border-b-secondary bg-linear-to-b from-zinc-800 to-secondary hover:from-secondary aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+        secondary: "text-secondary-foreground hover:border-border hover:bg-background bg-secondary aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
