@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PublicRouteImport } from './routes/_public'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BrowseIndexRouteImport } from './routes/browse/index'
-import { Route as GameIdIndexRouteImport } from './routes/$gameId/index'
 import { Route as PublicRegisterRouteImport } from './routes/_public/register'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as GameIdProtectedRouteImport } from './routes/$gameId/_protected'
@@ -30,11 +29,6 @@ const IndexRoute = IndexRouteImport.update({
 const BrowseIndexRoute = BrowseIndexRouteImport.update({
   id: '/browse/',
   path: '/browse/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GameIdIndexRoute = GameIdIndexRouteImport.update({
-  id: '/$gameId/',
-  path: '/$gameId/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicRegisterRoute = PublicRegisterRouteImport.update({
@@ -64,13 +58,12 @@ export interface FileRoutesByFullPath {
   '/$gameId': typeof GameIdProtectedRouteWithChildren
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
-  '/$gameId/': typeof GameIdIndexRoute
   '/browse/': typeof BrowseIndexRoute
   '/$gameId/$matchId/': typeof GameIdProtectedMatchIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/$gameId': typeof GameIdIndexRoute
+  '/$gameId': typeof GameIdProtectedRouteWithChildren
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
   '/browse': typeof BrowseIndexRoute
@@ -83,7 +76,6 @@ export interface FileRoutesById {
   '/$gameId/_protected': typeof GameIdProtectedRouteWithChildren
   '/_public/login': typeof PublicLoginRoute
   '/_public/register': typeof PublicRegisterRoute
-  '/$gameId/': typeof GameIdIndexRoute
   '/browse/': typeof BrowseIndexRoute
   '/$gameId/_protected/$matchId/': typeof GameIdProtectedMatchIdIndexRoute
 }
@@ -94,7 +86,6 @@ export interface FileRouteTypes {
     | '/$gameId'
     | '/login'
     | '/register'
-    | '/$gameId/'
     | '/browse/'
     | '/$gameId/$matchId/'
   fileRoutesByTo: FileRoutesByTo
@@ -112,7 +103,6 @@ export interface FileRouteTypes {
     | '/$gameId/_protected'
     | '/_public/login'
     | '/_public/register'
-    | '/$gameId/'
     | '/browse/'
     | '/$gameId/_protected/$matchId/'
   fileRoutesById: FileRoutesById
@@ -121,7 +111,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PublicRoute: typeof PublicRouteWithChildren
   GameIdProtectedRoute: typeof GameIdProtectedRouteWithChildren
-  GameIdIndexRoute: typeof GameIdIndexRoute
   BrowseIndexRoute: typeof BrowseIndexRoute
 }
 
@@ -146,13 +135,6 @@ declare module '@tanstack/react-router' {
       path: '/browse'
       fullPath: '/browse/'
       preLoaderRoute: typeof BrowseIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$gameId/': {
-      id: '/$gameId/'
-      path: '/$gameId'
-      fullPath: '/$gameId/'
-      preLoaderRoute: typeof GameIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public/register': {
@@ -215,7 +197,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PublicRoute: PublicRouteWithChildren,
   GameIdProtectedRoute: GameIdProtectedRouteWithChildren,
-  GameIdIndexRoute: GameIdIndexRoute,
   BrowseIndexRoute: BrowseIndexRoute,
 }
 export const routeTree = rootRouteImport
