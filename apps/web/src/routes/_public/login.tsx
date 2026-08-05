@@ -14,7 +14,7 @@ import {
 } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Button } from "#/components/ui/button";
-import { Key } from "@phosphor-icons/react";
+import { KeyIcon } from "@phosphor-icons/react";
 
 export const Route = createFileRoute("/_public/login")({
     component: RouteComponent,
@@ -104,7 +104,7 @@ function RouteComponent() {
                                 type="submit"
                                 className="font-bold text-lg py-5"
                             >
-                                <Key />
+                                <KeyIcon />
                                 login
                             </Button>
                             <Button

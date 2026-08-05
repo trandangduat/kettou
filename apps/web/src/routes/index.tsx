@@ -6,7 +6,12 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import cn from "cnfast";
 import { useEffect, useRef, useState } from "react";
 import GamesCarousal from "./-components/games-carousal";
-import { SignIn, Sword, MagnifyingGlass, X } from "@phosphor-icons/react";
+import {
+    SignInIcon,
+    SwordIcon,
+    MagnifyingGlassIcon,
+    XIcon,
+} from "@phosphor-icons/react";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
@@ -90,13 +95,13 @@ function Home() {
                       className={cn`text-lg lowercase p-6 rounded-full w-50`}
                       variant={"secondary"}
                   >
-                      <MagnifyingGlass className="size-6" /> Browse Rooms
+                      <MagnifyingGlassIcon className="size-6" /> Browse Rooms
                   </Button>
                   <Button
                       className={cn`text-lg lowercase p-6 rounded-full w-50`}
                       variant={"secondary"}
                   >
-                      <SignIn className="size-6" /> Join
+                      <SignInIcon className="size-6" /> Join
                       Room
                   </Button>
               </div>
@@ -142,7 +147,7 @@ function FindMatchButton({ findMatch }: { findMatch: () => void }) {
         <Button onClick={findMatch} className="font-bold lowercase p-6 w-56">
             <div className="w-full flex items-center justify-between">
                 <p className="text-2xl">Find match</p>
-                <Sword className="size-6" weight="fill" />
+                <SwordIcon className="size-6" weight="fill" />
             </div>
         </Button>
     );
@@ -163,7 +168,7 @@ function CancelFindMatchButton({
         >
             <div className="w-full flex items-center justify-between">
                 <p className="text-3xl">{mmTimer}</p>
-                <X className="size-6" weight="fill" />
+                <XIcon className="size-6" weight="fill" />
             </div>
         </Button>
     );

@@ -13,16 +13,16 @@ import { Avatar, AvatarImage } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { timeAgo } from "../../../../../utils";
 import {
-    Pulse,
-    ChatCircleDots,
-    Clock,
-    GearSix,
-    Hash,
-    GameController,
-    Play,
+    PulseIcon,
+    ChatCircleDotsIcon,
+    ClockIcon,
+    GearSixIcon,
+    HashIcon,
+    GameControllerIcon,
+    PlayIcon,
 } from "@phosphor-icons/react";
 import React from "react";
-import { SignOut, Flag } from "@phosphor-icons/react";
+import { SignOutIcon, FlagIcon } from "@phosphor-icons/react";
 import { Input } from "#/components/ui/input";
 import { Field } from "#/components/ui/field";
 import cn from "cnfast";
@@ -119,7 +119,7 @@ function RouteComponent() {
                                             className="flex items-center gap-2 text-lg font-bold absolute"
                                             onClick={startMatch}
                                         >
-                                            <Play className="h-6 w-6" weight="fill" />
+                                            <PlayIcon className="h-6 w-6" weight="fill" />
                                             start match
                                         </Button>
                                     ) : (
@@ -194,7 +194,7 @@ function YourInfo({ player }: { player?: Player }) {
                     variant="secondary"
                     className="flex items-center gap-2 p-5"
                 >
-                    <Flag className="h-4 w-4" />
+                    <FlagIcon className="h-4 w-4" />
                     surrender
                 </Button>
 
@@ -248,7 +248,7 @@ function Sidebar({
                 className="flex flex-row gap-2 font-bold lowercase text-lg py-6"
                 onClick={handleLeaveMatch}
             >
-                <SignOut className="size-6" />
+                <SignOutIcon className="size-6" />
                 Leave match
             </Button>
             <SidebarCard title="match information">
@@ -256,27 +256,27 @@ function Sidebar({
                     <InfoItem
                         label="id"
                         content={match.id.slice(0, 8)}
-                        icon={Hash}
+                        icon={HashIcon}
                     />
                     <InfoItem
                         label="mode"
                         content={match.type}
-                        icon={GearSix}
+                        icon={GearSixIcon}
                     />
                     <InfoItem
                         label="status"
                         content={match.status}
-                        icon={Pulse}
+                        icon={PulseIcon}
                     />
                     <InfoItem
                         label="game"
                         content={match.gameId}
-                        icon={GameController}
+                        icon={GameControllerIcon}
                     />
                     <InfoItem
                         label="created"
                         content={timeAgo(match.createdAt)}
-                        icon={Clock}
+                        icon={ClockIcon}
                     />
                 </CardContent>
             </SidebarCard>
@@ -325,7 +325,7 @@ function SidebarCard({
     return (
         <div className={className}>
             <span className="text-primary text-lg font-semibold mb-2 flex gap-2 items-center">
-                <ChatCircleDots className="size-8" weight="fill" />
+                <ChatCircleDotsIcon className="size-8" weight="fill" />
                 <p>{title}</p>
             </span>
             <Card className="flex-1 min-h-0">{children}</Card>
