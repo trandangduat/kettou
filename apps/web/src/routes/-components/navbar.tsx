@@ -1,5 +1,4 @@
-import { fetchMe } from "#/api/auth";
-import { Button } from "#/components/ui/button";
+import { meQueryOptions } from "#/api/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 
@@ -33,12 +32,8 @@ function NavLinks() {
     );
 }
 
-export function NavBar({}) {
-    const { data: user } = useQuery({
-        queryKey: ["me"],
-        queryFn: fetchMe,
-        retry: false,
-    });
+export function NavBar() {
+    const { data: user } = useQuery(meQueryOptions);
     const router = useRouter();
     const queryClient = useQueryClient();
     const logout = () => {

@@ -1,3 +1,5 @@
+import { queryOptions  } from "@tanstack/react-query";
+
 export const fetchMe = async () => {
     const res = await fetch("/api/me");
     if (res.status === 401) {
@@ -8,3 +10,9 @@ export const fetchMe = async () => {
     }
     return res.json();
 };
+
+export const meQueryOptions = queryOptions({
+    queryKey: ["me"],
+    queryFn: fetchMe,
+    staleTime: 5 * 60 * 1000,
+});
