@@ -1,7 +1,7 @@
 import { getAllGames, type Game } from "#/api/games";
 import { Button } from "#/components/ui/button";
 import { Divider } from "#/components/ui/divider";
-import { ArrowRightIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { SignIn, Clock } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import cn from "cnfast";
@@ -230,7 +230,7 @@ function RoomItem({ match }: { match: Match }) {
             </CardContent>
             <CardFooter className="flex flex-row justify-between border-t">
                 <span className="text-muted-foreground text-sm flex flex-row gap-1 items-center">
-                    <ClockIcon className="size-4" />
+                    <Clock className="size-4" />
                     <p>{timeAgo(match.createdAt)}</p>
                 </span>
                 <Link
@@ -238,7 +238,7 @@ function RoomItem({ match }: { match: Match }) {
                     params={{ gameId: match.gameId, matchId: match.id }}
                     className="font-bold flex gap-2 items-center transition hover:text-primary hover:underline"
                 >
-                    <p>join</p> <ArrowRightIcon className="size-4" />
+                    <p>join</p> <SignIn className="size-4" />
                 </Link>
             </CardFooter>
         </Card>

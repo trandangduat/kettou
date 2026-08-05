@@ -6,12 +6,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import cn from "cnfast";
 import { useEffect, useRef, useState } from "react";
 import GamesCarousal from "./-components/games-carousal";
-import {
-    ArrowRightEndOnRectangleIcon,
-    ArrowRightIcon,
-    MagnifyingGlassIcon,
-    XMarkIcon,
-} from "@heroicons/react/24/solid";
+import { SignIn, Sword, MagnifyingGlass, X } from "@phosphor-icons/react";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
@@ -95,13 +90,13 @@ function Home() {
                       className={cn`text-lg lowercase p-6 rounded-full w-50`}
                       variant={"secondary"}
                   >
-                      <MagnifyingGlassIcon className="size-6" /> Browse Rooms
+                      <MagnifyingGlass className="size-6" /> Browse Rooms
                   </Button>
                   <Button
                       className={cn`text-lg lowercase p-6 rounded-full w-50`}
                       variant={"secondary"}
                   >
-                      <ArrowRightEndOnRectangleIcon className="size-6" /> Join
+                      <SignIn className="size-6" /> Join
                       Room
                   </Button>
               </div>
@@ -147,7 +142,7 @@ function FindMatchButton({ findMatch }: { findMatch: () => void }) {
         <Button onClick={findMatch} className="font-bold lowercase p-6 w-56">
             <div className="w-full flex items-center justify-between">
                 <p className="text-2xl">Find match</p>
-                <ArrowRightIcon className="size-6" />
+                <Sword className="size-6" weight="fill" />
             </div>
         </Button>
     );
@@ -168,7 +163,7 @@ function CancelFindMatchButton({
         >
             <div className="w-full flex items-center justify-between">
                 <p className="text-3xl">{mmTimer}</p>
-                <XMarkIcon className="size-6" />
+                <X className="size-6" weight="fill" />
             </div>
         </Button>
     );
