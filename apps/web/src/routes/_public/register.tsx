@@ -1,3 +1,7 @@
+import { Button } from "#/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "#/components/ui/card";
+import { Field, FieldError } from "#/components/ui/field";
+import { Input } from "#/components/ui/input";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 
@@ -35,37 +39,58 @@ function RouteComponent() {
             });
     };
     return (
-        <>
-            <div className="">
-                <form
-                    action="/api/register"
-                    method="post"
-                    className="flex flex-col w-2xl"
-                    ref={formRef}
-                    onSubmit={handleSubmit}
-                >
-                    <label htmlFor="username">Username</label>
-                    <input type="text" name="username" placeholder="Username" />
-
-                    <label htmlFor="password">Password</label>
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Password"
-                    />
-
-                    <label htmlFor="retype-password">Retype password</label>
-                    <input
-                        type="password"
-                        name="retype-password"
-                        placeholder="Retype password"
-                    />
-
-                    <button type="submit">Register</button>
-                    {pending && <p>Registering...</p>}
-                    {error && <p>{error}</p>}
-                </form>
-            </div>
-        </>
+      <div className="m-auto flex flex-col items-center h-[calc(100dvh-6.5rem)]">
+          <form
+              className=""
+              action="/api/register"
+              method="post"
+              ref={formRef}
+              onSubmit={handleSubmit}
+          >
+              <Card className="w-lg">
+                  <CardHeader className="mb-8">
+                      <CardTitle className="text-center font-bold text-2xl">
+                          new to kettou?
+                      </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <Field>
+                          <Input
+                              id="username"
+                              name="username"
+                              type="text"
+                              className="font-bold text-md!"
+                              placeholder="username*"
+                          />
+                          <Input
+                              id="password"
+                              name="password"
+                              type="password"
+                              className="font-bold text-md!"
+                              placeholder="password*"
+                          />
+                          <Input
+                              id="retype-password"
+                              name="retype-password"
+                              type="password"
+                              className="font-bold text-md!"
+                              placeholder="retype password*"
+                          />
+                      </Field>
+                      <FieldError>{error}</FieldError>
+                  </CardContent>
+                  <CardFooter>
+                      <Field>
+                          <Button
+                              type="submit"
+                              className="font-bold text-lg py-5"
+                          >
+                              create account
+                          </Button>
+                      </Field>
+                  </CardFooter>
+              </Card>
+          </form>
+      </div>
     );
 }

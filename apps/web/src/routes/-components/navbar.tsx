@@ -1,4 +1,5 @@
 import { fetchMe } from "#/api/auth";
+import { Button } from "#/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 
@@ -48,7 +49,7 @@ export function NavBar({}) {
     };
     return (
         <div className="fixed flex justify-center w-full top-0 left-0 z-50">
-            <div className="flex items-center justify-between w-full max-w-7xl bg-sidebar p-4 mt-6 rounded-xl">
+            <div className="flex items-center justify-between w-full max-w-7xl bg-card p-4 mt-6 rounded-xl">
                 <Logo />
                 <NavLinks />
                 {user ? (
@@ -60,9 +61,9 @@ export function NavBar({}) {
                         <button onClick={logout}>Logout</button>
                     </div>
                 ) : (
-                    <div className="flex">
-                        <Link to="/login">Login</Link>
-                        <Link to="/register">Register</Link>
+                    <div className="flex gap-2 items-center">
+                        <Link to="/login" className="text-muted-foreground hover:text-primary transition font-semibold">login</Link>
+                        <Link to="/register" className="text-muted-foreground hover:text-card-foreground transition font-semibold">register</Link>
                     </div>
                 )}
             </div>
