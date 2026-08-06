@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+
 export type Game = {
     id: string;
     name: string;
@@ -5,7 +7,7 @@ export type Game = {
     rules: string;
 };
 
-export const getAllGames = async (): Promise<Game[] | null> => {
+const getAllGames = async (): Promise<Game[] | null> => {
     try {
         const res = await fetch(`/api/games`);
         const games = await res.json();
@@ -16,7 +18,7 @@ export const getAllGames = async (): Promise<Game[] | null> => {
     }
 };
 
-export const getGameById = async (gameId: string): Promise<Game | null> => {
+const getGameById = async (gameId: string): Promise<Game | null> => {
     try {
         const res = await fetch(`/api/games/${gameId}`);
         const game = await res.json();
@@ -26,3 +28,9 @@ export const getGameById = async (gameId: string): Promise<Game | null> => {
         return null;
     }
 };
+
+export const getAllGamesQueryOptions = queryOptions({
+    queryKey: ["list-games"],
+    queryFn: getAllGames,
+    staleTime: Infinity
+});

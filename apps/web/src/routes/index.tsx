@@ -1,4 +1,4 @@
-import { getAllGames } from "#/api/games";
+import { getAllGamesQueryOptions } from "#/api/games";
 import { Button } from "#/components/ui/button";
 import { socket } from "#/socket";
 import { useQuery } from "@tanstack/react-query";
@@ -24,10 +24,7 @@ function Home() {
     } | null>(null);
 
     const intervalId = useRef<ReturnType<typeof setInterval>>(null);
-    const { data: games, isLoading: isLoadingGames } = useQuery({
-        queryKey: ["list-games"],
-        queryFn: getAllGames,
-    });
+    const { data: games, isLoading: isLoadingGames } = useQuery(getAllGamesQueryOptions);
     const router = useRouter();
 
     const findMatch = () => {

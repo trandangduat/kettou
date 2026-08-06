@@ -1,4 +1,4 @@
-import { getAllGames, type Game } from "#/api/games";
+import { getAllGamesQueryOptions, type Game } from "#/api/games";
 import { Button } from "#/components/ui/button";
 import { Divider } from "#/components/ui/divider";
 import { SignInIcon, ClockIcon } from "@phosphor-icons/react";
@@ -32,10 +32,7 @@ type Match = {
 };
 
 function RouteComponent() {
-    const { data: games, isLoading: isLoadingGames } = useQuery({
-        queryKey: ["list-games"],
-        queryFn: getAllGames,
-    });
+    const { data: games, isLoading: isLoadingGames } = useQuery(getAllGamesQueryOptions);
 
     const [selectedGame, setSelectedGame] = useState<Game>();
     const [matches, setMatches] = useState<Match[]>([]);
