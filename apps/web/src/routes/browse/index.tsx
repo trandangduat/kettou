@@ -198,7 +198,7 @@ function PlayerSlot({ player }: { player?: Player }) {
         <div className="flex flex-col items-center gap-1">
             <Avatar className="w-14 h-14">
                 {player ? (
-                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarImage src={player.avatarUrls?.small} />
                 ) : (
                     <AvatarFallback>?</AvatarFallback>
                 )}

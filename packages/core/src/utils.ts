@@ -29,20 +29,13 @@ export const addPlayerToMatch = (
     match: Match<any>,
     player: Player,
 ): Match<any> => {
-    const { username, userId, elo } = player;
-    const isPlayer = match.players.find((p) => p.userId === userId);
+    const isPlayer = match.players.find((p) => p.userId === player.userId);
     if (isPlayer) {
         return match;
     }
-    let newPlayer: Player = {
-        username,
-        userId,
-        elo: elo ?? 1000,
-        status: "ONLINE",
-    };
     let newMatch: Match<any> = {
         ...match,
-        players: [...match.players, newPlayer],
+        players: [...match.players, player],
     };
     return updateReadyStatus(newMatch);
 };

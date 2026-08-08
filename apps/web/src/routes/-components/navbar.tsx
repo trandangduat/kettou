@@ -1,4 +1,5 @@
 import { meQueryOptions } from "#/api/auth";
+import { Avatar, AvatarImage } from "#/components/ui/avatar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 
@@ -51,9 +52,12 @@ export function NavBar() {
                     <div className="flex gap-4">
                         <Link
                             to="/profile/setting"
-                            className="text-primary font-bold"
+                            className="flex flex-row gap-1 items-center"
                         >
-                            {user.username}
+                            <Avatar className="border-2 border-primary">
+                                <AvatarImage src={user.avatarUrls.small} />
+                            </Avatar>
+                            <p className="text-primary font-bold">{user.username}</p>
                         </Link>
                         <button onClick={logout}>Logout</button>
                     </div>

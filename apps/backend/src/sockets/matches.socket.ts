@@ -86,6 +86,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
                 username: user.username,
                 elo: getUserEloOfGame(userId, gameId),
                 status: "ONLINE",
+                avatarUrls: user.avatarUrls,
             };
             match = addPlayerToMatch(match, newPlayer);
             io.to(lobbyKey).emit(

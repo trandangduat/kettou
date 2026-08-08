@@ -164,7 +164,7 @@ function OpponentInfo({ player }: { player?: Player }) {
                     )}
                 </div>
                 <Avatar className="border-2 border-primary w-14 h-14">
-                    <AvatarImage src="https://github.com/shadcn.png"></AvatarImage>
+                    <AvatarImage src={player?.avatarUrls?.small}></AvatarImage>
                 </Avatar>
             </div>
         </div>
@@ -176,7 +176,7 @@ function YourInfo({ player }: { player?: Player }) {
         <div className="flex flex-row justify-between w-full items-center">
             <div className="flex flex-row gap-4 items-center">
                 <Avatar className="border-2 border-primary w-14 h-14">
-                    <AvatarImage src="https://github.com/shadcn.png"></AvatarImage>
+                    <AvatarImage src={player?.avatarUrls?.small}></AvatarImage>
                 </Avatar>
                 <div className="flex flex-col">
                     <p className="font-semibold text-lg">

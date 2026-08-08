@@ -4,7 +4,6 @@ import { Input } from "#/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import toast from "react-hot-toast";
 import imageCompression from "browser-image-compression";
 import { updateAvatar } from "#/api/profile";
 

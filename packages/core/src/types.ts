@@ -2,12 +2,17 @@ export type PlayerStatus = "ONLINE" | "OFFLINE";
 export type MatchStatus = "WAITING" | "READY" | "PLAYING" | "ENDED";
 export type MatchType = "CUSTOM" | "RANKED";
 
+export interface UserAvatar {
+    small: string;
+    large: string;
+};
+
 export interface Player {
     userId: string;
     username: string;
     status: PlayerStatus;
     elo: number;
-    avatarUrl?: string;
+    avatarUrls?: UserAvatar;
 }
 
 export interface EndState<TEndReason extends string = string> {

@@ -3,6 +3,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3 } from "../s3.js";
 import dotenv from "dotenv";
 import db from "../db.js";
+import { UserAvatar } from "@mini-games/core";
 dotenv.config();
 
 type AllUrls = { putUrl: string; publicUrl: string };
@@ -40,7 +41,7 @@ export const getAvatarPresignedUrls = async (userId: string, type: string) => {
 
 export const updateAvatarToDb = (
     userId: string,
-    urls: { small: string; large: string },
+    urls: UserAvatar,
 ) => {
     db.prepare(`UPDATE users SET avatarUrls = ? WHERE id = ?`).run(
         JSON.stringify(urls),

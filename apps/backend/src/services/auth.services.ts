@@ -4,13 +4,14 @@ import bcrypt from "bcrypt";
 import { JWT_SECRET, SALT_ROUNDS } from "../config.js";
 import { v6 as uuidv6 } from "uuid";
 import dotenv from "dotenv";
+import { UserAvatar } from "@mini-games/core";
 dotenv.config();
 
 export const getUserById = (userId: string) => {
     let user = db
         .prepare<
             [string],
-            { id: string; username: string, avatarUrls: any }
+            { id: string; username: string; avatarUrls: any }
         >(`SELECT id, username, avatarUrls FROM users WHERE id = ?`)
         .get(userId);
 
@@ -19,18 +20,19 @@ export const getUserById = (userId: string) => {
     }
 
     if (user.avatarUrls) {
-        user.avatarUrls = JSON.parse(user.avatarUrls) as {
-            small: string;
-            large: string
-        }
+        user.avatarUrls = JSON.parse(user.avatarUrls) as UserAvatar;
     } else {
         user.avatarUrls = {
             small: process.env.R2_PUBLIC_URL + "/avatars/avatar_60x60.jpg",
-            large: process.env.R2_PUBLIC_URL + "/avatars/avatar_200x200.jpg"
-        }
+            large: process.env.R2_PUBLIC_URL + "/avatars/avatar_200x200.jpg",
+        };
     }
 
-    return user;
+    return user as {
+        id: string;
+        username: string;
+        avatarUrls: UserAvatar;
+    };
 };
 
 type RegisterInputProps = {

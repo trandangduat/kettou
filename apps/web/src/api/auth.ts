@@ -1,3 +1,4 @@
+import type { UserAvatar } from "@mini-games/core";
 import { queryOptions } from "@tanstack/react-query";
 
 export const fetchMe = async () => {
@@ -11,7 +12,7 @@ export const fetchMe = async () => {
     let user: {
         id: string;
         username: string;
-        avatarUrls: any;
+        avatarUrls: UserAvatar;
     } = await res.json();
 
     console.log("USER", user);

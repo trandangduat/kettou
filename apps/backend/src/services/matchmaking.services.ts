@@ -1,4 +1,4 @@
-import { GameRegistry, Player } from "@mini-games/core";
+import { GameRegistry, Player, UserAvatar } from "@mini-games/core";
 import { canMatch } from "../logics/matchmaking.logic.js";
 import { redis } from "../redis.js";
 
@@ -7,6 +7,7 @@ interface PlayerInQ {
     userId: string;
     elos: Record<string, number>;
     joinedAt: number;
+    avatarUrls?: UserAvatar
 }
 
 interface Pair {

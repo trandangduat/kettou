@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import { getAvatarPresignedUrls, updateAvatarToDb } from "../services/profile.services.js";
+import { UserAvatar } from "@mini-games/core";
 
 export const getAvatarPresigned: RequestHandler = async (req, res) => {
     if (!req.body) {
@@ -21,7 +22,7 @@ export const updateAvatar: RequestHandler = async (req, res) => {
   }
   try {
       const { id: userId } = req.user;
-      const avaUrls: {small: string, large: string} = req.body;
+      const avaUrls: UserAvatar = req.body;
       updateAvatarToDb(userId, avaUrls);
       return res.status(200);
   } catch (err) {
