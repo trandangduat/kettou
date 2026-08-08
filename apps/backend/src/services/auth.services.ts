@@ -3,17 +3,31 @@ import * as jose from "jose";
 import bcrypt from "bcrypt";
 import { JWT_SECRET, SALT_ROUNDS } from "../config.js";
 import { v6 as uuidv6 } from "uuid";
+import dotenv from "dotenv";
+dotenv.config();
 
 export const getUserById = (userId: string) => {
-    const user = db
+    let user = db
         .prepare<
             [string],
-            { id: string; username: string }
-        >(`SELECT id, username FROM users WHERE id = ?`)
+            { id: string; username: string, avatarUrls: any }
+        >(`SELECT id, username, avatarUrls FROM users WHERE id = ?`)
         .get(userId);
 
     if (!user) {
         throw new Error("Cannot find current user, baka >.<!");
+    }
+
+    if (user.avatarUrls) {
+        user.avatarUrls = JSON.parse(user.avatarUrls) as {
+            small: string;
+            large: string
+        }
+    } else {
+        user.avatarUrls = {
+            small: process.env.R2_PUBLIC_URL + "/avatars/avatar_60x60.jpg",
+            large: process.env.R2_PUBLIC_URL + "/avatars/avatar_200x200.jpg"
+        }
     }
 
     return user;

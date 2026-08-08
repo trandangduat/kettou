@@ -162,6 +162,12 @@ const migrations = [
         ALTER TABLE users DROP COLUMN elo;
         `,
     },
+    {
+        version: 6,
+        sql: `
+        ALTER TABLE users ADD COLUMN avatarUrls TEXT;
+        `
+    }
 ];
 
 const migrate = db.transaction(() => {

@@ -1,4 +1,4 @@
-import { queryOptions  } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 
 export const fetchMe = async () => {
     const res = await fetch("/api/me");
@@ -8,7 +8,15 @@ export const fetchMe = async () => {
     if (!res.ok) {
         throw new Error("Failed to get /api/me");
     }
-    return res.json();
+    let user: {
+        id: string;
+        username: string;
+        avatarUrls: any;
+    } = await res.json();
+
+    console.log("USER", user);
+
+    return user;
 };
 
 export const meQueryOptions = queryOptions({

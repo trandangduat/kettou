@@ -49,16 +49,28 @@ export function NavBar() {
                 <NavLinks />
                 {user ? (
                     <div className="flex gap-4">
-                        <p className="text-primary font-bold">
-                            {" "}
-                            {user.username}{" "}
-                        </p>
+                        <Link
+                            to="/profile/setting"
+                            className="text-primary font-bold"
+                        >
+                            {user.username}
+                        </Link>
                         <button onClick={logout}>Logout</button>
                     </div>
                 ) : (
                     <div className="flex gap-2 items-center">
-                        <Link to="/login" className="text-muted-foreground hover:text-primary transition font-semibold">login</Link>
-                        <Link to="/register" className="text-muted-foreground hover:text-card-foreground transition font-semibold">register</Link>
+                        <Link
+                            to="/login"
+                            className="text-muted-foreground hover:text-primary transition font-semibold"
+                        >
+                            login
+                        </Link>
+                        <Link
+                            to="/register"
+                            className="text-muted-foreground hover:text-card-foreground transition font-semibold"
+                        >
+                            register
+                        </Link>
                     </div>
                 )}
             </div>
