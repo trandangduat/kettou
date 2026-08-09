@@ -1,6 +1,7 @@
-import { meQueryOptions } from "#/api/auth";
+import { logout, meQueryOptions } from "#/api/auth";
 import { Avatar, AvatarImage } from "#/components/ui/avatar";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { disconnectSocket, socket } from "#/socket";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 
 function Logo() {
@@ -37,12 +38,19 @@ export function NavBar() {
     const { data: user } = useQuery(meQueryOptions);
     const router = useRouter();
     const queryClient = useQueryClient();
-    const logout = () => {
-        fetch("/api/logout").then(async () => {
-            queryClient.invalidateQueries({ queryKey: ["me"] });
+    const logoutMutation = useMutation({
+        mutationFn: logout,
+        onSuccess: async () => {
+            disconnectSocket();
             await router.invalidate();
-        });
+            queryClient.invalidateQueries({ queryKey: ["me"] });
+            // window.location.reload();
+        },
+    });
+    const handleLogout = async () => {
+        await logoutMutation.mutateAsync();
     };
+
     return (
         <div className="fixed flex justify-center w-full top-0 left-0 z-50">
             <div className="flex items-center justify-between w-full max-w-7xl bg-card p-4 mt-6 rounded-xl">
@@ -57,9 +65,11 @@ export function NavBar() {
                             <Avatar className="border-2 border-primary">
                                 <AvatarImage src={user.avatarUrls.small} />
                             </Avatar>
-                            <p className="text-primary font-bold">{user.username}</p>
+                            <p className="text-primary font-bold">
+                                {user.username}
+                            </p>
                         </Link>
-                        <button onClick={logout}>Logout</button>
+                        <button onClick={handleLogout}>Logout</button>
                     </div>
                 ) : (
                     <div className="flex gap-2 items-center">

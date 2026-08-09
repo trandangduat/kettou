@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Card,
     CardContent,
@@ -8,24 +8,29 @@ import {
     CardHeader,
     CardTitle,
 } from "#/components/ui/card";
-import {
-    Field,
-    FieldError,
-} from "#/components/ui/field";
+import { Field, FieldError } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Button } from "#/components/ui/button";
 import { KeyIcon } from "@phosphor-icons/react";
+import { login } from "#/api/auth";
+import { connectSocket } from "#/socket";
 
 export const Route = createFileRoute("/_public/login")({
     component: RouteComponent,
 });
 
 function RouteComponent() {
-    const [pending, setPending] = useState<Boolean>(false);
-    const [error, setError] = useState<string | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const queryClient = useQueryClient();
     const router = useRouter();
+    const loginMutation = useMutation({
+        mutationFn: login,
+        onSuccess: async () => {
+            connectSocket();
+            queryClient.invalidateQueries({ queryKey: ["me"] });
+            await router.invalidate();
+        },
+    });
 
     const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -33,29 +38,9 @@ function RouteComponent() {
 
         const formData = new FormData(formRef.current);
         const data = Object.fromEntries(formData.entries());
-
-        setPending(true);
-        setError(null);
-
-        const res = await fetch("/api/login", {
-            method: "POST",
-            body: JSON.stringify(data),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-
-        setPending(false);
-        if (!res.ok) {
-            setError(await res.text());
-            return;
-        }
-
-        queryClient.invalidateQueries({
-            queryKey: ["me"],
-        });
-        await router.invalidate();
+        await loginMutation.mutateAsync(data);
     };
+
     return (
         <div className="m-auto flex flex-col items-center h-[calc(100dvh-6.5rem)]">
             <form
@@ -89,14 +74,14 @@ function RouteComponent() {
                             />
                             <span className="w-full">
                                 <Link
-                                    to="#"
+                                    to="/"
                                     className="float-right hover:text-primary hover:underline text-sm transition"
                                 >
                                     forgot password?
                                 </Link>
                             </span>
                         </Field>
-                        <FieldError>{error}</FieldError>
+                        <FieldError>{loginMutation.error?.message}</FieldError>
                     </CardContent>
                     <CardFooter>
                         <Field>

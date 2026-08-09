@@ -25,3 +25,24 @@ export const meQueryOptions = queryOptions({
     queryFn: fetchMe,
     staleTime: 5 * 60 * 1000,
 });
+
+export const logout = async () => {
+    const res = await fetch("/api/logout", { method: "POST" });
+    if (!res.ok) {
+        throw new Error(await res.text());
+    }
+};
+
+export const login = async (data: any) => {
+    const res = await fetch("/api/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!res.ok) {
+        throw new Error(await res.text());
+    }
+};
