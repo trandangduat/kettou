@@ -1,8 +1,9 @@
 import { logout, meQueryOptions } from "#/api/auth";
 import { Avatar, AvatarImage } from "#/components/ui/avatar";
-import { disconnectSocket, socket } from "#/socket";
+import { connectSocket, disconnectSocket } from "#/socket";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 function Logo() {
     return (
@@ -50,6 +51,9 @@ export function NavBar() {
     const handleLogout = async () => {
         await logoutMutation.mutateAsync();
     };
+    useEffect(() => {
+        connectSocket();
+    }, []);
 
     return (
         <div className="fixed flex justify-center w-full top-0 left-0 z-50">

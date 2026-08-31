@@ -16,6 +16,7 @@ export const setUpSocket = (io: Server) => {
 
     io.use(async (socket, next) => {
         const { cookie: cookieHeader } = socket.handshake.headers;
+        console.log("cookiues", cookieHeader);
         if (!cookieHeader) {
             return next(new Error("No cookie available."));
         }
