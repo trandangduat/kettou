@@ -159,7 +159,7 @@ function OpponentInfo({ player }: { player?: Player }) {
                     </p>
                     {player && (
                         <span className="flex flex-row text-sm items-center">
-                            <p className="">{player.elo}</p>
+                            <p className="">{Math.round(player.elo)}</p>
                         </span>
                     )}
                 </div>
@@ -184,7 +184,7 @@ function YourInfo({ player }: { player?: Player }) {
                     </p>
                     {player?.elo && (
                         <span className="flex flex-row text-sm items-center">
-                            <p className="">{player.elo}</p>
+                            <p className="">{Math.round(player.elo)}</p>
                         </span>
                     )}
                 </div>

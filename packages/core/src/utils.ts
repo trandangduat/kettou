@@ -60,7 +60,7 @@ export const sanitizeMatchStateForClient = (
     const { gameId, players } = match;
     const engine = GameRegistry.getEngine(gameId);
     const newMatchState = engine.convertToClientMatchState(match, userId);
-    const sanitizedPlayers = players.map((p) => ({ ...p, elo: undefined }));
+    const sanitizedPlayers = players.map((p) => ({ ...p }));
     return {
         ...newMatchState,
         players: sanitizedPlayers,
