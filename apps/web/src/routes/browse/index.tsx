@@ -213,7 +213,7 @@ function RoomItem({ match }: { match: Match }) {
     return (
         <Card>
             <CardHeader>
-                <p className="font-bold">match #{match.id.slice(0, 8)}</p>
+                <p className="font-bold">match #{match.id}</p>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-row gap-4 justify-center text-xs">

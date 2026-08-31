@@ -1,6 +1,11 @@
-import { v6 as uuidv6 } from "uuid";
 import { EndState, Match, MatchType, Player, PlayerStatus } from "./types.js";
 import { GameRegistry } from "./index.js";
+import { customAlphabet } from 'nanoid';
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+export const generateId = (length: number): string => {
+    return customAlphabet(alphabet, length)();
+};
 
 export const debugMatch = (m: any) => {
     console.log("MATCH:", JSON.stringify(m, null, 2));
@@ -8,7 +13,7 @@ export const debugMatch = (m: any) => {
 
 export const newMatch = (gameId: string, matchType: MatchType): Match<any> => {
     return {
-        id: uuidv6(),
+        id: generateId(8),
         gameId: gameId,
         type: matchType,
         status: "WAITING",

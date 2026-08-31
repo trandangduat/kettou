@@ -2,7 +2,7 @@ import db from "../db.js";
 import * as jose from "jose";
 import bcrypt from "bcrypt";
 import { JWT_SECRET, SALT_ROUNDS } from "../config.js";
-import { v6 as uuidv6 } from "uuid";
+import { nanoid } from "nanoid";
 import dotenv from "dotenv";
 import { UserAvatar } from "@mini-games/core";
 dotenv.config();
@@ -49,7 +49,7 @@ export const registerUser = async (input: RegisterInputProps) => {
     }
 
     const hashResult = await bcrypt.hash(password, SALT_ROUNDS);
-    const userId = uuidv6();
+    const userId = nanoid(8);
     db.prepare(
         `INSERT INTO users(id, username, password) VALUES (?, ?, ?)`,
     ).run(userId, username, hashResult);

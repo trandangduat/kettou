@@ -255,7 +255,7 @@ function Sidebar({
                 <CardContent className="flex flex-col gap-2">
                     <InfoItem
                         label="id"
-                        content={match.id.slice(0, 8)}
+                        content={match.id}
                         icon={HashIcon}
                     />
                     <InfoItem
