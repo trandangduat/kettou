@@ -57,10 +57,7 @@ func StartDaemon() error {
 			return
 		}
 
-		res, err := services.Login(types.LoginRequest{
-			Username: payload.Username,
-			Password: payload.Password,
-		})
+		res, err := services.Login(payload)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

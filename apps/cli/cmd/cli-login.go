@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var username string
+var id string
 var password string
 
 var loginCmd = &cobra.Command{
@@ -20,7 +20,7 @@ var loginCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := daemon.NewHttpClient()
 		payload := types.LoginRequest{
-			Username: username,
+			Id:       id,
 			Password: password,
 		}
 		bodyData, err := json.Marshal(payload)
@@ -31,7 +31,7 @@ var loginCmd = &cobra.Command{
 
 		res, err := client.Post("http://kettoud/login", "application/json", bytes.NewReader(bodyData))
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("Kettou daemon is not running. Start it first with 'kettou daemon'")
 			return
 		}
 		defer res.Body.Close()
@@ -53,7 +53,7 @@ var loginCmd = &cobra.Command{
 func init() {
 	cliCmd.AddCommand(loginCmd)
 
-	loginCmd.Flags().StringVarP(&username, "username", "u", "", "Username")
+	loginCmd.Flags().StringVarP(&id, "username", "u", "", "Username")
 	loginCmd.Flags().StringVarP(&password, "password", "p", "", "Password")
 
 	loginCmd.MarkFlagRequired("username")
