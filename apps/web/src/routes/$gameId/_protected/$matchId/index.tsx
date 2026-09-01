@@ -155,7 +155,7 @@ function OpponentInfo({ player }: { player?: Player }) {
             <div className="flex flex-row gap-4 items-center">
                 <div className="flex flex-col items-end">
                     <p className="font-semibold text-lg">
-                        {player ? player.username : "waiting for player..."}
+                        {player ? player.userId : "waiting for player..."}
                     </p>
                     {player && (
                         <span className="flex flex-row text-sm items-center">
@@ -180,7 +180,7 @@ function YourInfo({ player }: { player?: Player }) {
                 </Avatar>
                 <div className="flex flex-col">
                     <p className="font-semibold text-lg">
-                        {player ? player.username : "waiting for player..."}
+                        {player ? player.userId : "waiting for player..."}
                     </p>
                     {player?.elo && (
                         <span className="flex flex-row text-sm items-center">

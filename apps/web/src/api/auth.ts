@@ -11,7 +11,6 @@ export const fetchMe = async () => {
     }
     let user: {
         id: string;
-        username: string;
         avatarUrls: UserAvatar;
     } = await res.json();
 
@@ -35,6 +34,20 @@ export const logout = async () => {
 
 export const login = async (data: any) => {
     const res = await fetch("/api/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!res.ok) {
+        throw new Error(await res.text());
+    }
+};
+
+export const register = async (data: any) => {
+    const res = await fetch("/api/register", {
         method: "POST",
         body: JSON.stringify(data),
         headers: {

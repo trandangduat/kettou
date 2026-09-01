@@ -83,7 +83,6 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         } else {
             let newPlayer: Player = {
                 userId: user.id,
-                username: user.username,
                 elo: getUserEloOfGame(userId, gameId),
                 status: "ONLINE",
                 avatarUrls: user.avatarUrls,

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Card,
@@ -59,8 +59,8 @@ function RouteComponent() {
                     <CardContent>
                         <Field>
                             <Input
-                                id="username"
-                                name="username"
+                                id="id"
+                                name="id"
                                 type="text"
                                 className="font-bold text-md!"
                                 placeholder="username*"

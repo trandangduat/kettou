@@ -70,7 +70,7 @@ export function NavBar() {
                                 <AvatarImage src={user.avatarUrls.small} />
                             </Avatar>
                             <p className="text-primary font-bold">
-                                {user.username}
+                                {user.id}
                             </p>
                         </Link>
                         <button onClick={handleLogout}>Logout</button>

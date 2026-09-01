@@ -203,7 +203,7 @@ function PlayerSlot({ player }: { player?: Player }) {
                     <AvatarFallback>?</AvatarFallback>
                 )}
             </Avatar>
-            {player ? player.username : "empty"}
+            {player ? player.userId : "empty"}
         </div>
     );
 }

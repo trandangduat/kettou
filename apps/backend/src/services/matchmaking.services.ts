@@ -3,7 +3,6 @@ import { canMatch } from "../logics/matchmaking.logic.js";
 import { redis } from "../redis.js";
 
 interface PlayerInQ {
-    username: string;
     userId: string;
     elos: Record<string, number>;
     joinedAt: number;

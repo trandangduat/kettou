@@ -11,8 +11,8 @@ export const getUserById = (userId: string) => {
     let user = db
         .prepare<
             [string],
-            { id: string; username: string; avatarUrls: any }
-        >(`SELECT id, username, avatarUrls FROM users WHERE id = ?`)
+            { id: string; avatarUrls: any }
+        >(`SELECT id, avatarUrls FROM users WHERE id = ?`)
         .get(userId);
 
     if (!user) {
@@ -30,39 +30,42 @@ export const getUserById = (userId: string) => {
 
     return user as {
         id: string;
-        username: string;
         avatarUrls: UserAvatar;
     };
 };
 
 type RegisterInputProps = {
-    username: string;
+    id: string;
     password: string;
 };
 
 export const registerUser = async (input: RegisterInputProps) => {
-    const { username, password } = input;
-    const rows = getUserByUsername(username);
+    const { id, password } = input;
+    const user = db
+        .prepare(`SELECT id FROM users WHERE id = ?`)
+        .get(id) as { id: string } | undefined;
 
-    if (rows) {
+    if (user) {
         throw new Error("Username already exists");
     }
 
     const hashResult = await bcrypt.hash(password, SALT_ROUNDS);
-    const userId = nanoid(8);
-    db.prepare(
-        `INSERT INTO users(id, username, password) VALUES (?, ?, ?)`,
-    ).run(userId, username, hashResult);
+    db.prepare(`INSERT INTO users(id, password) VALUES (?, ?)`).run(
+        id,
+        hashResult,
+    );
 };
 
 type LoginInputProps = {
-    username: string;
+    id: string;
     password: string;
 };
 
 export const loginUser = async (input: LoginInputProps) => {
-    const { username, password } = input;
-    const user = getUserByUsername(username);
+    const { id, password } = input;
+    const user = db
+        .prepare(`SELECT id, password FROM users WHERE id = ?`)
+        .get(id) as { id: string; password: string } | undefined;
 
     if (!user) {
         throw new Error("Username does not exist");
@@ -79,17 +82,4 @@ export const loginUser = async (input: LoginInputProps) => {
         .setExpirationTime("7d")
         .sign(JWT_SECRET);
     return jwtToken;
-};
-
-export const getUserByUsername = (username: string) => {
-    return db
-        .prepare<
-            [string],
-            {
-                id: string;
-                password: string;
-                username: string;
-            }
-        >(`SELECT * FROM users WHERE username = ?`)
-        .get(username);
 };

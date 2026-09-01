@@ -25,8 +25,8 @@ export const register: RequestHandler = async (req, res) => {
         return res.status(400).send("No request body");
     }
     try {
-        const { username, password } = req.body;
-        await registerUser({ username, password });
+        const { id, password } = req.body;
+        await registerUser({ id, password });
         res.status(200).send("User registered successfully");
     } catch (err) {
         return res.status(400).send(err.toString());
@@ -38,8 +38,8 @@ export const login: RequestHandler = async (req, res) => {
         return res.status(400).send("Already logged in");
     }
     try {
-        const { username, password } = req.body;
-        const jwtToken = await loginUser({ username, password });
+        const { id, password } = req.body;
+        const jwtToken = await loginUser({ id, password });
         res.cookie("accessToken", jwtToken, {
             httpOnly: true,
             secure: false,

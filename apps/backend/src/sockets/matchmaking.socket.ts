@@ -14,7 +14,7 @@ import {
 import { getUserRoomKey, handleEvent } from "./utils.js";
 import { getUserEloOfGames } from "../services/games.services.js";
 import { MATCHMAKING_DEBOUNCE } from "../config.js";
-import { addPlayerToMatch, Player } from "@mini-games/core";
+import { addPlayerToMatch } from "@mini-games/core";
 import { getUserById } from "../services/auth.services.js";
 
 const processMatchmakingQueue = async (io: Server) => {
@@ -59,10 +59,9 @@ export const setUpMatchmakingSocket = ({
 }: SocketHandlerContext) => {
     const joinMatchmaking = async (gameIds: string[]) => {
         const { userId } = socket.data;
-        const { username, avatarUrls } = getUserById(userId);
+        const { id, avatarUrls } = getUserById(userId);
         const player = {
             userId,
-            username,
             elos: getUserEloOfGames(userId, gameIds),
             joinedAt: Date.now(),
             avatarUrls
