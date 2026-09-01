@@ -52,7 +52,7 @@ var createMatchCmd = &cobra.Command{
 }
 
 func init() {
-	cliCmd.AddCommand(createMatchCmd)
+	rootCmd.AddCommand(createMatchCmd)
 
 	createMatchCmd.Flags().StringVar(&gameId, "gameId", "", "Game ID")
 	createMatchCmd.MarkFlagRequired("gameId")

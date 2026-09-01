@@ -12,7 +12,7 @@ var matchCmd = &cobra.Command{
 }
 
 func init() {
-	cliCmd.AddCommand(matchCmd)
+	rootCmd.AddCommand(matchCmd)
 
 	matchCmd.PersistentFlags().StringVar(&matchId, "matchId", "", "Match ID")
 	matchCmd.MarkFlagRequired("matchId")

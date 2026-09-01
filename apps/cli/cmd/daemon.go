@@ -9,7 +9,8 @@ import (
 )
 
 var daemonCmd = &cobra.Command{
-	Use: "daemon",
+	Use:   "daemon",
+	Short: "Kettou daemon",
 }
 
 var daemonStartCmd = &cobra.Command{
