@@ -9,7 +9,6 @@ export interface UserAvatar {
 
 export interface Player {
     userId: string;
-    username: string;
     status: PlayerStatus;
     elo: number;
     avatarUrls?: UserAvatar;
