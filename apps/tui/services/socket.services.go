@@ -6,11 +6,10 @@ import (
 	"kettou/types"
 	"log"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/zishang520/socket.io/clients/socket/v3"
 )
 
-var SocketChan = make(chan tea.Msg)
+var SocketChan = make(chan types.SocketEventMsg)
 var activeClient *socket.Socket
 
 func ConnectSocket() {
@@ -82,13 +81,6 @@ func WaitForSocket() {
 	fmt.Printf("--->SOCKET CHAN: %+v\n", <-SocketChan)
 }
 
-func WaitForSocketMsg() tea.Cmd {
-	log.Print("===========WAITING FOR SOCKET MSG=============")
-	return func() tea.Msg {
-		return <-SocketChan
-	}
-}
-
 func EmitEvent(event string, data any) {
 	if activeClient == nil {
 		return
@@ -123,11 +115,4 @@ func EmitEventWithAck[T any](event string, data any) *T {
 
 	fmt.Printf("--->EMITTED WITH ACK: %s, %+v\n", event, data)
 	return res
-}
-
-func EmitEventCmd(event string, data any) tea.Cmd {
-	return func() tea.Msg {
-		EmitEvent(event, data)
-		return nil
-	}
 }

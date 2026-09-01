@@ -1,5 +1,10 @@
 package types
 
+type SocketEventMsg struct {
+	Event string
+	Data  any
+}
+
 type LobbyUpdate struct {
 	MatchIds []string `json:"matchIds"`
 }

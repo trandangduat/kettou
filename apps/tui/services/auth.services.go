@@ -6,8 +6,6 @@ import (
 	"io"
 	"kettou/types"
 	"log"
-
-	tea "charm.land/bubbletea/v2"
 )
 
 func Login(u types.LoginRequest) (string, error) {
@@ -34,16 +32,6 @@ func Login(u types.LoginRequest) (string, error) {
 	return bodyPayload, nil
 }
 
-func LoginCmd(u types.LoginRequest) tea.Cmd {
-	return func() tea.Msg {
-		res, err := Login(u)
-		if err != nil {
-			return types.ErrMsg(err)
-		}
-		return types.LoggedInMsg(res)
-	}
-}
-
 func GetCurrentUser() (types.User, error) {
 	res, err := Client.Get("http://localhost:3000/me")
 	if err != nil {
@@ -65,41 +53,4 @@ func GetCurrentUser() (types.User, error) {
 	log.Printf("Current User: %+v", u)
 
 	return u, nil
-}
-
-func GetCurrentUserCmd() tea.Cmd {
-	return func() tea.Msg {
-		currentUser, err := GetCurrentUser()
-		if err != nil {
-			return types.ErrMsg(err)
-		}
-		return types.CurrentUserMsg(currentUser)
-	}
-}
-
-func Logout() tea.Cmd {
-	return func() tea.Msg {
-		res, err := Client.Get("http://localhost:3000/logout")
-		if err != nil {
-			return types.ErrMsg(err)
-		}
-		defer res.Body.Close()
-
-		msg, err := io.ReadAll(res.Body)
-		if err != nil {
-			return types.ErrMsg(err)
-		}
-
-		log.Printf("Response Status: %v\n", res.Status)
-		for k, vs := range res.Header {
-			for _, value := range vs {
-				log.Printf("%s: %s\n", k, value)
-			}
-		}
-
-		_ = SaveCookies()
-
-		return types.LogoutMsg(msg)
-	}
-
 }

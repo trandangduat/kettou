@@ -19,7 +19,6 @@ func init() {
 	}
 	configDir = filepath.Join(homeDir, ".kettou")
 	_ = os.MkdirAll(configDir, 0755)
-	SwitchSession("cookies.json")
 }
 
 func SwitchSession(cookieFile string) {

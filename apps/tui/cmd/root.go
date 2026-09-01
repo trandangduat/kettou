@@ -11,9 +11,6 @@ var rootCmd = &cobra.Command{
 	Use:   "kettou",
 	Short: "Kettou is a hub of duel games.",
 	Long:  "",
-	Run: func(cmd *cobra.Command, args []string) {
-		tuiCmd.Run(cmd, args)
-	},
 }
 
 func Execute() {

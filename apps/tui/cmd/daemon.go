@@ -16,7 +16,7 @@ var daemonStartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the Kettou daemon",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		services.SwitchSession("cli_cookies.json")
+		services.SwitchSession("cookies.json")
 		services.ConnectSocket()
 		go func() {
 			for {
