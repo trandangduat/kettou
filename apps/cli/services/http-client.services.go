@@ -9,7 +9,7 @@ import (
 )
 
 var Client *http.Client
-var jar *jujuCookiejar.Jar
+var cookiesJar *jujuCookiejar.Jar
 var configDir string
 
 func init() {
@@ -24,22 +24,22 @@ func init() {
 func SwitchSession(cookieFile string) {
 	jarFile := filepath.Join(configDir, cookieFile)
 
-	var jarErr error
-	jar, jarErr = jujuCookiejar.New(&jujuCookiejar.Options{
+	var err error
+	cookiesJar, err = jujuCookiejar.New(&jujuCookiejar.Options{
 		Filename: jarFile,
 	})
-	if jarErr != nil {
-		panic("Failed to init cookie jar: " + jarErr.Error())
+	if err != nil {
+		panic("Failed to init cookie jar: " + err.Error())
 	}
 
 	Client = &http.Client{
-		Jar: jar,
+		Jar: cookiesJar,
 	}
 }
 
 func SaveCookies() error {
-	if jar != nil {
-		return jar.Save()
+	if cookiesJar != nil {
+		return cookiesJar.Save()
 	}
 	return nil
 }

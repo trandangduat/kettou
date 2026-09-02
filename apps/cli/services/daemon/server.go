@@ -63,6 +63,9 @@ func StartDaemon() error {
 			return
 		}
 
+		UpdateCurrentUser()
+		services.ConnectSocket()
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(res)
 	})

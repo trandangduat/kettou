@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"kettou/types"
 	"log"
+	"net/http"
+	"net/url"
 
 	"github.com/zishang520/socket.io/clients/socket/v3"
 )
@@ -13,13 +15,36 @@ var SocketChan = make(chan types.SocketEventMsg)
 var activeClient *socket.Socket
 
 func ConnectSocket() {
+	if cookiesJar == nil {
+		log.Println("cookiesJar is not initialized.")
+	}
+
 	opts := socket.DefaultOptions()
+	serverUrl, _ := url.Parse("http://localhost:3000")
+	headers := http.Header{}
+	foundAccessToken := false
+	for _, cookie := range cookiesJar.Cookies(serverUrl) {
+		if cookie.Name == "accessToken" {
+			headers.Add("Cookie", cookie.String())
+			foundAccessToken = true
+			break
+		}
+	}
+	if !foundAccessToken {
+		log.Println("accessToken not found in cookies.")
+		return
+	}
+	opts.SetExtraHeaders(headers)
+
 	client, err := socket.Io("http://localhost:3000", opts)
 	if err != nil {
 		log.Printf("failed to connect to socket: %v\n", err)
 		return
 	}
 
+	if activeClient != nil {
+		activeClient.Close()
+	}
 	activeClient = client
 
 	client.On("lobby:matches-update", func(data ...any) {
