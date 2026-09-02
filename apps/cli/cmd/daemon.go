@@ -25,7 +25,7 @@ var daemonStartCmd = &cobra.Command{
 				services.WaitForSocket()
 			}
 		}()
-		return daemon.StartDaemon()
+		return daemon.StartDaemonServer()
 	},
 }
 

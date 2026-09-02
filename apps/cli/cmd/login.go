@@ -29,7 +29,11 @@ var loginCmd = &cobra.Command{
 			return
 		}
 
-		res, err := client.Post("http://kettoud/login", "application/json", bytes.NewReader(bodyData))
+		res, err := client.Post(
+			"http://kettoud/login",
+			"application/json",
+			bytes.NewReader(bodyData))
+
 		if err != nil {
 			fmt.Println("Kettou daemon is not running. Start it first with 'kettou daemon'")
 			return
