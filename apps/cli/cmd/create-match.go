@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"kettou/cmd/daemon"
+	"kettou/services/daemon"
 	"kettou/types"
 
 	"github.com/spf13/cobra"

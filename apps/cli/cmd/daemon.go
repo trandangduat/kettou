@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"kettou/cmd/daemon"
 	"kettou/services"
+	"kettou/services/daemon"
 
 	"github.com/spf13/cobra"
 )
