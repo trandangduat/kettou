@@ -67,80 +67,14 @@ func (s *DaemonServer) handleMatchStart(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var payload struct {
-		MatchId string `json:"matchId"`
-	}
-	if !s.decodeJSON(w, r, &payload) {
+	var matchId string
+	if !s.decodeJSON(w, r, &matchId) {
 		return
 	}
 
-	ackData := services.EmitEventWithAck[struct {
-		Ok bool `json:"ok"`
-	}]("match:start",
-		types.EmitMatchAction{
-			MatchId: payload.MatchId,
-			UserId:  (*s.currentUser).Id,
-		})
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ackData)
-}
-
-func (s *DaemonServer) handleMatchRollDice(w http.ResponseWriter, r *http.Request) {
-	if !s.authorizeAction() {
-		return
+	res := services.EmitEventWithAck[types.EmitMatchStartAck]("match:start", matchId)
+	if res.Error != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
 	}
-
-	var payload struct {
-		MatchId string `json:"matchId"`
-	}
-	if !s.decodeJSON(w, r, &payload) {
-		return
-	}
-
-	services.EmitEvent("match:roll-dice",
-		types.EmitMatchAction{
-			MatchId: payload.MatchId,
-			UserId:  (*s.currentUser).Id,
-		})
-}
-
-func (s *DaemonServer) handleMatchMove(w http.ResponseWriter, r *http.Request) {
-	if !s.authorizeAction() {
-		return
-	}
-
-	var payload struct {
-		MatchId string     `json:"matchId"`
-		Move    types.Move `json:"move"`
-	}
-	if !s.decodeJSON(w, r, &payload) {
-		return
-	}
-
-	services.EmitEvent("match:finish-move",
-		types.EmitMatchMove{
-			MatchId: payload.MatchId,
-			UserId:  (*s.currentUser).Id,
-			Move:    payload.Move,
-		})
-}
-
-func (s *DaemonServer) handleMatchCannotMove(w http.ResponseWriter, r *http.Request) {
-	if !s.authorizeAction() {
-		return
-	}
-
-	var payload struct {
-		MatchId string `json:"matchId"`
-	}
-	if !s.decodeJSON(w, r, &payload) {
-		return
-	}
-
-	services.EmitEvent("match:cannot-move",
-		types.EmitMatchAction{
-			MatchId: payload.MatchId,
-			UserId:  (*s.currentUser).Id,
-		})
 }

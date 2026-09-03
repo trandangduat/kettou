@@ -38,6 +38,7 @@ type EmitMatchCreateAck struct {
 
 type EmitMatchJoinAck struct{ EmitAck }
 type EmitMatchLeaveAck struct{ EmitAck }
+type EmitMatchStartAck struct{ EmitAck }
 
 type EmitMatchAction struct {
 	MatchId string `json:"matchId"`
