@@ -32,6 +32,24 @@ func Login(u types.LoginRequest) (string, error) {
 	return bodyPayload, nil
 }
 
+func Logout() (string, error) {
+	res, err := Client.Post(
+		"http://localhost:3000/logout",
+		"application/json",
+		bytes.NewBuffer([]byte{}),
+	)
+	if err != nil {
+		return "Logout failed", err
+	}
+	defer res.Body.Close()
+
+	bodyBytes, err := io.ReadAll(res.Body)
+	bodyPayload := string(bodyBytes)
+
+	_ = SaveCookies()
+	return bodyPayload, nil
+}
+
 func GetCurrentUser() (types.User, error) {
 	res, err := Client.Get("http://localhost:3000/me")
 	if err != nil {

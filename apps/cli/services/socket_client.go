@@ -14,6 +14,13 @@ import (
 var SocketChan = make(chan types.SocketEventMsg)
 var activeClient *socket.Socket
 
+func DisconnectSocket() {
+	if activeClient != nil {
+		activeClient.Close()
+		activeClient = nil
+	}
+}
+
 func ConnectSocket() {
 	if cookiesJar == nil {
 		log.Println("cookiesJar is not initialized.")
@@ -86,7 +93,6 @@ func ConnectSocket() {
 			Data:  convertMapToStructType[types.Match](data[0]),
 		}
 	})
-
 }
 
 func convertMapToStructType[T any](data any) T {

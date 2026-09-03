@@ -34,3 +34,17 @@ func (s *DaemonServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }
+
+func (s *DaemonServer) handleLogout(w http.ResponseWriter, r *http.Request) {
+	res, err := services.Logout()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.updateCurrentUser()
+	services.DisconnectSocket()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}

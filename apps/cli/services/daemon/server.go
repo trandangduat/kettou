@@ -38,6 +38,7 @@ func StartDaemonServer() error {
 
 	// AUTH
 	mux.HandleFunc("/login", daemonServer.handleLogin)
+	mux.HandleFunc("/logout", daemonServer.handleLogout)
 
 	// MATCH
 	mux.HandleFunc("/match/create", daemonServer.handleMatchCreate)
