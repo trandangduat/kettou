@@ -11,14 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var joinMatchCmd = &cobra.Command{
-	Use:   "join",
-	Short: "Join a match",
+var leaveMatchCmd = &cobra.Command{
+	Use:   "leave",
+	Short: "Leave a match",
 	Run: func(cmd *cobra.Command, args []string) {
 		client := daemon.NewHttpClient()
 		bodyBytes, err := json.Marshal(matchId)
 		res, err := client.Post(
-			"http://kettoud:/match/join",
+			"http://kettoud:/match/leave",
 			"application/json",
 			bytes.NewReader(bodyBytes),
 		)
@@ -39,17 +39,17 @@ var joinMatchCmd = &cobra.Command{
 			return
 		}
 
-		var ackData types.EmitMatchJoinAck
+		var ackData types.EmitMatchLeaveAck
 		json.Unmarshal(resBytes, &ackData)
 		if ackData.Error != nil {
 			fmt.Println(*ackData.Error)
 			return
 		}
 
-		fmt.Printf("Joined match with ID: %s\n", matchId)
+		fmt.Printf("Left match with ID: %s\n", matchId)
 	},
 }
 
 func init() {
-	matchCmd.AddCommand(joinMatchCmd)
+	matchCmd.AddCommand(leaveMatchCmd)
 }

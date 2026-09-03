@@ -43,6 +43,7 @@ func StartDaemonServer() error {
 	// MATCH
 	mux.HandleFunc("/match/create", daemonServer.handleMatchCreate)
 	mux.HandleFunc("/match/join", daemonServer.handleMatchJoin)
+	mux.HandleFunc("/match/leave", daemonServer.handleMatchLeave)
 	mux.HandleFunc("/match/start", daemonServer.handleMatchStart)
 	mux.HandleFunc("/match/roll-dice", daemonServer.handleMatchRollDice)
 	mux.HandleFunc("/match/move", daemonServer.handleMatchMove)

@@ -26,19 +26,18 @@ type EmitMatchCreate struct {
 	MatchType MatchType `json:"matchType"`
 }
 
+type EmitAck struct {
+	Ok    *bool   `json:"ok,omitempty"`
+	Error *string `json:"error,omitempty"`
+}
+
 type EmitMatchCreateAck struct {
+	EmitAck
 	MatchId string `json:"matchId"`
 }
 
-type EmitMatchJoin struct {
-	MatchId string `json:"matchId"`
-	User    User   `json:"user"`
-}
-
-type EmitMatchLeave struct {
-	MatchId string `json:"matchId"`
-	User    User   `json:"user"`
-}
+type EmitMatchJoinAck struct{ EmitAck }
+type EmitMatchLeaveAck struct{ EmitAck }
 
 type EmitMatchAction struct {
 	MatchId string `json:"matchId"`

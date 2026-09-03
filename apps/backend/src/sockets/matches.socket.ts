@@ -70,6 +70,10 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         const { userId } = socket.data;
         let user = getUserById(userId);
         let match = await getMatchState({ matchId });
+        if (!match) {
+            throw new Error("Match with ID " + matchId + " not found");
+        }
+
         let { gameId, players } = match;
         let lobbyKey = getLobbyRoomKey(gameId);
         let player = players.find((p) => p.userId === userId);
@@ -104,7 +108,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         const userId = socket.data.userId;
         let match = await getMatchState({ matchId });
         if (!match) {
-            throw new Error("Match not found");
+            throw new Error("Match with ID " + matchId + " not found");
         }
         let { players, status, gameId } = match;
         let isPlayer = players.some((p) => p.userId === userId);
@@ -153,6 +157,9 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         console.log("LEAVE MATCH");
         const { userId } = socket.data;
         let match = await getMatchState({ matchId });
+        if (!match) {
+            throw new Error("Match with ID " + matchId + " not found");
+        }
         let isPlayer = match.players.some((p) => p.userId === userId);
         if (!isPlayer) {
             throw new Error(NOT_A_PLAYER_MSG);

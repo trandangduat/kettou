@@ -22,6 +22,8 @@ func (s *DaemonServer) handleMatchCreate(w http.ResponseWriter, r *http.Request)
 			MatchType: payload.MatchType,
 		})
 
+	services.EmitEvent("match:join", res.MatchId)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }
@@ -31,18 +33,33 @@ func (s *DaemonServer) handleMatchJoin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload struct {
-		MatchId string `json:"matchId"`
-	}
-	if !s.decodeJSON(w, r, &payload) {
+	var matchId string
+	if !s.decodeJSON(w, r, &matchId) {
 		return
 	}
 
-	services.EmitEvent("match:join",
-		types.EmitMatchJoin{
-			MatchId: payload.MatchId,
-			User:    *s.currentUser,
-		})
+	res := services.EmitEventWithAck[types.EmitMatchJoinAck]("match:join", matchId)
+	if res.Error != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
+	}
+}
+
+func (s *DaemonServer) handleMatchLeave(w http.ResponseWriter, r *http.Request) {
+	if !s.authorizeAction() {
+		return
+	}
+
+	var matchId string
+	if !s.decodeJSON(w, r, &matchId) {
+		return
+	}
+
+	res := services.EmitEventWithAck[types.EmitMatchLeaveAck]("match:leave", matchId)
+	if res.Error != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
+	}
 }
 
 func (s *DaemonServer) handleMatchStart(w http.ResponseWriter, r *http.Request) {
