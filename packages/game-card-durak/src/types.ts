@@ -54,7 +54,6 @@ export type MatchStateClient = Match<DurakStateClient>;
 export type DurakEndReason = CommonEndReason | "EMPTY_HAND";
 export type DurakEndState = EndState<DurakEndReason>;
 export type DurakAction =
-    | { type: "START_MATCH"; userId: string }
     | { type: "ATTACK"; userId: string; cards: Card[] }
     | { type: "PASS"; userId: string }
     | { type: "DEFEND"; userId: string; cards: Card[] }

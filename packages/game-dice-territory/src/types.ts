@@ -29,7 +29,6 @@ export type MatchStateClient = Match<DiceTerritoryStateClient>;
 export type DiceTerritoryEndReason = CommonEndReason | "BOTH_IMMOVABLE";
 export type DiceTerritoryEndState = EndState<DiceTerritoryEndReason>;
 export type DiceTerritoryAction =
-    | { type: "START_MATCH"; userId: string }
     | { type: "ROLL_DICE"; userId: string }
     | { type: "MOVE"; userId: string; move: Move }
     | { type: "SKIP_TURN"; userId: string };

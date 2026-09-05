@@ -78,3 +78,20 @@ func (s *DaemonServer) handleMatchStart(w http.ResponseWriter, r *http.Request) 
 		json.NewEncoder(w).Encode(res)
 	}
 }
+
+func (s *DaemonServer) handleMatchAction(w http.ResponseWriter, r *http.Request) {
+	if !s.authorizeAction() {
+		return
+	}
+
+	var payload types.EmitMatchAction
+	if !s.decodeJSON(w, r, &payload) {
+		return
+	}
+
+	res := services.EmitEventWithAck[types.EmitMatchActionAck]("match:action", payload)
+	if res.Error != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
+	}
+}

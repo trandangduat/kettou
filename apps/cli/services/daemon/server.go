@@ -45,6 +45,7 @@ func StartDaemonServer() error {
 	mux.HandleFunc("/match/join", daemonServer.handleMatchJoin)
 	mux.HandleFunc("/match/leave", daemonServer.handleMatchLeave)
 	mux.HandleFunc("/match/start", daemonServer.handleMatchStart)
+	mux.HandleFunc("/match/action", daemonServer.handleMatchAction)
 
 	return http.Serve(listener, mux)
 }
