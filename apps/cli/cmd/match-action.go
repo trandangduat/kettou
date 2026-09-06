@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"kettou/services/daemon"
 	"kettou/types"
 
@@ -39,18 +38,12 @@ var matchActionCmd = &cobra.Command{
 			return
 		}
 
-		resBytes, err := io.ReadAll(res.Body)
-		if err != nil {
+		var ackData types.EmitMatchActionAck
+		if err := DecodeAckData(res.Body, &ackData); err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		var ackData types.EmitMatchActionAck
-		json.Unmarshal(resBytes, &ackData)
-		if ackData.Error != nil {
-			fmt.Println(*ackData.Error)
-			return
-		}
 		fmt.Println("Performed action " + action + " on match " + matchId)
 	},
 }

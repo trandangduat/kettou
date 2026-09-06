@@ -1,6 +1,9 @@
 package types
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+)
 
 type SocketEventMsg struct {
 	Event string
@@ -29,6 +32,17 @@ type EmitMatchCreate struct {
 type EmitMatchAction struct {
 	MatchId string          `json:"matchId"`
 	Action  json.RawMessage `json:"action"`
+}
+
+type AckResponse interface {
+	GetError() error
+}
+
+func (e *EmitAck) GetError() error {
+	if e == nil || e.Error == nil {
+		return nil
+	}
+	return errors.New(*e.Error)
 }
 
 type EmitAck struct {

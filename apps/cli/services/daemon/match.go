@@ -39,10 +39,8 @@ func (s *DaemonServer) handleMatchJoin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := services.EmitEventWithAck[types.EmitMatchJoinAck]("match:join", matchId)
-	if res.Error != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(res)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 func (s *DaemonServer) handleMatchLeave(w http.ResponseWriter, r *http.Request) {
@@ -56,10 +54,8 @@ func (s *DaemonServer) handleMatchLeave(w http.ResponseWriter, r *http.Request) 
 	}
 
 	res := services.EmitEventWithAck[types.EmitMatchLeaveAck]("match:leave", matchId)
-	if res.Error != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(res)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 func (s *DaemonServer) handleMatchStart(w http.ResponseWriter, r *http.Request) {
@@ -73,10 +69,8 @@ func (s *DaemonServer) handleMatchStart(w http.ResponseWriter, r *http.Request) 
 	}
 
 	res := services.EmitEventWithAck[types.EmitMatchStartAck]("match:start", matchId)
-	if res.Error != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(res)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }
 
 func (s *DaemonServer) handleMatchAction(w http.ResponseWriter, r *http.Request) {
@@ -90,8 +84,6 @@ func (s *DaemonServer) handleMatchAction(w http.ResponseWriter, r *http.Request)
 	}
 
 	res := services.EmitEventWithAck[types.EmitMatchActionAck]("match:action", payload)
-	if res.Error != nil {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(res)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 }

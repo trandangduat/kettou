@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"kettou/services/daemon"
 	"kettou/types"
 
@@ -33,16 +32,9 @@ var joinMatchCmd = &cobra.Command{
 			return
 		}
 
-		resBytes, err := io.ReadAll(res.Body)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
 		var ackData types.EmitMatchJoinAck
-		json.Unmarshal(resBytes, &ackData)
-		if ackData.Error != nil {
-			fmt.Println(*ackData.Error)
+		if err := DecodeAckData(res.Body, &ackData); err != nil {
+			fmt.Println(err)
 			return
 		}
 
