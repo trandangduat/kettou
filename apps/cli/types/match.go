@@ -1,42 +1,10 @@
 package types
 
-type Match struct {
-	Id          string      `json:"id"`
-	GameID      string      `json:"gameId"`
-	MatchType   MatchType   `json:"matchType"`
-	Status      MatchStatus `json:"status"`
-	Players     []Player    `json:"players"`
-	RoundNumber int         `json:"roundNumber"`
-	Rounds      []Round     `json:"rounds"`
-	Turn        int         `json:"turn"`
-	EndState    EndState    `json:"endState"`
-}
-
-type Move struct {
-	R   int `json:"r"`
-	C   int `json:"c"`
-	Len int `json:"len"`
-}
-
-type Player struct {
-	UserId   string `json:"userId"`
-	Username string `json:"username"`
-	Elo      int    `json:"elo"`
-}
-
-type Round struct {
-	Move       Move   `json:"move"`
-	DiceNumber int    `json:"diceNumber"`
-	PlayerId   string `json:"playerId"`
-}
-
-type EndState struct {
-	WinnerUserId string         `json:"winnerUserId"`
-	PlayerPoints map[string]int `json:"playerPoints"`
-}
+import "encoding/json"
 
 type MatchStatus string
 type MatchType string
+type PlayerStatus string
 
 const (
 	MatchStatusWaiting MatchStatus = "WAITING"
@@ -49,3 +17,31 @@ const (
 	MatchTypeCustom MatchType = "CUSTOM"
 	MatchTypeRanked MatchType = "RANKED"
 )
+
+const (
+	PlayerStatusOnline  PlayerStatus = "ONLINE"
+	PlayerStatusOffline PlayerStatus = "OFFLINE"
+)
+
+type Match struct {
+	Id        string          `json:"id"`
+	GameID    string          `json:"gameId"`
+	MatchType MatchType       `json:"matchType"`
+	Status    MatchStatus     `json:"status"`
+	Players   []Player        `json:"players"`
+	EndState  *EndState       `json:"endState"`
+	CreatedAt int64           `json:"createdAt"`
+	GameState json.RawMessage `json:"gameState"`
+}
+
+type Player struct {
+	UserId string       `json:"userId"`
+	Elo    int          `json:"elo"`
+	Status PlayerStatus `json:"status"`
+}
+
+type EndState struct {
+	WinnerId string          `json:"winnerId"`
+	Reason   string          `json:"reason"`
+	Scores   *map[string]int `json:"scores"`
+}

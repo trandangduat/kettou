@@ -79,7 +79,12 @@ func convertMapToStructType[T any](data any) T {
 }
 
 func WaitForSocket() {
-	log.Printf("--->SOCKET CHAN: %+v\n", <-SocketChan)
+	bytes, err := json.Marshal(<-SocketChan)
+	if err != nil {
+		log.Printf("failed to marshal: %v\n", err)
+		return
+	}
+	log.Printf("--->SOCKET CHAN: %+v\n", string(bytes))
 }
 
 func EmitEvent(event string, data any) {
