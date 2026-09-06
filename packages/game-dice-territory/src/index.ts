@@ -39,6 +39,12 @@ const rollDice = (state: MatchState, userId: string): MatchState => {
     if (!isPlayerTurn) {
         throw new Error(NOT_YOUR_TURN_MSG);
     }
+    const prevRound = rounds[rounds.length - 1];
+    if (prevRound) {
+        if (prevRound.playerId === userId && !prevRound.move) {
+          throw new Error("You have already rolled the dice.")
+        }
+    }
 
     const newDiceNumber = getRandomNumber(6) + 1;
     const newRound: Round = {
@@ -61,7 +67,7 @@ const submitMove = (
     move: Move,
 ): MatchState => {
     const { players, gameState, status } = state;
-    const { turn } = gameState;
+    const { rounds, turn } = gameState;
 
     let isPlayer = players.some((p) => p.userId === userId);
     let isPlaying = status === "PLAYING";
@@ -74,6 +80,12 @@ const submitMove = (
     }
     if (!isPlayerTurn) {
         throw new Error(NOT_YOUR_TURN_MSG);
+    }
+    const prevRound = rounds[rounds.length - 1];
+    if (prevRound) {
+        if (prevRound.playerId === userId && prevRound.diceNumber !== move.len) {
+          throw new Error("Square length does not match your dice number.")
+        }
     }
 
     if (!validateMove(state, userId, move)) {
