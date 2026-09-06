@@ -54,36 +54,6 @@ func ConnectSocket() {
 	}
 	activeClient = client
 
-	client.On("lobby:matches-update", func(data ...any) {
-		if len(data) == 0 {
-			return
-		}
-		SocketChan <- types.SocketEventMsg{
-			Event: "lobby:matches-update",
-			Data:  convertMapToStructType[types.LobbyUpdate](data[0]),
-		}
-	})
-
-	client.On("match:created", func(data ...any) {
-		if len(data) == 0 {
-			return
-		}
-		SocketChan <- types.SocketEventMsg{
-			Event: "match:created",
-			Data:  convertMapToStructType[types.MatchCreated](data[0]),
-		}
-	})
-
-	client.On("match:deleted", func(data ...any) {
-		if len(data) == 0 {
-			return
-		}
-		SocketChan <- types.SocketEventMsg{
-			Event: "match:deleted",
-			Data:  convertMapToStructType[types.MatchDeleted](data[0]),
-		}
-	})
-
 	client.On("match:updated", func(data ...any) {
 		if len(data) == 0 {
 			return
@@ -109,7 +79,7 @@ func convertMapToStructType[T any](data any) T {
 }
 
 func WaitForSocket() {
-	fmt.Printf("--->SOCKET CHAN: %+v\n", <-SocketChan)
+	log.Printf("--->SOCKET CHAN: %+v\n", <-SocketChan)
 }
 
 func EmitEvent(event string, data any) {
@@ -120,7 +90,7 @@ func EmitEvent(event string, data any) {
 	if err != nil {
 		fmt.Print(err)
 	}
-	fmt.Printf("--->EMITED: %s, %+v\n", event, data)
+	log.Printf("Event emitted: %s\n", event)
 }
 
 func EmitEventWithAck[T any](event string, data any) *T {
@@ -144,6 +114,6 @@ func EmitEventWithAck[T any](event string, data any) *T {
 	})
 	<-done
 
-	fmt.Printf("--->EMITTED WITH ACK: %s, %+v\n", event, data)
+	log.Printf("Event emitted with ack: %s\n", event)
 	return res
 }

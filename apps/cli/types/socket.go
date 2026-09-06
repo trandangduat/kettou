@@ -10,20 +10,12 @@ type SocketEventMsg struct {
 	Data  any
 }
 
-type LobbyUpdate struct {
-	MatchIds []string `json:"matchIds"`
-}
-
 type MatchCreated struct {
 	MatchId string `json:"matchId"`
 }
 
 type MatchDeleted struct {
 	MatchId string `json:"matchId"`
-}
-
-type EmitLobbyJoin struct {
-	GameId string `json:"gameId"`
 }
 type EmitMatchCreate struct {
 	GameId    string    `json:"gameId"`
