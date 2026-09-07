@@ -77,7 +77,7 @@ const rollDice = (state: MatchState, userId: string): any => {
     return {
         updatedState: newState,
         diceNumber: newDiceNumber,
-        turnedSkipped: countValidMoves === 0,
+        turnSkipped: countValidMoves === 0,
         msg:
             countValidMoves === 0
                 ? "Skip turn because no valid moves"
@@ -162,10 +162,10 @@ export class DiceTerritoryEngine implements IGameEngine<
             switch (action.type) {
                 case "ROLL_DICE": {
                     const { userId } = action;
-                    const { updatedState, diceNumber, turnedSkipped, msg } =
+                    const { updatedState, diceNumber, turnSkipped, msg } =
                         rollDice(state, userId);
                     newState = updatedState;
-                    data = { diceNumber, turnedSkipped, msg };
+                    data = { diceNumber, turnSkipped, msg };
                     break;
                 }
                 case "MOVE": {
