@@ -37,6 +37,7 @@ export interface ActionResult<TGameState> {
     newState: TGameState;
     isValid: boolean;
     error?: string;
+    data?: any;
 }
 
 export interface IGameEngine<TGameState, TAction, TGameStateClient> {

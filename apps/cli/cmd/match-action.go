@@ -45,6 +45,9 @@ var matchActionCmd = &cobra.Command{
 		}
 
 		fmt.Println("Performed action " + action + " on match " + matchId)
+		if ackData.Data != nil {
+			fmt.Println(string(*ackData.Data))
+		}
 	},
 }
 

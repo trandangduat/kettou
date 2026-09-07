@@ -48,4 +48,7 @@ type EmitMatchCreateAck struct {
 type EmitMatchJoinAck struct{ EmitAck }
 type EmitMatchLeaveAck struct{ EmitAck }
 type EmitMatchStartAck struct{ EmitAck }
-type EmitMatchActionAck struct{ EmitAck }
+type EmitMatchActionAck struct {
+	EmitAck
+	Data *json.RawMessage `json:"data"`
+}

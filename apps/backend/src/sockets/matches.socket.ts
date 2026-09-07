@@ -134,10 +134,9 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
     const processAction = async ({ matchId, action }) => {
         console.log("PROCESS ACTION: ", action.type);
         action.userId = socket.data.userId;
-
         let match = await getMatchState({ matchId });
         if (!match) {
-            throw new Error("Match not found");
+            throw new Error("Match with ID " + matchId + " not found");
         }
 
         const engine = GameRegistry.getEngine(match.gameId);
@@ -151,6 +150,8 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             saveEndedMatchToDb({ match, endedAt: Date.now() });
         }
         await saveAndBroadcastMatchState({ io, match });
+        console.log("res data", res)
+        return { data: res.data };
     };
 
     const leaveMatch = async (matchId: string) => {

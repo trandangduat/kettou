@@ -1,4 +1,12 @@
-import { DiceTerritoryAction, DiceTerritoryState, DiceTerritoryStateClient, MatchState, MatchStateClient, Move, Round } from "./types.js";
+import {
+    DiceTerritoryAction,
+    DiceTerritoryState,
+    DiceTerritoryStateClient,
+    MatchState,
+    MatchStateClient,
+    Move,
+    Round,
+} from "./types.js";
 import {
     ActionResult,
     GAME_NOT_STARTED_MSG,
@@ -23,7 +31,7 @@ export const gameDefinition = {
     createEngine: () => new DiceTerritoryEngine(),
 };
 
-const rollDice = (state: MatchState, userId: string): MatchState => {
+const rollDice = (state: MatchState, userId: string): any => {
     const { gameState, players, status } = state;
     const { rounds, turn } = gameState;
 
@@ -42,7 +50,7 @@ const rollDice = (state: MatchState, userId: string): MatchState => {
     const prevRound = rounds[rounds.length - 1];
     if (prevRound) {
         if (prevRound.playerId === userId && !prevRound.move) {
-          throw new Error("You have already rolled the dice.")
+            throw new Error("You have already rolled the dice.");
         }
     }
 
@@ -52,13 +60,16 @@ const rollDice = (state: MatchState, userId: string): MatchState => {
         diceNumber: newDiceNumber,
         playerId: userId,
     };
-    return {
-        ...state,
-        gameState: {
-            ...gameState,
-            rounds: [...rounds, newRound],
+    return [
+        {
+            ...state,
+            gameState: {
+                ...gameState,
+                rounds: [...rounds, newRound],
+            },
         },
-    };
+        newDiceNumber,
+    ];
 };
 
 const submitMove = (
@@ -83,8 +94,11 @@ const submitMove = (
     }
     const prevRound = rounds[rounds.length - 1];
     if (prevRound) {
-        if (prevRound.playerId === userId && prevRound.diceNumber !== move.len) {
-          throw new Error("Square length does not match your dice number.")
+        if (
+            prevRound.playerId === userId &&
+            prevRound.diceNumber !== move.len
+        ) {
+            throw new Error("Square length does not match your dice number.");
         }
     }
 
@@ -151,7 +165,7 @@ export class DiceTerritoryEngine implements IGameEngine<
                 turn: firstTurn,
             },
         };
-    };
+    }
 
     processAction(
         state: MatchState,
@@ -159,10 +173,12 @@ export class DiceTerritoryEngine implements IGameEngine<
     ): ActionResult<MatchState> {
         try {
             let newState: MatchState = state;
+            let data: any;
             switch (action.type) {
                 case "ROLL_DICE": {
                     const { userId } = action;
-                    newState = rollDice(state, userId);
+                    data = {};
+                    [newState, data.diceNumber] = rollDice(state, userId);
                     break;
                 }
                 case "MOVE": {
@@ -179,6 +195,7 @@ export class DiceTerritoryEngine implements IGameEngine<
             return {
                 newState,
                 isValid: true,
+                data,
             };
         } catch (error) {
             return {
