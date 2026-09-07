@@ -9,22 +9,27 @@ import {
 } from "./types.js";
 import {
     ActionResult,
+    EndState,
     GAME_NOT_STARTED_MSG,
     IGameEngine,
     INVALID_ACTION_MSG,
     Match,
+    MatchStatus,
     MatchType,
     newMatch,
     NOT_A_PLAYER_MSG,
     NOT_YOUR_TURN_MSG,
+    Player,
+    updatePlayerStatus,
 } from "@mini-games/core";
 import {
     addMove,
-    endMatch,
     getRandomNumber,
     moveOnToNextRound,
+    skipTurn,
     validateMove,
 } from "./utils.js";
+import { calculateBoards } from "./logic.js";
 
 export const gameDefinition = {
     id: "dice-territory",
@@ -60,16 +65,33 @@ const rollDice = (state: MatchState, userId: string): any => {
         diceNumber: newDiceNumber,
         playerId: userId,
     };
-    return [
-        {
-            ...state,
-            gameState: {
-                ...gameState,
-                rounds: [...rounds, newRound],
-            },
+    let newState = {
+        ...state,
+        gameState: {
+            ...gameState,
+            rounds: [...rounds, newRound],
         },
+    };
+    const { countValidMoves } = calculateBoards(
+        8,
+        8,
+        newState,
+        userId,
         newDiceNumber,
-    ];
+    );
+    if (countValidMoves === 0) {
+        newState = skipTurn(newState);
+    }
+
+    return {
+        updatedState: newState,
+        diceNumber: newDiceNumber,
+        turnedSkipped: countValidMoves === 0,
+        msg:
+            countValidMoves === 0
+                ? "Skip turn because no valid moves"
+                : "Dice rolled successfully",
+    };
 };
 
 const submitMove = (
@@ -107,34 +129,6 @@ const submitMove = (
     }
 
     let newMatchState = moveOnToNextRound(addMove(state, move));
-    return newMatchState;
-};
-
-const skipTurn = (state: MatchState, userId: string): MatchState => {
-    const { players, gameState, status } = state;
-    const { turn, roundNumber, rounds } = gameState;
-
-    let isPlayer = players.some((p) => p.userId === userId);
-    let isPlaying = status === "PLAYING";
-    let isPlayerTurn = players[turn].userId === userId;
-    if (!isPlayer) {
-        throw new Error(NOT_A_PLAYER_MSG);
-    }
-    if (!isPlaying) {
-        throw new Error(GAME_NOT_STARTED_MSG);
-    }
-    if (!isPlayerTurn) {
-        throw new Error(NOT_YOUR_TURN_MSG);
-    }
-
-    let newMatchState = { ...state };
-    let prevPlayerSkipMove = roundNumber >= 2 && !rounds[roundNumber - 2].move;
-
-    if (prevPlayerSkipMove) {
-        newMatchState = endMatch(newMatchState);
-    } else {
-        newMatchState = moveOnToNextRound(newMatchState);
-    }
     return newMatchState;
 };
 
@@ -177,18 +171,15 @@ export class DiceTerritoryEngine implements IGameEngine<
             switch (action.type) {
                 case "ROLL_DICE": {
                     const { userId } = action;
-                    data = {};
-                    [newState, data.diceNumber] = rollDice(state, userId);
+                    const { updatedState, diceNumber, turnedSkipped, msg } =
+                        rollDice(state, userId);
+                    newState = updatedState;
+                    data = { diceNumber, turnedSkipped, msg };
                     break;
                 }
                 case "MOVE": {
                     const { move, userId } = action;
                     newState = submitMove(state, userId, move);
-                    break;
-                }
-                case "SKIP_TURN": {
-                    const { userId } = action;
-                    newState = skipTurn(state, userId);
                     break;
                 }
             }

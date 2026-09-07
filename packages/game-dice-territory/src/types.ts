@@ -31,4 +31,3 @@ export type DiceTerritoryEndState = EndState<DiceTerritoryEndReason>;
 export type DiceTerritoryAction =
     | { type: "ROLL_DICE"; userId: string }
     | { type: "MOVE"; userId: string; move: Move }
-    | { type: "SKIP_TURN"; userId: string };

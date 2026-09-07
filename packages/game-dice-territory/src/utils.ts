@@ -37,6 +37,21 @@ export const moveOnToNextRound = (state: MatchState): MatchState => {
     return { ...state, gameState: newGameState };
 };
 
+export const skipTurn = (state: MatchState): MatchState => {
+    const { gameState } = state;
+    const { roundNumber, rounds } = gameState;
+
+    let newMatchState = { ...state };
+    let prevPlayerSkipMove = roundNumber >= 2 && !rounds[roundNumber - 2].move;
+
+    if (prevPlayerSkipMove) {
+        newMatchState = endMatch(newMatchState);
+    } else {
+        newMatchState = moveOnToNextRound(newMatchState);
+    }
+    return newMatchState;
+};
+
 export const endMatch = (matchState: MatchState): MatchState => {
     const { gameState, players } = matchState;
     const { rounds } = gameState;
