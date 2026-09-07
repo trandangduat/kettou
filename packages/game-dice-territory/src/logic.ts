@@ -1,63 +1,5 @@
-import { MatchState, Move, Round } from "./types.js";
-
-export type PrefixSumMatrix = number[][];
-
-export type CreatePrefixSumMatrixParams = {
-    boardWidth: number;
-    boardHeight: number;
-    sourceMatrix: number[][];
-};
-
-export const createPrefixSumMatrix = ({
-    boardWidth,
-    boardHeight,
-    sourceMatrix,
-}: CreatePrefixSumMatrixParams): PrefixSumMatrix => {
-    const prefixSumMatrix: PrefixSumMatrix = Array.from(
-        { length: boardHeight + 2 },
-        () => Array(boardWidth + 2).fill(0),
-    );
-
-    for (let row = 0; row <= boardHeight + 1; row++) {
-        for (let col = 0; col <= boardWidth + 1; col++) {
-            prefixSumMatrix[row][col] +=
-                row > 0 ? prefixSumMatrix[row - 1][col] : 0;
-            prefixSumMatrix[row][col] +=
-                col > 0 ? prefixSumMatrix[row][col - 1] : 0;
-            prefixSumMatrix[row][col] -=
-                row > 0 && col > 0 ? prefixSumMatrix[row - 1][col - 1] : 0;
-            prefixSumMatrix[row][col] += sourceMatrix[row][col];
-        }
-    }
-
-    return prefixSumMatrix;
-};
-
-export type GetRectangleSumParams = {
-    prefixSumMatrix: PrefixSumMatrix;
-    topRow: number;
-    leftCol: number;
-    bottomRow: number;
-    rightCol: number;
-};
-
-export const getRectangleSum = ({
-    prefixSumMatrix,
-    topRow,
-    leftCol,
-    bottomRow,
-    rightCol,
-}: GetRectangleSumParams): number => {
-    let result = prefixSumMatrix[bottomRow][rightCol];
-    result -= topRow > 0 ? prefixSumMatrix[topRow - 1][rightCol] : 0;
-    result -= leftCol > 0 ? prefixSumMatrix[bottomRow][leftCol - 1] : 0;
-    result +=
-        topRow > 0 && leftCol > 0
-            ? prefixSumMatrix[topRow - 1][leftCol - 1]
-            : 0;
-
-    return result;
-};
+import { MatchState, Move } from "./types.js";
+import { createPrefixSumMatrix, getRectangleSum, PrefixSumMatrix } from "./utils.js";
 
 export type IsValidSquareMoveParams = {
     boardWidth: number;
@@ -217,4 +159,86 @@ export const calculateBoards = (
         isAValidMove,
         countValidMoves
     };
+};
+
+export const validateMove = (
+    match: MatchState,
+    playerId: string,
+    move: Move,
+): boolean => {
+    const { gameState } = match;
+    const { rounds } = gameState;
+
+    const W = 8;
+    const H = 8;
+    const board: number[][] = Array.from({ length: H + 2 }, () =>
+        Array(W + 2).fill(0),
+    );
+    let sumBoard: number[][] = Array.from({ length: H + 2 }, () =>
+        Array(W + 2).fill(0),
+    );
+    let sumBoardMine: number[][] = Array.from({ length: H + 2 }, () =>
+        Array(W + 2).fill(0),
+    );
+
+    let moves: Record<string, (Move | null)[]> = {
+        yours: [],
+        enemys: [],
+    };
+
+    if (rounds) {
+        moves = {
+            mine: rounds
+                .filter((round) => round.playerId === playerId)
+                .map((round) => round.move),
+            enemys: rounds
+                .filter((round) => round.playerId !== playerId)
+                .map((round) => round.move),
+        };
+        // putting the square in the bottom edge of the board is always valid
+        for (let j = 1; j <= W; j++) board[0][j] = 1;
+
+        for (const move of moves?.mine) {
+            if (!move) continue;
+            let { r, c, len: len } = move;
+            for (let i = r; i <= r + len - 1; i++) {
+                for (let j = c; j <= c + len - 1; j++) {
+                    board[i][j] = 1;
+                }
+            }
+        }
+        sumBoardMine = createPrefixSumMatrix({
+            boardWidth: W,
+            boardHeight: H,
+            sourceMatrix: board,
+        });
+        for (const move of moves?.enemys) {
+            if (!move) continue;
+            let { r, c, len } = move;
+            r = H - r + 1;
+            c = W - c + 1;
+            for (let i = r; i >= r - len + 1; i--) {
+                for (let j = c; j >= c - len + 1; j--) {
+                    board[i][j] = 2;
+                }
+            }
+        }
+        sumBoard = createPrefixSumMatrix({
+            boardWidth: W,
+            boardHeight: H,
+            sourceMatrix: board,
+        });
+    }
+
+    const { r, c, len: myDiceNumber } = move;
+
+    return isValidSquareMove({
+        boardWidth: W,
+        boardHeight: H,
+        row: r,
+        col: c,
+        squareSize: myDiceNumber,
+        occupiedCellsPrefixSum: sumBoard,
+        ownCellsPrefixSum: sumBoardMine,
+    });
 };

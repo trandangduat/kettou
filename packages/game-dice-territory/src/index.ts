@@ -9,27 +9,18 @@ import {
 } from "./types.js";
 import {
     ActionResult,
-    EndState,
     GAME_NOT_STARTED_MSG,
     IGameEngine,
     INVALID_ACTION_MSG,
     Match,
-    MatchStatus,
     MatchType,
     newMatch,
     NOT_A_PLAYER_MSG,
     NOT_YOUR_TURN_MSG,
-    Player,
-    updatePlayerStatus,
 } from "@mini-games/core";
-import {
-    addMove,
-    getRandomNumber,
-    moveOnToNextRound,
-    skipTurn,
-    validateMove,
-} from "./utils.js";
-import { calculateBoards } from "./logic.js";
+import { getRandomNumber, } from "./utils.js";
+import { calculateBoards, validateMove } from "./logic.js";
+import { skipTurn, moveOnToNextRound, addMove } from "./state.js";
 
 export const gameDefinition = {
     id: "dice-territory",
@@ -206,5 +197,6 @@ export class DiceTerritoryEngine implements IGameEngine<
 }
 
 export * from "./types.js";
+export * from "./state.js";
 export * from "./logic.js";
 export * from "./utils.js";
