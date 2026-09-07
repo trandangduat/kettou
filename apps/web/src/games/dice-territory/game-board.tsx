@@ -1,6 +1,8 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { socket } from "#/socket";
 import {
+    BOARD_HEIGHT,
+    BOARD_WIDTH,
     calculateBoards,
     DiceTerritoryEngine,
     type DiceTerritoryAction,
@@ -29,8 +31,8 @@ export function GameBoard({
         c: 0,
         len: -1,
     });
-    const W = 8;
-    const H = 8;
+    const W = BOARD_WIDTH;
+    const H = BOARD_HEIGHT;
     const { board, isAValidMove } = useMemo(
         () => calculateBoards(W, H, match, user.id, myDiceNumber),
         [match, myDiceNumber],

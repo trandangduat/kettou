@@ -4,6 +4,7 @@ import {
     getRectangleSum,
     PrefixSumMatrix,
 } from "./utils.js";
+import { BOARD_WIDTH, BOARD_HEIGHT } from "./constants.js";
 
 export type IsValidSquareMoveParams = {
     boardWidth: number;
@@ -75,8 +76,8 @@ export const isValidSquareMove = ({
 
 // calculate essential game boards in playerId's perspective after rolling the dice
 export const calculateBoards = (
-    W: number,
-    H: number,
+    W: number = BOARD_WIDTH,
+    H: number = BOARD_HEIGHT,
     state: MatchState,
     playerId: string,
     diceNumber: number,
@@ -170,6 +171,12 @@ export const validateMove = (
     playerId: string,
     move: Move,
 ): boolean => {
-    const { isAValidMove } = calculateBoards(8, 8, match, playerId, move.len);
+    const { isAValidMove } = calculateBoards(
+        BOARD_WIDTH,
+        BOARD_HEIGHT,
+        match,
+        playerId,
+        move.len,
+    );
     return isAValidMove[move.r]?.[move.c] ?? false;
 };

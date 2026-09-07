@@ -21,6 +21,7 @@ import {
 import { getRandomNumber, } from "./utils.js";
 import { calculateBoards, validateMove } from "./logic.js";
 import { skipTurn, moveOnToNextRound, addMove } from "./state.js";
+import { BOARD_WIDTH, BOARD_HEIGHT } from "./constants.js";
 
 export const gameDefinition = {
     id: "dice-territory",
@@ -64,8 +65,8 @@ const rollDice = (state: MatchState, userId: string): any => {
         },
     };
     const { countValidMoves } = calculateBoards(
-        8,
-        8,
+        BOARD_WIDTH,
+        BOARD_HEIGHT,
         newState,
         userId,
         newDiceNumber,
@@ -200,3 +201,4 @@ export * from "./types.js";
 export * from "./state.js";
 export * from "./logic.js";
 export * from "./utils.js";
+export * from "./constants.js";
