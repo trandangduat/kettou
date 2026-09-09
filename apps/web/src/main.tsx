@@ -3,7 +3,6 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { setUpGameEngines } from "./games";
-import { Toaster } from "react-hot-toast";
 
 const queryClient = new QueryClient();
 
@@ -35,25 +34,6 @@ if (!rootElement.innerHTML) {
     root.render(
         <QueryClientProvider client={queryClient}>
             <InnerApp />
-            <Toaster
-                position="top-center"
-                toastOptions={{
-                    className:
-                        "!bg-card !border !text-card-foreground !p-4 !px-5 !rounded-xl lowercase",
-                    success: {
-                        iconTheme: {
-                            primary: "oklch(59.6% 0.145 163.225)",
-                            secondary: "white",
-                        },
-                    },
-                    error: {
-                        iconTheme: {
-                            primary: "oklch(0.704 0.191 22.216)",
-                            secondary: "white",
-                        },
-                    },
-                }}
-            />
         </QueryClientProvider>,
     );
 }
