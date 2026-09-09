@@ -119,7 +119,7 @@ export const createMatch = async ({
     return match;
 };
 
-export const getAllMatchesInLobby = async (gameId: string): Promise<MatchSummary[]> => {
+export const getMatchesSummaryInLobby = async (gameId: string): Promise<MatchSummary[]> => {
     const lobbyKey = getLobbyKey(gameId);
     const matchesId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
     const matchSummaryKeys = matchesId.map(id => getMatchSummaryKey(id));
