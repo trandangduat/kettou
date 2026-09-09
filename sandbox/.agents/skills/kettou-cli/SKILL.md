@@ -119,37 +119,45 @@ description: Use when user wants to play a duel (1v1) game with you.
 ```
 
 # Interactive Flow 
-Run commands with `./kettou`.
 You MUST NOT inspect any of the code inside this directory and its parents.
 
+## Runtime Protocol
+
+- Treat `/tmp/kettoud.log` as an event stream. Keep a persistent `lastReadLine` cursor: read existing lines once, then only read and process new lines in order. If the log is binary, use an incremental byte cursor preserving complete newline-delimited records; never reread the full log or run full-file `strings` on each poll.
+- Read the log immediately after daemon startup and every CLI action. While waiting, wait exactly 3 seconds between incremental reads. Never use a longer sleep, `tail -f`, or an arbitrary maximum wait; continue until `ENDED`, the user leaves/stops, or the daemon fails. A shell/tool timeout is not a game timeout.
+- Report meaningful events such as joins, readiness, turn changes, skips, actions, and completion; do not report empty polls.
+- In Dice Territory, `move: null` is ambiguous: after `ROLL_DICE` it can mean the rolled move is still awaiting placement, not that the turn was skipped. Treat it as skipped only when the action acknowledgement reports a skip or a subsequent state update advances the turn/round without a move. If the same player's turn remains active after a roll, choose and submit `MOVE` before rolling again.
+
 ### Daemon
-Remove all running daemon processes:
+Run daemon cleanup as a separate command/tool call. Never combine it with daemon startup, because `pkill -f kettou` can match the shell command that is about to start the daemon:
 ```bash
 pkill -f kettou
 ```
 
-Start the daemon in the background (required to connect to game server and receive game updates):
+Immediately start the daemon in the background (required to connect to game server and receive game updates):
 ```bash
-./kettou daemon start > /tmp/kettoud.log 2>&1 &
+nohup ./kettou daemon start </dev/null > /tmp/kettoud.log 2>&1 &
 ```
-You must always watch the daemon logs to receive real-time updates and act accordingly. For example, after creating a match, new player join -> new log -> use CLI to start the match.
+
+Read `/tmp/kettoud.log` immediately after startup. Once `Daemon started` is present, proceed with match creation or joining; do not wait for an arbitrary additional startup period. Always continue watching the daemon log and act on events. For example, after creating a match, a `READY` update means a player joined and the host should start the match immediately.
 
 ### Match
 
-To create a new match, use:
+If the user asked to create a new match, use:
 ```bash
 ./kettou create-match --gameId $gameId
 ```
 Replace `$gameId` with the ID of the game you want to play. Refer to `Games Catalog` for available game IDs.
 After creating a match, display the match ID to the user in a ASCII box so they can join.
-You must keep watching the daemon log to know whether a new player joins.
 
-To join an existing match, use:
+Do not wait for the second player before displaying the match ID. Continue the fixed 3-second log polling loop while the match is `WAITING`.
+
+If the user asked to join an existing match, use:
 ```bash
 ./kettou match join --matchId $matchId
 ```
 
-To start a match (only if you are the host), use:
+To start a match if you are the host, use:
 ```bash
 ./kettou match start --matchId $matchId
 ```
@@ -159,6 +167,8 @@ To take an action, use:
 ./kettou match action --matchId $matchId --action '<action_json>'
 ```
 For available actions for each game, refer to the `Games Catalog`.
+
+After each action, read the daemon log immediately, then continue polling it every 3 seconds. When the log reports that it is this agent's turn, act without an extra backoff. When it reports `ENDED`, announce the result and stop polling that match.
 
 To leave a match, use:
 ```bash
