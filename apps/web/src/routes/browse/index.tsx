@@ -32,7 +32,9 @@ type Match = {
 };
 
 function RouteComponent() {
-    const { data: games, isLoading: isLoadingGames } = useQuery(getAllGamesQueryOptions);
+    const { data: games, isLoading: isLoadingGames } = useQuery(
+        getAllGamesQueryOptions,
+    );
 
     const [selectedGame, setSelectedGame] = useState<Game>();
     const [matches, setMatches] = useState<Match[]>([]);
@@ -81,7 +83,6 @@ function RouteComponent() {
 
     useEffect(() => {
         if (currentGame) {
-            console.log("current game", currentGame);
             socket.emit("lobby:join", currentGame.id);
         }
 
@@ -219,7 +220,11 @@ function RoomItem({ match }: { match: Match }) {
                 <div className="flex flex-row gap-4 justify-center text-xs">
                     {Array.from({ length: 2 }).map((_, i) => (
                         <PlayerSlot
-                            key={players?.[i] ? players[i].userId : `empty-slot-${i}`}
+                            key={
+                                players?.[i]
+                                    ? players[i].userId
+                                    : `empty-slot-${i}`
+                            }
                             player={players?.[i]}
                         />
                     ))}

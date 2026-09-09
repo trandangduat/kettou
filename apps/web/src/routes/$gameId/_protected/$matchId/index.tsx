@@ -230,15 +230,13 @@ function Sidebar({
                 if (!ok) {
                     toast.error(error!);
                 }
+                if (canGoBack) {
+                    router.history.back();
+                } else {
+                    router.navigate({ to: "/" });
+                }
             },
         );
-        setTimeout(() => {
-            if (canGoBack) {
-                router.history.back();
-            } else {
-                router.navigate({ to: "/" });
-            }
-        }, 500);
     };
 
     return (

@@ -171,9 +171,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
 
         match = removePlayerFromMatch(match, userId);
         const { gameId, players } = match;
-
         const lobbyKey = getLobbyRoomKey(gameId);
-
         if (players.length > 0) {
             io.to(lobbyKey).emit(
                 "lobby:match-updated",
