@@ -53,11 +53,8 @@ export const setUpSocket = (io: Server) => {
         try {
             const { userId } = socket.data;
             const currentMatch = await getUserCurrentMatch(userId);
-            console.log("%%%%%%%%% backend currentMatch", currentMatch);
             if (!currentMatch) return next();
-
-            const { gameId, matchId } = currentMatch;
-            socket.emit("current-match-updated", gameId, matchId);
+            socket.emit("current-match:updated", currentMatch);
 
             next();
         } catch (err) {

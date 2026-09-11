@@ -75,7 +75,6 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         }
 
         let { gameId, players } = match;
-        let lobbyKey = getLobbyRoomKey(gameId);
         let player = players.find((p) => p.userId === userId);
 
         if (player) {
@@ -92,13 +91,20 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
                 avatarUrls: user.avatarUrls,
             };
             match = addPlayerToMatch(match, newPlayer);
-            io.to(lobbyKey).emit(
+
+            let lobbyRoom = getLobbyRoomKey(gameId);
+            let userRoom = getUserRoomKey(userId);
+            io.to(lobbyRoom).emit(
                 "lobby:match-updated",
                 summarizeMatchState(match),
             );
+            await saveUserCurrentMatch(userId, gameId, matchId);
+            io.to(userRoom).emit(
+                "current-match:updated",
+                await getUserCurrentMatch(userId)
+            )
         }
 
-        await saveUserCurrentMatch(userId, gameId, matchId);
         await addMatchPlayerSocket(matchId, userId, socket.id);
         await saveAndBroadcastMatchState({ io, match });
     };
@@ -150,12 +156,10 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             saveEndedMatchToDb({ match, endedAt: Date.now() });
         }
         await saveAndBroadcastMatchState({ io, match });
-        console.log("res data", res)
         return { data: res.data };
     };
 
     const leaveMatch = async (matchId: string) => {
-        console.log("LEAVE MATCH");
         const { userId } = socket.data;
         let match = await getMatchState({ matchId });
         if (!match) {
@@ -168,7 +172,6 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
 
         await removeMatchPlayerSocket(matchId, userId, socket.id);
         await clearUserCurrentMatch(userId);
-
         match = removePlayerFromMatch(match, userId);
         const { gameId, players } = match;
         const lobbyKey = getLobbyRoomKey(gameId);

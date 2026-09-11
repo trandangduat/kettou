@@ -1,4 +1,8 @@
-import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
+import {
+    Link,
+    Outlet,
+    createRootRouteWithContext,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
@@ -6,6 +10,8 @@ import type { QueryClient } from "@tanstack/react-query";
 import "../styles.css";
 import { NavBar } from "./-components/navbar";
 import { Toaster } from "react-hot-toast";
+import { useEffect, useState } from "react";
+import { socket } from "#/socket";
 
 interface RootRouterContext {
     queryClient: QueryClient;
@@ -16,6 +22,22 @@ export const Route = createRootRouteWithContext<RootRouterContext>()({
 });
 
 function RootComponent() {
+    const [currentMatchInfo, setCurrentMatchInfo] = useState<{
+        gameId: string;
+        matchId: string;
+    } | null>(null);
+
+    useEffect(() => {
+        socket.on(
+            "current-match:updated",
+            (data: { gameId: string; matchId: string } | null) => {
+                setCurrentMatchInfo(data);
+            },
+        );
+        return () => {
+            socket.off("current-match:updated");
+        };
+    }, []);
     return (
         <>
             <NavBar />
@@ -41,6 +63,25 @@ function RootComponent() {
                     },
                 }}
             />
+            {currentMatchInfo && (
+                <div className="bg-card p-4 fixed right-0 bottom-0 m-15 rounded-lg">
+                    <p>You are currently in a match.</p>
+                    <p>
+                        Click{" "}
+                        <Link
+                            className="text-primary hover:underline"
+                            to="/$gameId/$matchId"
+                            params={{
+                                gameId: currentMatchInfo.gameId,
+                                matchId: currentMatchInfo.matchId,
+                            }}
+                        >
+                            here
+                        </Link>{" "}
+                        to go to the match.
+                    </p>
+                </div>
+            )}
             <TanStackDevtools
                 config={{
                     position: "bottom-right",

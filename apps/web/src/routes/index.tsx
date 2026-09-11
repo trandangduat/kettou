@@ -18,10 +18,6 @@ function Home() {
     const [isInMm, setIsInMm] = useState<boolean>(false);
     const [mmTimer, setMmTimer] = useState<number>(0);
     const [selectedGames, setSelectedGames] = useState<string[]>([]);
-    const [currentMatch, setCurrentMatch] = useState<{
-        gameId: string;
-        matchId: string;
-    } | null>(null);
 
     const intervalId = useRef<ReturnType<typeof setInterval>>(null);
     const { data: games, isLoading: isLoadingGames } = useQuery(getAllGamesQueryOptions);
@@ -69,18 +65,6 @@ function Home() {
                 });
             },
         );
-
-        socket.on(
-            "current-match-updated",
-            (gameId: string, matchId: string) => {
-                console.log("$$$$$$$$$current-match-updated", gameId, matchId);
-                setCurrentMatch({
-                    gameId: gameId,
-                    matchId: matchId,
-                });
-            },
-        );
-
         // TODO: clean up socket listeners
     }, []);
 
@@ -120,21 +104,6 @@ function Home() {
                 isLoadingGames={isLoadingGames}
                 isInMm={isInMm}
             />
-            {currentMatch && (
-                <div className="bg-yellow-200">
-                    You are currently in a match:{" "}
-                    <Link
-                        className="text-blue-500 hover:underline"
-                        to={`/$gameId/$matchId`}
-                        params={{
-                            gameId: currentMatch.gameId,
-                            matchId: currentMatch.matchId,
-                        }}
-                    >
-                        {currentMatch.matchId}
-                    </Link>
-                </div>
-            )}
         </div>
     );
 }
