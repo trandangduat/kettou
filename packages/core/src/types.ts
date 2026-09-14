@@ -20,7 +20,7 @@ export interface EndState<TEndReason extends string = string> {
     scores?: Record<string, number>;
 }
 
-export type CommonEndReason = "FORFEIT" | "PLAYER_DISCONNECTED";
+export type CommonEndReason = "PLAYER_ABANDONED";
 
 export interface Match<TGameState> {
     id: string;

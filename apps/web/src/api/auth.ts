@@ -14,8 +14,6 @@ export const fetchMe = async () => {
         avatarUrls: UserAvatar;
     } = await res.json();
 
-    console.log("USER", user);
-
     return user;
 };
 

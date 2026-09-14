@@ -6,27 +6,31 @@ import {
     sanitizeMatchStateForClient,
     Player,
     updatePlayerStatus,
-    endGameByDisconnect,
     NOT_HOST_MSG,
+    abandonMatch,
+    updateReadyStatus,
 } from "@mini-games/core";
 import {
-    addMatchPlayerSocket,
     clearUserCurrentMatch,
     createMatch,
     deleteMatch,
-    getMatchPlayerSockets,
     getMatchState,
     getUserCurrentMatch,
-    removeMatchPlayerSocket,
     saveEndedMatchToDb,
     saveMatchToDb,
     saveUserCurrentMatch,
-    setMatchState,
+    saveMatchState,
     summarizeMatchState,
 } from "../services/matches.services.js";
 import type { SocketHandlerContext } from "./types.js";
 import { Server } from "socket.io";
-import { getLobbyRoomKey, getUserRoomKey, handleEvent } from "./utils.js";
+import {
+    debugRooms,
+    getLobbyRoom,
+    getMatchUserRoom,
+    getUserRoom,
+    handleEvent,
+} from "./utils.js";
 import { getUserById } from "../services/auth.services.js";
 import { getUserEloOfGame } from "../services/games.services.js";
 import { DISCONNECT_TIMEOUT } from "../config.js";
@@ -36,28 +40,28 @@ const NOT_A_PLAYER_MSG =
 
 const disconnectTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
-export const saveAndBroadcastMatchState = async ({
-    io,
-    match,
-}: {
-    io: Server;
-    match: Match<any>;
-}) => {
-    const { id: matchId, players } = match;
-    for (const { userId } of players) {
-        // convert the match state to the client's perspective
-        // so that the client only sees their own state, not the state of all players
-        const matchForUser = sanitizeMatchStateForClient(match, userId);
-        io.to(getUserRoomKey(userId)).emit("match:updated", matchForUser);
-    }
-    await setMatchState({ matchId, matchState: match });
-};
-
 export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
+    const saveAndBroadcastMatchState = async (match: Match<any>) => {
+        const { id: matchId, players } = match;
+
+        await saveMatchState(match);
+
+        for (const { userId } of players) {
+            // convert the match state to the client's perspective
+            // so that the client only sees their own state, not the state of all players
+            const matchForUser = sanitizeMatchStateForClient(match, userId);
+            io.to(getMatchUserRoom(matchId, userId)).emit(
+                "match:updated",
+                matchForUser,
+            );
+        }
+    };
+
     const createNewMatch = async ({ gameId, matchType }) => {
         console.log("CREATE NEW MATCH");
+
         const match = await createMatch({ gameId, matchType });
-        const lobbyKey = getLobbyRoomKey(gameId);
+        const lobbyKey = getLobbyRoom(gameId);
         io.to(lobbyKey).emit(
             "lobby:new-match-created",
             summarizeMatchState(match),
@@ -65,61 +69,90 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         return { matchId: match.id };
     };
 
+    const handleNewPlayerJoin = async (
+        match: Match<any>,
+        userId: string,
+    ): Promise<Match<any>> => {
+        let user = getUserById(userId);
+        let newPlayer: Player = {
+            userId: user.id,
+            status: "ONLINE",
+            avatarUrls: user.avatarUrls,
+            elo: getUserEloOfGame(userId, match.gameId),
+        };
+        match = addPlayerToMatch(match, newPlayer);
+
+        io.to(getLobbyRoom(match.gameId)).emit(
+            "lobby:match-updated",
+            summarizeMatchState(match),
+        );
+        socket.to(getUserRoom(userId)).emit("current-match:updated", {
+            gameId: match.gameId,
+            matchId: match.id,
+        });
+        await saveUserCurrentMatch(userId, match.gameId, match.id);
+
+        return match;
+    };
+
+    const handlePlayerReconnect = async (
+        match: Match<any>,
+        userId: string,
+    ): Promise<Match<any>> => {
+        // cancel abandon countdown
+        let timeout = disconnectTimeouts.get(userId);
+        if (timeout) {
+            clearTimeout(timeout);
+            disconnectTimeouts.delete(userId);
+        }
+
+        // update player status
+        match = updatePlayerStatus(match, userId, "ONLINE");
+        return match;
+    };
+
     const joinMatch = async (matchId: string) => {
         console.log("JOIN MATCH");
+
         const { userId } = socket.data;
-        let user = getUserById(userId);
         let match = await getMatchState({ matchId });
         if (!match) {
-            throw new Error("Match with ID " + matchId + " not found");
+            throw new Error(`Match #${matchId} not found`);
         }
 
-        let { gameId, players } = match;
-        let player = players.find((p) => p.userId === userId);
+        let isExistingPlayer = match.players.some((p) => p.userId === userId);
 
-        if (player) {
-            if (player.status === "OFFLINE") {
-                match = updatePlayerStatus(match, userId, "ONLINE");
-                clearTimeout(disconnectTimeouts.get(userId));
-                disconnectTimeouts.delete(userId);
-            }
+        if (!isExistingPlayer && match.players.length === 2) {
+            throw new Error(`Match #${matchId} is full`);
+        }
+
+        // leave the game lobby room
+        socket.leave(getLobbyRoom(match.gameId));
+        // join the match user room
+        socket.join(getMatchUserRoom(matchId, userId));
+
+        if (!isExistingPlayer) {
+            match = await handleNewPlayerJoin(match, userId);
         } else {
-            let newPlayer: Player = {
-                userId: user.id,
-                elo: getUserEloOfGame(userId, gameId),
-                status: "ONLINE",
-                avatarUrls: user.avatarUrls,
-            };
-            match = addPlayerToMatch(match, newPlayer);
-
-            let lobbyRoom = getLobbyRoomKey(gameId);
-            let userRoom = getUserRoomKey(userId);
-            io.to(lobbyRoom).emit(
-                "lobby:match-updated",
-                summarizeMatchState(match),
-            );
-            await saveUserCurrentMatch(userId, gameId, matchId);
-            io.to(userRoom).emit(
-                "current-match:updated",
-                await getUserCurrentMatch(userId)
-            )
+            match = await handlePlayerReconnect(match, userId);
         }
 
-        await addMatchPlayerSocket(matchId, userId, socket.id);
-        await saveAndBroadcastMatchState({ io, match });
+        await saveAndBroadcastMatchState(match);
+        debugRooms(io);
     };
 
     const startMatch = async (matchId: string) => {
         console.log("START MATCH: ", matchId);
-        const userId = socket.data.userId;
+
+        const { userId } = socket.data;
         let match = await getMatchState({ matchId });
         if (!match) {
-            throw new Error("Match with ID " + matchId + " not found");
+            throw new Error(`Match #${matchId} not found`);
         }
-        let { players, status, gameId } = match;
-        let isPlayer = players.some((p) => p.userId === userId);
-        let isHost = players[0].userId === userId;
-        let isReady = status === "READY";
+
+        let isPlayer = match.players.some((p) => p.userId === userId);
+        let isHost = match.players[0].userId === userId;
+        let isReady = match.status === "READY";
         if (!isPlayer) {
             throw new Error(NOT_A_PLAYER_MSG);
         }
@@ -129,62 +162,92 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         if (!isReady) {
             throw new Error("Match is not ready yet.");
         }
+
         const engine = GameRegistry.getEngine(match.gameId);
         match = engine.getInitialMatchState(match);
         match.status = "PLAYING";
 
         saveMatchToDb({ match, startedAt: Date.now() });
-        await saveAndBroadcastMatchState({ io, match });
+        await saveAndBroadcastMatchState(match);
     };
 
     const processAction = async ({ matchId, action }) => {
         console.log("PROCESS ACTION: ", action.type);
+
         action.userId = socket.data.userId;
         let match = await getMatchState({ matchId });
         if (!match) {
-            throw new Error("Match with ID " + matchId + " not found");
+            throw new Error(`Match #${matchId} not found`);
         }
 
         const engine = GameRegistry.getEngine(match.gameId);
         const res = engine.processAction(match, action);
         if (!res.isValid) {
-            throw res.error;
+            throw new Error(res.error);
         }
 
         match = res.newState;
         if (match.status === "ENDED") {
             saveEndedMatchToDb({ match, endedAt: Date.now() });
         }
-        await saveAndBroadcastMatchState({ io, match });
+
+        await saveAndBroadcastMatchState(match);
         return { data: res.data };
     };
 
     const leaveMatch = async (matchId: string) => {
+        console.log("LEAVE MATCH: ", matchId);
+
         const { userId } = socket.data;
         let match = await getMatchState({ matchId });
         if (!match) {
-            throw new Error("Match with ID " + matchId + " not found");
+            throw new Error(`Match #${matchId} not found`);
         }
+
         let isPlayer = match.players.some((p) => p.userId === userId);
         if (!isPlayer) {
             throw new Error(NOT_A_PLAYER_MSG);
         }
+        if (match.status !== "PLAYING") {
+            // remove player from match state and broadcast new match state
+            match = removePlayerFromMatch(match, userId);
+            await saveAndBroadcastMatchState(match);
 
-        await removeMatchPlayerSocket(matchId, userId, socket.id);
-        await clearUserCurrentMatch(userId);
-        match = removePlayerFromMatch(match, userId);
-        const { gameId, players } = match;
-        const lobbyKey = getLobbyRoomKey(gameId);
-        if (players.length > 0) {
-            io.to(lobbyKey).emit(
-                "lobby:match-updated",
-                summarizeMatchState(match),
-            );
-            await saveAndBroadcastMatchState({ io, match });
+            // broadcast to user's other clients in the match that the user has left
+            const matchUserRoom = getMatchUserRoom(matchId, userId);
+            socket.to(matchUserRoom).emit("user:left-match", matchId);
+            io.in(matchUserRoom).socketsLeave(matchUserRoom);
+
+            // broadcast to user's clients that the current match has updated
+            await clearUserCurrentMatch(userId);
+            const userRoom = getUserRoom(userId);
+            io.to(userRoom).emit("current-match:updated", null);
+
+            const lobbyKey = getLobbyRoom(match.gameId);
+            if (match.players.length > 0) {
+                io.to(lobbyKey).emit(
+                    "lobby:match-updated",
+                    summarizeMatchState(match),
+                );
+            } else {
+                io.to(lobbyKey).emit("lobby:match-deleted", matchId);
+                await deleteMatch({ matchId, gameId: match.gameId });
+            }
         } else {
-            io.to(lobbyKey).emit("lobby:match-deleted", matchId);
-            await deleteMatch({ matchId, gameId });
+            // end match because player abandoned
+            match = abandonMatch(match, userId);
+            await saveAndBroadcastMatchState(match);
+            saveEndedMatchToDb({ match, endedAt: Date.now() });
+
+            for (let player of match.players) {
+                const userRoom = getUserRoom(player.userId);
+                io.to(userRoom).emit("current-match:updated", null);
+
+                const matchUserRoom = getMatchUserRoom(matchId, player.userId);
+                io.in(matchUserRoom).socketsLeave(matchUserRoom);
+            }
         }
+        debugRooms(io);
     };
 
     const playerDisconnect = async () => {
@@ -194,34 +257,30 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             return;
         }
 
-        const { matchId: currMatchId } = currentMatch;
-        let match = await getMatchState({ matchId: currMatchId });
+        const { matchId } = currentMatch;
+        let match = await getMatchState({ matchId });
         if (!match) {
             return;
         }
 
-        await removeMatchPlayerSocket(currMatchId, userId, socket.id);
-        const matchPlayerSockets = await getMatchPlayerSockets(
-            currMatchId,
-            userId,
-        );
-        if (!matchPlayerSockets || !matchPlayerSockets.length) {
-            if (match.status !== "PLAYING") {
-                await leaveMatch(match.id);
-            } else {
-                match = updatePlayerStatus(match, userId, "OFFLINE");
-                await saveAndBroadcastMatchState({ io, match });
+        const playerClients = await io
+            .in(getMatchUserRoom(matchId, userId))
+            .fetchSockets();
 
-                const to = setTimeout(async () => {
-                    match = endGameByDisconnect(match, userId);
-                    saveEndedMatchToDb({ match, endedAt: Date.now() });
-                    await clearUserCurrentMatch(userId);
-                    await saveAndBroadcastMatchState({ io, match });
-                }, DISCONNECT_TIMEOUT);
-
-                disconnectTimeouts.set(userId, to);
-            }
+        if (playerClients.length) {
+            return;
         }
+
+        match = updatePlayerStatus(match, userId, "OFFLINE");
+        await saveAndBroadcastMatchState(match);
+
+        const tout = setTimeout(async () => {
+            console.log("🥀🥀🥀 Leave match because of abandon");
+            await leaveMatch(matchId);
+        }, DISCONNECT_TIMEOUT);
+
+        disconnectTimeouts.set(userId, tout);
+        debugRooms(io);
     };
 
     socket.on("match:create", handleEvent(createNewMatch));

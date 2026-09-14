@@ -1,5 +1,7 @@
-export const getUserRoomKey = (userId: string) => `user:${userId}`;
-export const getLobbyRoomKey = (gameId: string) => `lobby:${gameId}`;
+export const getUserRoom = (userId: string) => `user:${userId}`;
+export const getLobbyRoom = (gameId: string) => `lobby:${gameId}`;
+// this room contains all user's clients in the match
+export const getMatchUserRoom = (matchId: string, userId: string) => `match:${matchId}:user:${userId}`;
 
 export const handleEvent = (handlerFunc: any) => {
     return async (...args: any[]) => {
@@ -22,4 +24,13 @@ export const handleEvent = (handlerFunc: any) => {
             }
         }
     };
+};
+
+export const debugRooms = (io: any) => {
+    const rooms = io.sockets.adapter.rooms;
+    const sids = io.sockets.adapter.sids;
+    const activeRooms = Array.from(rooms.entries()).filter(
+        (r) => !sids.has(r[0]),
+    );
+    console.log("👉 Current socket rooms:", activeRooms);
 };

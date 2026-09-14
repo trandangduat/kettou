@@ -9,9 +9,9 @@ import {
 } from "../services/matchmaking.services.js";
 import {
     createMatch,
-    setMatchState,
+    saveMatchState,
 } from "../services/matches.services.js";
-import { getUserRoomKey, handleEvent } from "./utils.js";
+import { getUserRoom, handleEvent } from "./utils.js";
 import { getUserEloOfGames } from "../services/games.services.js";
 import { MATCHMAKING_DEBOUNCE } from "../config.js";
 import { addPlayerToMatch } from "@mini-games/core";
@@ -28,10 +28,10 @@ const processMatchmakingQueue = async (io: Server) => {
         match = addPlayerToMatch(match, player1);
         match = addPlayerToMatch(match, player2);
 
-        await setMatchState({ matchId: match.id, matchState: match });
+        await saveMatchState({ matchId: match.id, matchState: match });
 
-        io.to(getUserRoomKey(player1.userId)).emit("matchmaking:found", match.id, gameId);
-        io.to(getUserRoomKey(player2.userId)).emit("matchmaking:found", match.id, gameId);
+        io.to(getUserRoom(player1.userId)).emit("matchmaking:found", match.id, gameId);
+        io.to(getUserRoom(player2.userId)).emit("matchmaking:found", match.id, gameId);
     }
 
     await removePairsFromMmQueue(pairs);

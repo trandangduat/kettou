@@ -1,14 +1,15 @@
 import { EndState, Match, MatchType, Player, PlayerStatus } from "./types.js";
 import { GameRegistry } from "./index.js";
-import { customAlphabet } from 'nanoid';
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+import { customAlphabet } from "nanoid";
+const alphabet =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 export const generateId = (length: number): string => {
     return customAlphabet(alphabet, length)();
 };
 
 export const debugMatch = (m: any) => {
-    console.log("MATCH:", JSON.stringify(m, null, 2));
+    console.log("🤓 MATCH:", JSON.stringify(m, null, 2));
 };
 
 export const newMatch = (gameId: string, matchType: MatchType): Match<any> => {
@@ -19,14 +20,21 @@ export const newMatch = (gameId: string, matchType: MatchType): Match<any> => {
         status: "WAITING",
         players: [],
         gameState: null,
-        createdAt: Date.now()
+        createdAt: Date.now(),
     };
 };
 
 export const updateReadyStatus = (match: Match<any>): Match<any> => {
+    if (match.status === "PLAYING" || match.status === "ENDED") {
+        return match;
+    }
+
+    let ready =
+        match.players.length >= 2 &&
+        match.players.every((p) => p.status === "ONLINE");
     return {
         ...match,
-        status: match.players.length < 2 ? "WAITING" : "READY",
+        status: ready ? "READY" : "WAITING",
     };
 };
 
@@ -34,13 +42,9 @@ export const addPlayerToMatch = (
     match: Match<any>,
     player: Player,
 ): Match<any> => {
-    const isPlayer = match.players.find((p) => p.userId === player.userId);
-    if (isPlayer) {
-        return match;
-    }
     let newMatch: Match<any> = {
         ...match,
-        players: [...match.players, player],
+        players: [...match.players, { ...player }],
     };
     return updateReadyStatus(newMatch);
 };
@@ -49,13 +53,15 @@ export const removePlayerFromMatch = (
     match: Match<any>,
     userId: string,
 ): Match<any> => {
-    let newMatch = { ...match };
-    const { players } = newMatch;
-    const removedPlayerIndex = players.findIndex((p) => p.userId === userId);
+    const newPlayers = [...match.players];
+    const removedPlayerIndex = newPlayers.findIndex((p) => p.userId === userId);
     if (removedPlayerIndex >= 0) {
-        players.splice(removedPlayerIndex, 1);
+        newPlayers.splice(removedPlayerIndex, 1);
     }
-    return updateReadyStatus(newMatch);
+    return updateReadyStatus({
+        ...match,
+        players: newPlayers,
+    });
 };
 
 export const sanitizeMatchStateForClient = (
@@ -80,23 +86,21 @@ export const updatePlayerStatus = (
     const updatedPlayers = match.players.map((p) =>
         p.userId === userId ? { ...p, status } : p,
     );
-    return { ...match, players: updatedPlayers };
+    return updateReadyStatus({ ...match, players: updatedPlayers });
 };
 
-export const endGameByDisconnect = (
+export const abandonMatch = (
     match: Match<any>,
-    whoDisconnected: string
+    whoAbandoned: string,
 ): Match<any> => {
-    const { players } = match;
-
     let endState: EndState = {
-      winnerId: players.find(p => p.userId != whoDisconnected)?.userId,
-      reason: "PLAYER_DISCONNECTED",
-    }
+        winnerId: match.players.find((p) => p.userId != whoAbandoned)?.userId,
+        reason: "PLAYER_ABANDONED",
+    };
 
     return {
         ...match,
         status: "ENDED",
         endState,
-    }
-}
+    };
+};

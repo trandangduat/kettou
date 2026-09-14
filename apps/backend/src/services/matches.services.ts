@@ -1,7 +1,13 @@
 import db from "../db.js";
 import { getNewElo } from "../logics/elo.logic.js";
 import { redis } from "../redis.js";
-import { GameRegistry, Match, MatchStatus, MatchType, Player } from "@mini-games/core";
+import {
+    GameRegistry,
+    Match,
+    MatchStatus,
+    MatchType,
+    Player,
+} from "@mini-games/core";
 
 type MatchSummary = {
     id: string;
@@ -28,17 +34,13 @@ export const getUserCurrentMatchKey = (userId: string) => {
     return `user:${userId}:current-match`;
 };
 
-export const getMatchPlayerSocketsKey = (matchId: string, playerId: string) => {
-    return `sockets-list:match:${matchId}:player:${playerId}`;
-};
-
 export const summarizeMatchState = (match: Match<any>): MatchSummary => {
     return {
         id: match.id,
         gameId: match.gameId,
         players: match.players,
         status: match.status,
-        createdAt: match.createdAt
+        createdAt: match.createdAt,
     };
 };
 
@@ -54,20 +56,14 @@ export const getMatchState = async ({
     return JSON.parse(data.toString()) as Match<any>;
 };
 
-export const setMatchState = async ({
-    matchId,
-    matchState,
-}: {
-    matchId: string;
-    matchState: Match<any>;
-}) => {
-    const matchKey = getMatchKey(matchId);
-    const matchSummaryKey = getMatchSummaryKey(matchId);
-    await redis.set(matchKey, JSON.stringify(matchState));
-    if (matchState.status != 'PLAYING') {
+export const saveMatchState = async (match: Match<any>) => {
+    const matchKey = getMatchKey(match.id);
+    const matchSummaryKey = getMatchSummaryKey(match.id);
+    await redis.set(matchKey, JSON.stringify(match));
+    if (match.status != "PLAYING") {
         await redis.set(
             matchSummaryKey,
-            JSON.stringify(summarizeMatchState(matchState))
+            JSON.stringify(summarizeMatchState(match)),
         );
     }
 };
@@ -99,15 +95,15 @@ export const createMatch = async ({
     const gameEngine = GameRegistry.getEngine(gameId);
     const match = gameEngine.createNewMatchState(matchType);
 
-    const matchKey = getMatchKey(match.id);
-    const lobbyKey = getLobbyKey(gameId);
-
     const redisChain = redis.multi();
-    redisChain.set(matchKey, JSON.stringify(match));
+    redisChain.set(getMatchKey(match.id), JSON.stringify(match));
+
     if (matchType === "CUSTOM") {
-        const matchSummaryKey = getMatchSummaryKey(match.id);
-        redisChain.set(matchSummaryKey, JSON.stringify(summarizeMatchState(match)));
-        redisChain.zAdd(lobbyKey, [
+        redisChain.set(
+            getMatchSummaryKey(match.id),
+            JSON.stringify(summarizeMatchState(match)),
+        );
+        redisChain.zAdd(getLobbyKey(gameId), [
             {
                 score: match.createdAt,
                 value: match.id,
@@ -116,18 +112,21 @@ export const createMatch = async ({
     }
 
     await redisChain.exec();
+
     return match;
 };
 
-export const getMatchesSummaryInLobby = async (gameId: string): Promise<MatchSummary[]> => {
+export const getMatchesSummaryInLobby = async (
+    gameId: string,
+): Promise<MatchSummary[]> => {
     const lobbyKey = getLobbyKey(gameId);
     const matchesId = await redis.zRange(lobbyKey, 0, -1, { REV: true });
-    const matchSummaryKeys = matchesId.map(id => getMatchSummaryKey(id));
+    const matchSummaryKeys = matchesId.map((id) => getMatchSummaryKey(id));
     if (matchSummaryKeys.length === 0) {
         return [];
     }
     const result = await redis.mGet(matchSummaryKeys);
-    const matchSummaries = result.map(str => JSON.parse(str));
+    const matchSummaries = result.map((str) => JSON.parse(str));
     return matchSummaries;
 };
 
@@ -242,33 +241,4 @@ export const getUserCurrentMatch = async (
 export const clearUserCurrentMatch = async (userId: string) => {
     const key = getUserCurrentMatchKey(userId);
     await redis.del(key);
-};
-
-export const addMatchPlayerSocket = async (
-    matchId: string,
-    userId: string,
-    socketId: string,
-) => {
-    const key = getMatchPlayerSocketsKey(matchId, userId);
-    await redis.zAdd(key, {
-        score: Date.now(),
-        value: socketId,
-    });
-};
-
-export const removeMatchPlayerSocket = async (
-    matchId: string,
-    userId: string,
-    socketId: string,
-) => {
-    const key = getMatchPlayerSocketsKey(matchId, userId);
-    await redis.zRem(key, socketId);
-};
-
-export const getMatchPlayerSockets = async (
-    matchId: string,
-    userId: string,
-) => {
-    const key = getMatchPlayerSocketsKey(matchId, userId);
-    return await redis.zRange(key, 0, -1);
 };

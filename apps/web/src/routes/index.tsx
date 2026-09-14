@@ -2,7 +2,7 @@ import { getAllGamesQueryOptions } from "#/api/games";
 import { Button } from "#/components/ui/button";
 import { socket } from "#/socket";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import cn from "cnfast";
 import { useEffect, useRef, useState } from "react";
 import GamesCarousal from "./-components/games-carousal";

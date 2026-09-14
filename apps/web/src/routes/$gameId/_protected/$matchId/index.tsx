@@ -156,6 +156,7 @@ function OpponentInfo({ player }: { player?: Player }) {
                 <div className="flex flex-col items-end">
                     <p className="font-semibold text-lg">
                         {player ? player.userId : "waiting for player..."}
+                        ({player && player.status})
                     </p>
                     {player && (
                         <span className="flex flex-row text-sm items-center">
@@ -181,6 +182,7 @@ function YourInfo({ player }: { player?: Player }) {
                 <div className="flex flex-col">
                     <p className="font-semibold text-lg">
                         {player ? player.userId : "waiting for player..."}
+                        ({player && player.status})
                     </p>
                     {player?.elo && (
                         <span className="flex flex-row text-sm items-center">

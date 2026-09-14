@@ -8,7 +8,7 @@ import {
 import { jwtVerify } from "jose";
 import { JWT_SECRET } from "../config.js";
 import * as cookie from "cookie";
-import { getUserRoomKey } from "./utils.js";
+import { getUserRoom } from "./utils.js";
 import { getUserCurrentMatch } from "../services/matches.services.js";
 
 export const setUpSocket = (io: Server) => {
@@ -40,7 +40,7 @@ export const setUpSocket = (io: Server) => {
     io.use((socket, next) => {
         try {
             const { userId } = socket.data;
-            socket.join(getUserRoomKey(userId));
+            socket.join(getUserRoom(userId));
 
             next();
         } catch (err) {
