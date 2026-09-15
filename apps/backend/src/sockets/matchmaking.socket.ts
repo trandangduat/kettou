@@ -76,4 +76,5 @@ export const setUpMatchmakingSocket = ({
 
     socket.on("matchmaking:join", handleEvent(joinMatchmaking));
     socket.on("matchmaking:leave", handleEvent(leaveMatchmaking));
+    socket.on("disconnect", leaveMatchmaking);
 };
