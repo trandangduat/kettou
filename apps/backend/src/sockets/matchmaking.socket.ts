@@ -28,7 +28,7 @@ const processMatchmakingQueue = async (io: Server) => {
         match = addPlayerToMatch(match, player1);
         match = addPlayerToMatch(match, player2);
 
-        await saveMatchState({ matchId: match.id, matchState: match });
+        await saveMatchState(match);
 
         io.to(getUserRoom(player1.userId)).emit("matchmaking:found", match.id, gameId);
         io.to(getUserRoom(player2.userId)).emit("matchmaking:found", match.id, gameId);
