@@ -57,6 +57,21 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         }
     };
 
+    const handleEndedMatch = async (match: Match<any>) => {
+        saveEndedMatchToDb({ match, endedAt: Date.now() });
+
+        for (let player of match.players) {
+            io.to(getUserRoom(player.userId)).emit(
+                "current-match:updated",
+                null,
+            );
+            await clearUserCurrentMatch(player.userId);
+
+            const matchUserRoom = getMatchUserRoom(match.id, player.userId);
+            io.in(matchUserRoom).socketsLeave(matchUserRoom);
+        }
+    };
+
     const createNewMatch = async ({ gameId, matchType }) => {
         console.log("CREATE NEW MATCH");
 
@@ -187,11 +202,12 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         }
 
         match = res.newState;
+        await saveAndBroadcastMatchState(match);
+
         if (match.status === "ENDED") {
-            saveEndedMatchToDb({ match, endedAt: Date.now() });
+            await handleEndedMatch(match);
         }
 
-        await saveAndBroadcastMatchState(match);
         return { data: res.data };
     };
 
@@ -237,15 +253,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             // end match because player abandoned
             match = abandonMatch(match, userId);
             await saveAndBroadcastMatchState(match);
-            saveEndedMatchToDb({ match, endedAt: Date.now() });
-
-            for (let player of match.players) {
-                const userRoom = getUserRoom(player.userId);
-                io.to(userRoom).emit("current-match:updated", null);
-
-                const matchUserRoom = getMatchUserRoom(matchId, player.userId);
-                io.in(matchUserRoom).socketsLeave(matchUserRoom);
-            }
+            await handleEndedMatch(match);
         }
         debugRooms(io);
     };
