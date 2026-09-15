@@ -48,6 +48,7 @@ function RouteComponent() {
     let isHost = user.id === match?.players[0]?.userId;
     let wasMatchStarted =
         match?.status !== "WAITING" && match?.status !== "READY";
+    let router = useRouter();
 
     const MatchView = GameUI[gameId];
 
@@ -95,6 +96,10 @@ function RouteComponent() {
 
         socket.on("match:updated", (updatedMatch) => {
             setMatch(updatedMatch);
+        });
+        socket.on("user:left-match", () => {
+            toast.error("You have left the match.");
+            router.navigate({ to: "/browse" });
         });
 
         return () => {
