@@ -285,6 +285,7 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
         const tout = setTimeout(async () => {
             console.log("🥀🥀🥀 Leave match because of abandon");
             await leaveMatch(matchId);
+            delete disconnectTimeouts[userId];
         }, DISCONNECT_TIMEOUT);
 
         disconnectTimeouts.set(userId, tout);
