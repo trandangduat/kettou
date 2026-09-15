@@ -17,9 +17,14 @@ const config = defineConfig({
     server: {
         proxy: {
             "/api": {
-                target: "http://localhost:3000",
+                target: "http://localhost:1109",
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api/, ""),
+            },
+            "/socket.io": {
+                target: "http://localhost:1109",
+                ws: true,
+                rewriteWsOrigin: true,
             },
         },
     },

@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { BACKEND_PORT, WEB_ORIGIN } from "./config.js";
+import { ALLOWED_CLIENT_ORIGINS, BACKEND_PORT } from "./config.js";
 import { app } from "./app.js";
 import { setUpSocket } from "./sockets/index.js";
 import { setUpGameEngines } from "./games.js";
@@ -10,7 +10,7 @@ const io = new Server(httpServer, {
     pingInterval: 5000,
     pingTimeout: 3000,
     cors: {
-        origin: [WEB_ORIGIN],
+        origin: ALLOWED_CLIENT_ORIGINS,
         credentials: true
     },
 });

@@ -1,11 +1,16 @@
 import { io } from "socket.io-client";
-export const socket = io("http://localhost:3000", {
+
+export const socket = io({
     withCredentials: true,
-    autoConnect: false
+    autoConnect: false,
+    transports: ["websocket"],
+    reconnectionAttempts: 5,
+    reconnectionDelay: 3000,
+    timeout: 5000
 });
 
 socket.on("connect_error", (err) => {
-    console.error(err.message);
+    console.error("Socket connect_error:", err.message);
 });
 
 export const connectSocket = () => {
