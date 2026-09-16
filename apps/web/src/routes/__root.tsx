@@ -8,7 +8,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 
 import "../styles.css";
-import { NavBar } from "./-components/navbar";
+import { NavDock } from "./-components/nav-dock";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { socket } from "#/socket";
@@ -40,9 +40,13 @@ function RootComponent() {
     }, []);
     return (
         <>
-            <NavBar />
-            <div className="mt-26 max-w-7xl w-full mx-auto">
-                <Outlet />
+            <div className="flex flex-row h-screen overflow-hidden">
+                <NavDock />
+                <main className="flex-1 h-full overflow-y-auto px-8">
+                    <div className="max-w-7xl mx-auto w-full">
+                        <Outlet />
+                    </div>
+                </main>
             </div>
             <Toaster
                 position="top-center"
