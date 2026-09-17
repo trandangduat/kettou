@@ -135,9 +135,6 @@ function RouteComponent() {
                     onSearchChange={setSearchQuery}
                     onCreateMatch={() => handleCreateMatch(currentGame?.id)}
                 />
-
-                <Divider />
-
                 <RoomGrid
                     matches={filteredMatches}
                     searchQuery={searchQuery}
