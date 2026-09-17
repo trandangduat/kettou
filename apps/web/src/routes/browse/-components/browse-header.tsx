@@ -440,7 +440,8 @@ export function BrowseHeader({
                 {/* Create Match button */}
                 <Button
                     onClick={onCreateMatch}
-                    className="font-semibold gap-1.5 h-9 px-4 rounded-lg cursor-pointer"
+                    size="lg"
+                    className="cursor-pointer"
                 >
                     <PlusIcon className="size-4" weight="bold" />
                     <span>create match</span>

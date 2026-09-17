@@ -73,17 +73,20 @@ function Home() {
             <div className="flex justify-between items-center">
               <div className="flex gap-4 items-center justify-center">
                   <Button
-                      className={cn`text-lg lowercase p-6 rounded-full w-50`}
-                      variant={"secondary"}
+                      size="2xl"
+                      className="w-56"
+                      variant="secondary"
                   >
-                      <MagnifyingGlassIcon className="size-6" /> Browse Rooms
+                      <MagnifyingGlassIcon className="size-5" />
+                      <span>Browse Rooms</span>
                   </Button>
                   <Button
-                      className={cn`text-lg lowercase p-6 rounded-full w-50`}
-                      variant={"secondary"}
+                      size="2xl"
+                      className="w-56"
+                      variant="secondary"
                   >
-                      <SignInIcon className="size-6" /> Join
-                      Room
+                      <SignInIcon className="size-5" />
+                      <span>Join Room</span>
                   </Button>
               </div>
                 <div className="">
@@ -110,11 +113,13 @@ function Home() {
 
 function FindMatchButton({ findMatch }: { findMatch: () => void }) {
     return (
-        <Button onClick={findMatch} className="font-bold lowercase p-6 w-56">
-            <div className="w-full flex items-center justify-between">
-                <p className="text-2xl">Find match</p>
-                <SwordIcon className="size-6" weight="fill" />
-            </div>
+        <Button
+            onClick={findMatch}
+            size="2xl"
+            className="w-56 justify-between px-6"
+        >
+            <span>Find match</span>
+            <SwordIcon className="size-6" weight="fill" />
         </Button>
     );
 }
@@ -130,12 +135,11 @@ function CancelFindMatchButton({
         <Button
             onClick={cancelFindMatch}
             variant="secondary"
-            className="font-bold lowercase p-6 w-56"
+            size="2xl"
+            className="w-56 justify-between px-6"
         >
-            <div className="w-full flex items-center justify-between">
-                <p className="text-3xl">{mmTimer}</p>
-                <XIcon className="size-6" weight="fill" />
-            </div>
+            <span>{mmTimer}</span>
+            <XIcon className="size-6" weight="fill" />
         </Button>
     );
 }
