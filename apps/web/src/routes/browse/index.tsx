@@ -1,35 +1,20 @@
 import { getAllGamesQueryOptions, type Game } from "#/api/games";
-import { Button } from "#/components/ui/button";
 import { Divider } from "#/components/ui/divider";
-import { SignInIcon, ClockIcon } from "@phosphor-icons/react";
+import { socket } from "#/socket";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import cn from "cnfast";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import {
+    BrowseHeader,
+    GamesSidebar,
+    RoomGrid,
+    type Match,
+} from "./-components";
 
 export const Route = createFileRoute("/browse/")({
     component: RouteComponent,
 });
-
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useEffect, useState } from "react";
-import { socket } from "#/socket";
-import type { MatchStatus, Player } from "@mini-games/core";
-import { timeAgo } from "../../../utils";
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-} from "#/components/ui/card";
-import toast from "react-hot-toast";
-
-type Match = {
-    id: string;
-    gameId: string;
-    players: Player[];
-    status: MatchStatus;
-    createdAt: number;
-};
 
 function RouteComponent() {
     const { data: games, isLoading: isLoadingGames } = useQuery(
@@ -38,6 +23,7 @@ function RouteComponent() {
 
     const [selectedGame, setSelectedGame] = useState<Game>();
     const [matches, setMatches] = useState<Match[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
     const currentGame = selectedGame ?? games?.[0];
     const router = useRouter();
 
@@ -105,7 +91,7 @@ function RouteComponent() {
             });
         });
 
-        socket.on("lobby:matches-updated", (matchSummaries: any) => {
+        socket.on("lobby:matches-updated", (matchSummaries: Match[]) => {
             setMatches(matchSummaries);
         });
 
@@ -121,128 +107,43 @@ function RouteComponent() {
         return null;
     }
 
+    const filteredMatches = matches.filter((m) => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        const idMatches = m.id.toLowerCase().includes(q);
+        const playerMatches = m.players?.some((p) =>
+            p?.userId?.toLowerCase().includes(q),
+        );
+        return idMatches || playerMatches;
+    });
+
     return (
-        <div className="flex flex-row w-full">
-            <div className="flex-2 flex flex-col gap-4 p-4 pr-8">
-                <p className="uppercase text-xs tracking-wider">Games</p>
-                <div className="flex flex-col gap-4">
-                    {!isLoadingGames && games && (
-                        <>
-                            {games.map((game) => (
-                                <GameItem
-                                    key={game.id}
-                                    game={game}
-                                    isActive={currentGame?.id === game.id}
-                                    onClick={() => handleSelectGame(game)}
-                                />
-                            ))}
-                        </>
-                    )}
-                </div>
-            </div>
-            <div className="flex-8 w-full flex flex-col gap-8">
-                <div className="flex flex-col gap-4">
-                    <p className="lowercase text-2xl font-semibold tracking-tight">
-                        {currentGame?.name}
-                    </p>
-                    <div>
-                        <Button
-                            className="font-semibold text-lg"
-                            onClick={() => handleCreateMatch(currentGame?.id)}
-                        >
-                            + create match
-                        </Button>
-                    </div>
-                </div>
-                <Divider text="⎛⎝ ≽ > ⩊ < ≼ ⎠⎞" />
-                <div className="grid grid-cols-4 gap-8">
-                    {matches.map((match) => (
-                        <RoomItem match={match} key={match.id} />
-                    ))}
-                </div>
-            </div>
+        <div className="flex flex-row gap-8 w-full min-h-[calc(100dvh-4rem)]">
+            <GamesSidebar
+                games={games}
+                selectedGameId={currentGame?.id}
+                onSelectGame={handleSelectGame}
+            />
+
+            <Divider orientation="vertical" className="self-stretch" />
+
+            <main className="flex-1 flex flex-col gap-6 min-w-0">
+                <BrowseHeader
+                    gameName={currentGame?.name}
+                    roomCount={matches.length}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onCreateMatch={() => handleCreateMatch(currentGame?.id)}
+                />
+
+                <Divider />
+
+                <RoomGrid
+                    matches={filteredMatches}
+                    searchQuery={searchQuery}
+                    gameId={currentGame?.id}
+                />
+            </main>
         </div>
-    );
-}
-
-function GameItem({
-    game,
-    isActive,
-    onClick,
-}: {
-    game: Game;
-    isActive: boolean;
-    onClick: () => void;
-}) {
-    return (
-        <>
-            <div
-                className={cn(
-                    "lowercase flex flex-row justify-between items-center transition cursor-pointer text-shadow-2xs",
-                    isActive
-                        ? " text-primary"
-                        : "text-muted-foreground/67 hover:text-foreground",
-                )}
-                onClick={onClick}
-            >
-                <p className="font-semibold text-xl tracking-tight">
-                    {game.name}
-                </p>
-                <span>67</span>
-            </div>
-        </>
-    );
-}
-
-function PlayerSlot({ player }: { player?: Player }) {
-    return (
-        <div className="flex flex-col items-center gap-1">
-            <Avatar className="w-14 h-14">
-                {player ? (
-                    <AvatarImage src={player.avatarUrls?.small} />
-                ) : (
-                    <AvatarFallback>?</AvatarFallback>
-                )}
-            </Avatar>
-            {player ? player.userId : "empty"}
-        </div>
-    );
-}
-
-function RoomItem({ match }: { match: Match }) {
-    const { players } = match;
-    return (
-        <Card>
-            <CardHeader>
-                <p className="font-bold">match #{match.id}</p>
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-row gap-4 justify-center text-xs">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                        <PlayerSlot
-                            key={
-                                players?.[i]
-                                    ? players[i].userId
-                                    : `empty-slot-${i}`
-                            }
-                            player={players?.[i]}
-                        />
-                    ))}
-                </div>
-            </CardContent>
-            <CardFooter className="flex flex-row justify-between border-t">
-                <span className="text-muted-foreground text-sm flex flex-row gap-1 items-center">
-                    <ClockIcon className="size-4" />
-                    <p>{timeAgo(match.createdAt)}</p>
-                </span>
-                <Link
-                    to="/$gameId/$matchId"
-                    params={{ gameId: match.gameId, matchId: match.id }}
-                    className="font-bold flex gap-2 items-center transition hover:text-primary hover:underline"
-                >
-                    <p>join</p> <SignInIcon className="size-4" />
-                </Link>
-            </CardFooter>
-        </Card>
     );
 }

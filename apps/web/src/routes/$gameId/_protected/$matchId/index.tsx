@@ -209,7 +209,7 @@ function YourInfo({ player }: { player?: Player }) {
                     variant="secondary"
                     className="flex items-center gap-2 p-5 shadow-sm"
                 >
-                    <span className="flex h-4 w-4 items-center justify-center font-mono text-[20px] font-medium leading-none">
+                    <span className="flex h-4 w-4 items-center justify-center text-[20px] font-medium leading-none">
                         &frac12;
                     </span>
                     draw

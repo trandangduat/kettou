@@ -42,7 +42,7 @@ function RootComponent() {
         <>
             <div className="flex flex-row h-screen overflow-hidden">
                 <NavDock />
-                <main className="flex-1 h-full overflow-y-auto px-8">
+                <main className="flex-1 h-full overflow-y-auto px-8 py-8">
                     <div className="max-w-7xl mx-auto w-full">
                         <Outlet />
                     </div>
