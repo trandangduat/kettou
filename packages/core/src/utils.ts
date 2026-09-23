@@ -1,5 +1,5 @@
 import { EndState, Match, MatchType, Player, PlayerStatus } from "./types.js";
-import { GameRegistry } from "./index.js";
+import { DISCONNECT_TIMEOUT, GameRegistry } from "./index.js";
 import { customAlphabet } from "nanoid";
 const alphabet =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -82,9 +82,21 @@ export const updatePlayerStatus = (
     match: Match<any>,
     userId: string,
     status: PlayerStatus,
+    disconnectedAt?: number,
 ): Match<any> => {
-    const updatedPlayers = match.players.map((p) =>
-        p.userId === userId ? { ...p, status } : p,
+    let reconnectUntil: number | undefined;
+    if (status === "OFFLINE") {
+        reconnectUntil =
+            (disconnectedAt ? disconnectedAt : Date.now()) + DISCONNECT_TIMEOUT;
+    }
+    let updatedPlayers = match.players.map((p) =>
+        p.userId === userId
+            ? {
+                  ...p,
+                  status,
+                  reconnectUntil,
+              }
+            : p,
     );
     return updateReadyStatus({ ...match, players: updatedPlayers });
 };

@@ -35,6 +35,7 @@ export interface RedisMulti {
 }
 
 export interface RedisClient {
+    zRangeByScore(key: string, min: number, max: number): Promise<string[]>;
     get(key: string): Promise<string | null>;
     set(key: string, value: string): Promise<unknown>;
     del(key: RedisKey): Promise<unknown>;

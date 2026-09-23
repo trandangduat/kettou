@@ -12,6 +12,7 @@ export interface Player {
     status: PlayerStatus;
     elo: number;
     avatarUrls?: UserAvatar;
+    reconnectUntil?: number;
 }
 
 export interface EndState<TEndReason extends string = string> {

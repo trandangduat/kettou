@@ -1,5 +1,5 @@
 import type { Server } from "socket.io";
-import { setupMatchesSocket } from "./matches.socket.js";
+import { setupMatchesSocket, startReconnectDeadlinesWorker } from "./matches.socket.js";
 import { setupLobbySocket } from "./lobby.socket.js";
 import {
     setUpMatchmakingSocket,
@@ -13,6 +13,7 @@ import { getUserCurrentMatch } from "../services/matches.services.js";
 
 export const setUpSocket = (io: Server) => {
     startMatchMakingWorker(io);
+    startReconnectDeadlinesWorker(io);
 
     io.use(async (socket, next) => {
         const { cookie: cookieHeader } = socket.handshake.headers;

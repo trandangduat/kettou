@@ -17,22 +17,24 @@ type MatchSummary = {
     createdAt: number;
 };
 
-export const getLobbyKey = (id: string) => {
+const getLobbyKey = (id: string) => {
     return `game:${id}:lobby`;
 };
 
-export const getMatchSummaryKey = (matchId: string) => {
+const getMatchSummaryKey = (matchId: string) => {
     return `match:${matchId}:summary`;
 };
 
 // save summary of match state for game lobby UI
-export const getMatchKey = (id: string) => {
+const getMatchKey = (id: string) => {
     return `match:${id}`;
 };
 
-export const getUserCurrentMatchKey = (userId: string) => {
+const getUserCurrentMatchKey = (userId: string) => {
     return `user:${userId}:current-match`;
 };
+
+const RECONNECT_DEADLINES_KEY = "reconnect-deadlines";
 
 export const summarizeMatchState = (match: Match<any>): MatchSummary => {
     return {
@@ -241,4 +243,31 @@ export const getUserCurrentMatch = async (
 export const clearUserCurrentMatch = async (userId: string) => {
     const key = getUserCurrentMatchKey(userId);
     await redis.del(key);
+};
+
+export const addReconnectDeadline = async (
+    userId: string,
+    matchId: string,
+    deadline: number,
+) => {
+    await redis.zAdd(RECONNECT_DEADLINES_KEY, {
+        score: deadline,
+        value: `${userId}:${matchId}`,
+    });
+};
+
+export const removeReconnectDeadline = async (
+    userId: string,
+    matchId: string,
+) => {
+    await redis.zRem(RECONNECT_DEADLINES_KEY, `${userId}:${matchId}`);
+};
+
+export const getExpiredReconnectDeadlines = async (): Promise<string[]> => {
+    const now = Date.now();
+    const expired = await redis.zRangeByScore(RECONNECT_DEADLINES_KEY, 0, now);
+    if (expired.length > 0) {
+        await redis.zRem(RECONNECT_DEADLINES_KEY, expired);
+    }
+    return expired;
 };
