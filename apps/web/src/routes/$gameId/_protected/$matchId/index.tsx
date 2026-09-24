@@ -1,32 +1,15 @@
 import { socket } from "#/socket";
 import { createFileRoute, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { GameRegistry, type Match, type Player } from "@mini-games/core";
+import { GameRegistry, type Match } from "@mini-games/core";
 import { GameUI } from "#/games";
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-} from "#/components/ui/card";
-import { Avatar, AvatarImage } from "#/components/ui/avatar";
-import { Button } from "#/components/ui/button";
-import { timeAgo } from "../../../../../utils";
-import {
-    PulseIcon,
-    ChatCircleDotsIcon,
-    ClockIcon,
-    GearSixIcon,
-    HashIcon,
-    GameControllerIcon,
-    PlayIcon,
-} from "@phosphor-icons/react";
-import React from "react";
-import { SignOutIcon, FlagIcon } from "@phosphor-icons/react";
-import { Input } from "#/components/ui/input";
-import { Field } from "#/components/ui/field";
-import cn from "cnfast";
 import toast from "react-hot-toast";
+import {
+    VersusBar,
+    GameArena,
+    MatchInfoCard,
+    BanterBoxCard,
+} from "./-components";
 
 export const Route = createFileRoute("/$gameId/_protected/$matchId/")({
     component: RouteComponent,
@@ -40,15 +23,16 @@ function RouteComponent() {
     const [match, setMatch] = useState<Match<any>>(
         engine.createNewMatchState("CUSTOM"),
     );
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-    let you = match?.players[0];
-    let opponent = match?.players[1];
-    [you, opponent] =
-        you?.userId === user?.id ? [you, opponent] : [opponent, you];
-    let isHost = user.id === match?.players[0]?.userId;
-    let wasMatchStarted =
+    const hostPlayer = match?.players?.[0];
+    const you = match?.players.find(p => p.userId === user?.id);
+    const opponent = match?.players.find(p => p.userId !== user?.id);
+    const isHost = user?.id === hostPlayer?.userId;
+    const wasMatchStarted =
         match?.status !== "WAITING" && match?.status !== "READY";
-    let router = useRouter();
+    const router = useRouter();
+    const canGoBack = useCanGoBack();
 
     const MatchView = GameUI[gameId];
 
@@ -63,6 +47,7 @@ function RouteComponent() {
             },
         );
     };
+
     const handleAction = (action: any) => {
         socket.emit(
             "match:action",
@@ -76,6 +61,31 @@ function RouteComponent() {
                 }
             },
         );
+    };
+
+    const handleLeaveMatch = () => {
+        socket.emit(
+            "match:leave",
+            match.id,
+            ({ ok, error }: { ok: boolean; error?: string }) => {
+                if (!ok) {
+                    toast.error(error!);
+                }
+                if (canGoBack) {
+                    router.history.back();
+                } else {
+                    router.navigate({ to: "/browse" });
+                }
+            },
+        );
+    };
+
+    const handleSurrender = () => {
+        toast("Surrender coming soon", { icon: "🏳️" });
+    };
+
+    const handleDraw = () => {
+        toast("Draw offer coming soon", { icon: "½" });
     };
 
     useEffect(() => {
@@ -105,235 +115,54 @@ function RouteComponent() {
         return () => {
             socket.off("match:updated");
             socket.off("connect");
+            socket.off("user:left-match");
         };
-    }, []);
+    }, [matchId, router]);
 
     return (
-        <div className="h-[calc(100dvh-6.5rem)] flex flex-col">
-            <div className="flex-1 min-h-0 flex flex-row gap-8 pb-10">
-                <div className="flex-75 min-h-0">
-                    <Card className="h-full">
-                        <CardHeader>
-                            <OpponentInfo player={opponent} />
-                        </CardHeader>
-                        <CardContent className="border-y bg-background h-full p-4 flex items-center relative">
-                            {!wasMatchStarted && (
-                                <>
-                                    {isHost ? (
-                                        <Button
-                                            className="flex items-center gap-2 text-lg font-bold absolute"
-                                            onClick={startMatch}
-                                        >
-                                            <PlayIcon className="h-6 w-6" weight="fill" />
-                                            start match
-                                        </Button>
-                                    ) : (
-                                        <p>Wait for host to start game...</p>
-                                    )}
-                                </>
-                            )}
-
-                            <div className="flex flex-col items-center h-full w-full">
-                                <MatchView
-                                    match={match}
-                                    setMatch={setMatch}
-                                    user={user}
-                                    engine={engine}
-                                    handleAction={handleAction}
-                                />
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <YourInfo player={you} />
-                        </CardFooter>
-                    </Card>
-                </div>
-                <Sidebar className="flex-25 min-h-0" match={match} />
+        <div className="-mt-8 h-[calc(100dvh-2rem)] flex flex-col gap-4 sm:gap-5 min-w-0 pb-3">
+            {/* 1. Header */}
+            <div className="flex justify-center shrink-0">
+                <VersusBar
+                    hostId={hostPlayer?.userId}
+                    you={you}
+                    opponent={opponent}
+                />
             </div>
-        </div>
-    );
-}
 
-function OpponentInfo({ player }: { player?: Player }) {
-    return (
-        <div className="flex flex-row justify-end w-full">
-            <div className="flex flex-row gap-4 items-center">
-                <div className="flex flex-col items-end">
-                    <p className="font-semibold text-lg">
-                        {player ? player.userId : "waiting for player..."}
-                        ({player && player.status})
-                    </p>
-                    {player && (
-                        <span className="flex flex-row text-sm items-center">
-                            <p className="">{Math.round(player.elo)}</p>
-                        </span>
-                    )}
-                </div>
-                <Avatar className="border-2 border-primary w-14 h-14">
-                    <AvatarImage src={player?.avatarUrls?.small}></AvatarImage>
-                </Avatar>
+            {/* 2. Main Area*/}
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 sm:gap-6">
+                {/* Left: Game Board Arena Card */}
+                <GameArena
+                    match={match}
+                    setMatch={setMatch}
+                    user={user}
+                    gameId={gameId}
+                    engine={engine}
+                    MatchView={MatchView}
+                    wasMatchStarted={wasMatchStarted}
+                    isHost={isHost}
+                    opponentPlayer={opponent}
+                    isSidebarOpen={isSidebarOpen}
+                    onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+                    onStartMatch={startMatch}
+                    onAction={handleAction}
+                    onDraw={handleDraw}
+                    onSurrender={handleSurrender}
+                    onLeaveMatch={handleLeaveMatch}
+                />
+
+                {/* Right: Sidebar (Match Info Card -> Banter Box) */}
+                {isSidebarOpen && (
+                    <aside className="w-full lg:w-80 shrink-0 flex flex-col gap-4 sm:gap-5 min-h-125 lg:min-h-0 animate-in fade-in slide-in-from-right-4 duration-150">
+                        <MatchInfoCard match={match} gameId={gameId} />
+                        <BanterBoxCard
+                            match={match}
+                            currentUserName={user?.id || "Player"}
+                        />
+                    </aside>
+                )}
             </div>
-        </div>
-    );
-}
-
-function YourInfo({ player }: { player?: Player }) {
-    return (
-        <div className="flex flex-row justify-between w-full items-center">
-            <div className="flex flex-row gap-4 items-center">
-                <Avatar className="border-2 border-primary w-14 h-14">
-                    <AvatarImage src={player?.avatarUrls?.small}></AvatarImage>
-                </Avatar>
-                <div className="flex flex-col">
-                    <p className="font-semibold text-lg">
-                        {player ? player.userId : "waiting for player..."}
-                        ({player && player.status})
-                    </p>
-                    {player?.elo && (
-                        <span className="flex flex-row text-sm items-center">
-                            <p className="">{Math.round(player.elo)}</p>
-                        </span>
-                    )}
-                </div>
-            </div>
-            <div className="flex flex-row gap-2">
-                <Button
-                    variant="secondary"
-                    className="flex items-center gap-2 p-5"
-                >
-                    <FlagIcon className="h-4 w-4" />
-                    surrender
-                </Button>
-
-                <Button
-                    variant="secondary"
-                    className="flex items-center gap-2 p-5 shadow-sm"
-                >
-                    <span className="flex h-4 w-4 items-center justify-center text-[20px] font-medium leading-none">
-                        &frac12;
-                    </span>
-                    draw
-                </Button>
-            </div>
-        </div>
-    );
-}
-
-function Sidebar({
-    className,
-    match,
-}: {
-    className?: string;
-    match: Match<any>;
-}) {
-    const router = useRouter();
-    const canGoBack = useCanGoBack();
-
-    const handleLeaveMatch = () => {
-        socket.emit(
-            "match:leave",
-            match.id,
-            ({ ok, error }: { ok: boolean; error?: string }) => {
-                if (!ok) {
-                    toast.error(error!);
-                }
-                if (canGoBack) {
-                    router.history.back();
-                } else {
-                    router.navigate({ to: "/" });
-                }
-            },
-        );
-    };
-
-    return (
-        <div className={cn("flex flex-col gap-8", className)}>
-            <Button
-                variant="destructive"
-                className="flex flex-row gap-2 font-bold lowercase text-lg py-6"
-                onClick={handleLeaveMatch}
-            >
-                <SignOutIcon className="size-6" />
-                Leave match
-            </Button>
-            <SidebarCard title="match information">
-                <CardContent className="flex flex-col gap-2">
-                    <InfoItem
-                        label="id"
-                        content={match.id}
-                        icon={HashIcon}
-                    />
-                    <InfoItem
-                        label="mode"
-                        content={match.type}
-                        icon={GearSixIcon}
-                    />
-                    <InfoItem
-                        label="status"
-                        content={match.status}
-                        icon={PulseIcon}
-                    />
-                    <InfoItem
-                        label="game"
-                        content={match.gameId}
-                        icon={GameControllerIcon}
-                    />
-                    <InfoItem
-                        label="created"
-                        content={timeAgo(match.createdAt)}
-                        icon={ClockIcon}
-                    />
-                </CardContent>
-            </SidebarCard>
-            <SidebarCard className="flex flex-col min-h-0" title="banter box">
-                <CardContent className="border-b h-full">hello hi</CardContent>
-                <CardFooter>
-                    <Field orientation="horizontal">
-                        <Input placeholder="type here..." />
-                        <Button>send</Button>
-                    </Field>
-                </CardFooter>
-            </SidebarCard>
-        </div>
-    );
-}
-
-function InfoItem({
-    label,
-    content,
-    icon: Icon,
-}: {
-    label: string;
-    content: string;
-    icon?: React.ElementType;
-}) {
-    return (
-        <div className="flex flex-row justify-between items-center">
-            <span className="text-muted-foreground flex items-center gap-2">
-                {Icon && <Icon className="size-4" />}
-                <p>{label}</p>
-            </span>
-            <p className="lowercase font-semibold">{content}</p>
-        </div>
-    );
-}
-
-function SidebarCard({
-    title,
-    className,
-    children,
-}: {
-    title: string;
-    className?: string;
-    children?: React.ReactNode;
-}) {
-    return (
-        <div className={className}>
-            <span className="text-primary text-lg font-semibold mb-2 flex gap-2 items-center">
-                <ChatCircleDotsIcon className="size-8" weight="fill" />
-                <p>{title}</p>
-            </span>
-            <Card className="flex-1 min-h-0">{children}</Card>
         </div>
     );
 }
