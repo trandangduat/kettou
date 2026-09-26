@@ -6,7 +6,7 @@ npm install -g pnpm@latest-11
 pn install
 cp ./apps/backend/.env.example ./apps/backend/.env
 # Run the app
-pn -r --parallel dev
+pn dev
 ```
 
 # Struggles & decisions

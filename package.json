@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "cd redis-local && docker-compose up -d && trap 'docker-compose down' EXIT && trap 'exit 130' INT && trap 'exit 143' TERM && pn -r --parallel dev"
   },
   "keywords": [],
   "author": "",
