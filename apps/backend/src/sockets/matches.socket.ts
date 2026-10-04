@@ -63,14 +63,10 @@ export const startReconnectDeadlinesWorker = (io: Server) => {
         } finally {
             running = false;
         }
-    }, 1000);
-}
+    }, 1000000);
+};
 
-const leaveMatch = async (
-    io: Server,
-    userId: string,
-    matchId: string,
-) => {
+const leaveMatch = async (io: Server, userId: string, matchId: string) => {
     let match = await getMatchState({ matchId });
     if (!match) {
         throw new Error(`Match #${matchId} not found`);
@@ -121,10 +117,7 @@ const handleEndedMatch = async (io: Server, match: Match<any>) => {
     saveEndedMatchToDb({ match, endedAt: Date.now() });
 
     for (let player of match.players) {
-        io.to(getUserRoom(player.userId)).emit(
-            "current-match:updated",
-            null,
-        );
+        io.to(getUserRoom(player.userId)).emit("current-match:updated", null);
         await clearUserCurrentMatch(player.userId);
 
         const matchUserRoom = getMatchUserRoom(match.id, player.userId);
@@ -148,10 +141,20 @@ const saveAndBroadcastMatchState = async (io: Server, match: Match<any>) => {
     }
 };
 
+const checkCurrentMatch = async (userId: string) => {
+    let currentMatch = await getUserCurrentMatch(userId);
+    if (currentMatch) {
+        throw new Error(
+            `You are already in a match with id #${currentMatch.matchId}. If you want to create or join a different match, please leave the current match first.`,
+        );
+    }
+};
 
 export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
     const createNewMatch = async ({ gameId, matchType }) => {
         console.log("CREATE NEW MATCH");
+
+        await checkCurrentMatch(socket.data.userId);
 
         const match = await createMatch({ gameId, matchType });
         const lobbyKey = getLobbyRoom(gameId);
@@ -205,6 +208,11 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             console.log("JOIN MATCH");
 
             const { userId } = socket.data;
+
+            await checkCurrentMatch(userId);
+
+            console.log("it does run")
+
             let match = await getMatchState({ matchId });
             if (!match) {
                 throw new Error(`Match #${matchId} not found`);

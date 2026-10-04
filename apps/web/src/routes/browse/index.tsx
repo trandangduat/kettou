@@ -11,6 +11,16 @@ import {
     RoomGrid,
     type Match,
 } from "./-components";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "#/components/ui/dialog";
+import { Button } from "#/components/ui/button";
 
 export const Route = createFileRoute("/browse/")({
     component: RouteComponent,
@@ -24,6 +34,10 @@ function RouteComponent() {
     const [selectedGame, setSelectedGame] = useState<Game>();
     const [matches, setMatches] = useState<Match[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
+    const [open, setOpen] = useState(false);
+    const [createMatchError, setCreateMatchError] = useState<
+        string | undefined
+    >(undefined);
     const currentGame = selectedGame ?? games?.[0];
     const router = useRouter();
 
@@ -61,7 +75,8 @@ function RouteComponent() {
                         },
                     });
                 } else {
-                    toast.error(error);
+                    setCreateMatchError(error);
+                    setOpen(true);
                 }
             },
         );
@@ -141,6 +156,21 @@ function RouteComponent() {
                     gameId={currentGame?.id}
                 />
             </main>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Unable to create match</DialogTitle>
+                        <DialogDescription>
+                            {createMatchError}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose
+                            render={<Button size="lg">Ok</Button>}
+                        />
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
