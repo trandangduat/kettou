@@ -26,7 +26,7 @@ import {
     getExpiredReconnectDeadlines,
 } from "../services/matches.services.js";
 import type { SocketHandlerContext } from "./types.js";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import {
     debugRooms,
     getLobbyRoom,
@@ -49,7 +49,7 @@ export const startReconnectDeadlinesWorker = (io: Server) => {
             return;
         }
 
-        logger.info("🔥PROCESSING RECONNECT DEADLINES");
+        // logger.info("🔥PROCESSING RECONNECT DEADLINES");
 
         try {
             const expiredDeadlines = await getExpiredReconnectDeadlines();
@@ -88,21 +88,19 @@ const leaveMatch = async (io: Server, userId: string, matchId: string) => {
         const matchUserRoom = getMatchUserRoom(matchId, userId);
         io.in(matchUserRoom).socketsLeave(matchUserRoom);
 
-        // broadcast to user's clients that the current match has updated
+        // broadcast to user's clients that their current match has updated
         await clearUserCurrentMatch(userId);
-        const userRoom = getUserRoom(userId);
-        io.to(userRoom).emit("current-match:updated", null);
+        io.to(getUserRoom(userId)).emit("current-match:updated", null);
 
-        const lobbyKey = getLobbyRoom(match.gameId);
+        // update match status in game lobby
         if (match.players.length > 0) {
-            io.to(lobbyKey).emit(
+            io.to(getLobbyRoom(match.gameId)).emit(
                 "lobby:match-updated",
                 summarizeMatchState(match),
             );
         } else {
-            io.to(lobbyKey).emit("lobby:match-deleted", matchId);
-            await deleteMatch({ matchId, gameId: match.gameId });
-            removeMatchLock(matchId);
+            io.to(getLobbyRoom(match.gameId)).emit("lobby:match-deleted", matchId);
+            await removeMatch(match.id, match.gameId);
         }
     } else {
         // end match because player abandoned
@@ -110,8 +108,14 @@ const leaveMatch = async (io: Server, userId: string, matchId: string) => {
         await saveAndBroadcastMatchState(io, match);
         await handleEndedMatch(io, match);
     }
+
     debugRooms(io);
 };
+
+const removeMatch = async (matchId: string, gameId: string) => {
+    await deleteMatch({ matchId, gameId });
+    removeMatchLock(matchId);
+}
 
 const handleEndedMatch = async (io: Server, match: Match<any>) => {
     saveEndedMatchToDb({ match, endedAt: Date.now() });
@@ -123,6 +127,9 @@ const handleEndedMatch = async (io: Server, match: Match<any>) => {
         const matchUserRoom = getMatchUserRoom(match.id, player.userId);
         io.in(matchUserRoom).socketsLeave(matchUserRoom);
     }
+
+    io.to(getLobbyRoom(match.gameId)).emit("lobby:match-deleted", match.id);
+    await removeMatch(match.id, match.gameId);
 };
 
 const saveAndBroadcastMatchState = async (io: Server, match: Match<any>) => {
@@ -306,11 +313,8 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             console.log("LEAVE MATCH: ", matchId);
 
             const { userId } = socket.data;
-
+            socket.to(getUserRoom(userId)).emit("user:left-match", matchId);
             await leaveMatch(io, userId, matchId);
-
-            const matchUserRoom = getMatchUserRoom(matchId, userId);
-            socket.to(matchUserRoom).emit("user:left-match", matchId);
         });
     };
 

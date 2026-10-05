@@ -36,6 +36,14 @@ function RouteComponent() {
 
     const MatchView = GameUI[gameId];
 
+    const goBack = () => {
+        if (canGoBack) {
+            router.history.back();
+        } else {
+            router.navigate({ to: "/browse" });
+        }
+    }
+
     const startMatch = () => {
         socket.emit(
             "match:start",
@@ -71,11 +79,7 @@ function RouteComponent() {
                 if (!ok) {
                     toast.error(error!);
                 }
-                if (canGoBack) {
-                    router.history.back();
-                } else {
-                    router.navigate({ to: "/browse" });
-                }
+                goBack();
             },
         );
     };
@@ -106,10 +110,18 @@ function RouteComponent() {
 
         socket.on("match:updated", (updatedMatch) => {
             setMatch(updatedMatch);
+            if (updatedMatch.status === "ENDED") {
+                toast("The match ended. You will be redirect in the 5 seconds.");
+                setTimeout(() => {
+                    goBack();
+                }, 5000);
+            }
         });
         socket.on("user:left-match", () => {
-            toast.error("You have left the match.");
-            router.navigate({ to: "/browse" });
+            toast.error("You have left the match. You will be redirect in the 5 seconds.");
+            setTimeout(() => {
+                goBack();
+            }, 5000);
         });
 
         return () => {
