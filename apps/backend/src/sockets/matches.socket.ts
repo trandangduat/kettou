@@ -63,7 +63,7 @@ export const startReconnectDeadlinesWorker = (io: Server) => {
         } finally {
             running = false;
         }
-    }, 1000000);
+    }, 1000);
 };
 
 const leaveMatch = async (io: Server, userId: string, matchId: string) => {
@@ -141,20 +141,17 @@ const saveAndBroadcastMatchState = async (io: Server, match: Match<any>) => {
     }
 };
 
-const checkCurrentMatch = async (userId: string) => {
-    let currentMatch = await getUserCurrentMatch(userId);
-    if (currentMatch) {
-        throw new Error(
-            `You are already in a match with id #${currentMatch.matchId}. If you want to create or join a different match, please leave the current match first.`,
-        );
-    }
-};
-
 export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
     const createNewMatch = async ({ gameId, matchType }) => {
         console.log("CREATE NEW MATCH");
 
-        await checkCurrentMatch(socket.data.userId);
+        let currentMatch = await getUserCurrentMatch(socket.data.userId);
+        if (currentMatch) {
+            throw new Error(
+                `You are already in a match with id #${currentMatch.matchId}.\n
+                Leave the current match first before creating a new match.`
+            );
+        }
 
         const match = await createMatch({ gameId, matchType });
         const lobbyKey = getLobbyRoom(gameId);
@@ -208,14 +205,17 @@ export const setupMatchesSocket = ({ io, socket }: SocketHandlerContext) => {
             console.log("JOIN MATCH");
 
             const { userId } = socket.data;
-
-            await checkCurrentMatch(userId);
-
-            console.log("it does run")
-
             let match = await getMatchState({ matchId });
             if (!match) {
                 throw new Error(`Match #${matchId} not found`);
+            }
+
+            let currentMatch = await getUserCurrentMatch(userId);
+            if (currentMatch && currentMatch.matchId !== matchId) {
+                throw new Error(
+                    `You are already in a match with id #${currentMatch.matchId}.\n
+                    If you want to join a different match, please leave the current match first.`
+                );
             }
 
             let isExistingPlayer = match.players.some(
