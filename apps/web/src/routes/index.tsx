@@ -3,7 +3,6 @@ import { Button } from "#/components/ui/button";
 import { socket } from "#/socket";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import cn from "cnfast";
 import { useEffect, useRef, useState } from "react";
 import GamesCarousal from "./-components/games-carousal";
 import {
@@ -12,27 +11,43 @@ import {
     MagnifyingGlassIcon,
     XIcon,
 } from "@phosphor-icons/react";
+import toast from "react-hot-toast";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "#/components/ui/dialog";
+
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
     const [isInMm, setIsInMm] = useState<boolean>(false);
     const [mmTimer, setMmTimer] = useState<number>(0);
     const [selectedGames, setSelectedGames] = useState<string[]>([]);
+    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+    const [dialogContent, setDialogContent] = useState<string>("");
 
     const intervalId = useRef<ReturnType<typeof setInterval>>(null);
     const { data: games, isLoading: isLoadingGames } = useQuery(getAllGamesQueryOptions);
     const router = useRouter();
 
     const findMatch = () => {
-        intervalId.current = setInterval(() => {
-            setMmTimer((prev) => prev + 1);
-        }, 1000);
-        setIsInMm(true);
         socket.emit(
             "matchmaking:join",
             selectedGames,
-            ({ ok }: { ok: boolean }) => {
-                if (!ok) cancelFindMatch();
+            ({ ok, error }: { ok: boolean, error?: string }) => {
+                if (!ok && error) {
+                    toast.error(error);
+                } else {
+                    intervalId.current = setInterval(() => {
+                        setMmTimer((prev) => prev + 1);
+                    }, 1000);
+                    setIsInMm(true);
+                }
             },
         );
     };
@@ -100,6 +115,21 @@ function Home() {
                     )}
                 </div>
             </div>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Unable to create match</DialogTitle>
+                        <DialogDescription>
+                            {dialogContent}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose
+                            render={<Button size="lg">Ok</Button>}
+                        />
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
             <GamesCarousal
                 games={games}
                 selectedGames={selectedGames}

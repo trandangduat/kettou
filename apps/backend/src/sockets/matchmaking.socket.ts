@@ -6,6 +6,7 @@ import {
     getPairsInMmQueue,
     removePlayerFromMmQueue,
     removePairsFromMmQueue,
+    checkPlayerInMmQueue,
 } from "../services/matchmaking.services.js";
 import {
     createMatch,
@@ -45,7 +46,7 @@ export const startMatchMakingWorker = (io: Server) => {
         }
         isProcessing = true;
         try {
-            logger.info("PROCESSING MM QUEUE");
+            // logger.info("PROCESSING MM QUEUE");
             await processMatchmakingQueue(io);
         } finally {
             isProcessing = false;
@@ -58,8 +59,15 @@ export const setUpMatchmakingSocket = ({
     socket,
 }: SocketHandlerContext) => {
     const joinMatchmaking = async (gameIds: string[]) => {
+        if (!gameIds.length) {
+            throw new Error("You haven't chosen any games yet.")
+        }
         const { userId } = socket.data;
-        const { id, avatarUrls } = getUserById(userId);
+        if (await checkPlayerInMmQueue(userId)) {
+            throw new Error("IN_QUEUE_ALREADY")
+        }
+
+        const { avatarUrls } = getUserById(userId);
         const player = {
             userId,
             elos: getUserEloOfGames(userId, gameIds),

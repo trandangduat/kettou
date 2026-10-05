@@ -1,6 +1,7 @@
 import { GameRegistry, Player, UserAvatar } from "@mini-games/core";
 import { canMatch } from "../logics/matchmaking.logic.js";
 import { redis } from "../redis.js";
+import { logger } from "../logger.js";
 
 interface PlayerInQ {
     userId: string;
@@ -64,6 +65,15 @@ export const removePlayerFromMmQueue = async (userId: string) => {
     await redisChain.exec();
 };
 
+export const checkPlayerInMmQueue = async (userId: string) : Promise<boolean> => {
+    const playerKey = getPlayerKey(userId);
+    const player = await redis.get(playerKey);
+    if (player) {
+        return true;
+    }
+    return false;
+};
+
 const getAllGameQueuePlayerIds = async (): Promise<string[][]> => {
   const gameIds = GameRegistry.getAllGameIds();
   let redisChain = redis.multi();
@@ -102,7 +112,6 @@ export const getPairsInMmQueue = async () => {
     gameIds.forEach((gameId, index) => {
         let queue = queues[index];
         let matched: Record<string, boolean> = {};
-        console.log("GAME QUEUE", gameId, queue);
 
         for (let id1 of queue) {
             for (let id2 of queue) {
@@ -142,7 +151,6 @@ export const getPairsInMmQueue = async () => {
     });
     // sort pairs by wait time (descending) and iteratively get the pairs from top of stack
     allPairs.sort((a, b) => b.waitTime - a.waitTime);
-    console.log("ALL PAIRS", allPairs);
     // filter out pairs that have players that were already matched before
     let finalPairs: Pair[] = [];
     let occ: Record<string, boolean> = {};
@@ -154,7 +162,6 @@ export const getPairsInMmQueue = async () => {
         occ[pair.player2.userId] = true;
         finalPairs.push(pair);
     }
-    console.log("FINAL PAIRS", finalPairs);
     return finalPairs;
 };
 

@@ -9,4 +9,4 @@ export const BACKEND_PORT = 1109;
 export const SALT_ROUNDS = 10;
 export const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 export const DEFAULT_ELO = 1000;
-export const MATCHMAKING_DEBOUNCE = 200000;
+export const MATCHMAKING_DEBOUNCE = 2000;
