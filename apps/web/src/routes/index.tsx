@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import GamesCarousal from "./-components/games-carousal";
+import CardDurakImg from "#/assets/card-durak.png";
+import DiceTerritoryImg from "#/assets/dice-territory.png";
 import {
     SignInIcon,
     SwordIcon,
@@ -14,22 +16,26 @@ import {
 import toast from "react-hot-toast";
 import {
     Dialog,
-    DialogClose,
     DialogContent,
-    DialogDescription,
-    DialogFooter,
     DialogHeader,
-    DialogTitle,
 } from "#/components/ui/dialog";
 
 export const Route = createFileRoute("/")({ component: Home });
+
+const MATCHMAKING_FOUND_WAIT = 3;
+
+const GAME_IMAGES: Record<string, string> = {
+    "dice-territory": DiceTerritoryImg,
+    "card-durak": CardDurakImg,
+};
 
 function Home() {
     const [isInMm, setIsInMm] = useState<boolean>(false);
     const [mmTimer, setMmTimer] = useState<number>(0);
     const [selectedGames, setSelectedGames] = useState<string[]>([]);
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-    const [dialogContent, setDialogContent] = useState<string>("");
+    const [dialogContent, setDialogContent] = useState<number>(-1);
+    const [foundGameId, setFoundGameId] = useState<string | null>(null);
 
     const intervalId = useRef<ReturnType<typeof setInterval>>(null);
     const { data: games, isLoading: isLoadingGames } = useQuery(getAllGamesQueryOptions);
@@ -72,38 +78,59 @@ function Home() {
         socket.on(
             "matchmaking:found",
             async (matchId: string, gameId: string) => {
-                console.log("Matched Found");
                 setIsInMm(false);
-                await router.navigate({
-                    to: "/$gameId/$matchId",
-                    params: { gameId, matchId },
-                });
+                setFoundGameId(gameId);
+                setDialogOpen(true);
+                setDialogContent(MATCHMAKING_FOUND_WAIT);
+                const waitUntil = Date.now() + MATCHMAKING_FOUND_WAIT * 1000;
+
+                const intv = setInterval(async () => {
+                    console.log("WAIT UNTIL: ", new Date(waitUntil))
+
+                    if (Date.now() >= waitUntil) {
+                        await router.navigate({
+                            to: "/$gameId/$matchId",
+                            params: { gameId, matchId },
+                        })
+                        clearInterval(intv);
+                    }
+
+                    let counter = Math.ceil((waitUntil - Date.now()) / 1000);
+                    if (counter < 0) {
+                        counter = 0;
+                    }
+                    setDialogContent(counter);
+                }, 1000);
             },
         );
-        // TODO: clean up socket listeners
+        return () => {
+            socket.off("matchmaking:found");
+        }
     }, []);
+
+    const foundGame = games?.find((game: any) => game.id === foundGameId);
 
     return (
         <div className="py-8 flex flex-col gap-8">
             <div className="flex justify-between items-center">
-              <div className="flex gap-4 items-center justify-center">
-                  <Button
-                      size="2xl"
-                      className="w-56"
-                      variant="secondary"
-                  >
-                      <MagnifyingGlassIcon className="size-5" />
-                      <span>Browse Rooms</span>
-                  </Button>
-                  <Button
-                      size="2xl"
-                      className="w-56"
-                      variant="secondary"
-                  >
-                      <SignInIcon className="size-5" />
-                      <span>Join Room</span>
-                  </Button>
-              </div>
+                <div className="flex gap-4 items-center justify-center">
+                    <Button
+                        size="2xl"
+                        className="w-56"
+                        variant="secondary"
+                    >
+                        <MagnifyingGlassIcon className="size-5" />
+                        <span>Browse Rooms</span>
+                    </Button>
+                    <Button
+                        size="2xl"
+                        className="w-56"
+                        variant="secondary"
+                    >
+                        <SignInIcon className="size-5" />
+                        <span>Join Room</span>
+                    </Button>
+                </div>
                 <div className="">
                     {isInMm ? (
                         <CancelFindMatchButton
@@ -115,19 +142,37 @@ function Home() {
                     )}
                 </div>
             </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Unable to create match</DialogTitle>
-                        <DialogDescription>
-                            {dialogContent}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <DialogClose
-                            render={<Button size="lg">Ok</Button>}
-                        />
-                    </DialogFooter>
+            <Dialog open={dialogOpen}>
+                <DialogContent
+                    showCloseButton={false}
+                    className="w-sm flex flex-col justify-center"
+                >
+                    <div className="flex flex-col gap-6">
+                        <DialogHeader>
+                            <div className="flex justify-center uppercase">Match Found</div>
+                        <div className="flex justify-center">
+                            {foundGame && (
+                                <div className="inline-flex items-center justify-center pr-4">
+                                    {GAME_IMAGES[foundGame.id] && (
+                                        <img
+                                            src={GAME_IMAGES[foundGame.id]}
+                                            alt={foundGame.name}
+                                            className="size-12 object-contain"
+                                        />
+                                    )}
+                                    <p className="text-lg tracking-tight font-semibold lowercase text-primary">
+                                        {foundGame.name}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        </DialogHeader>
+                        <div className="flex justify-center font-space-grotesk">
+                            <span className="text-8xl">
+                                {dialogContent}
+                            </span>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
             <GamesCarousal
