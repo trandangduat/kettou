@@ -25,10 +25,6 @@ const processMatchmakingQueue = async (io: Server) => {
         logger.info(pair, "MATCHED: ");
         const { player1, player2, gameId } = pair;
         let match = await createMatch({ gameId, matchType: "RANKED" });
-
-        match = addPlayerToMatch(match, player1);
-        match = addPlayerToMatch(match, player2);
-
         await saveMatchState(match);
 
         io.to(getUserRoom(player1.userId)).emit("matchmaking:found", match.id, gameId);
